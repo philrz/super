@@ -6,9 +6,9 @@ script: |
 outputs:
   - name: stdout
     data: |
-        file a
+        from a
         | join (
-          file b
+          from b
         ) on c
         ===
         file a

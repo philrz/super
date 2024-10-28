@@ -27,8 +27,9 @@ var unpacker = unpack.New(
 	Explode{},
 	Enum{},
 	Error{},
+	ExprEntity{},
 	FieldExpr{},
-	File{},
+	FormatArg{},
 	From{},
 	FString{},
 	FStringExpr{},
@@ -38,7 +39,7 @@ var unpacker = unpack.New(
 	Summarize{},
 	Grep{},
 	Head{},
-	HTTP{},
+	HTTPArgs{},
 	ID{},
 	ImpliedValue{},
 	IndexExpr{},
@@ -53,7 +54,7 @@ var unpacker = unpack.New(
 	OverExpr{},
 	Parallel{},
 	Pass{},
-	Pool{},
+	PoolArgs{},
 	Primitive{},
 	Put{},
 	Record{},
@@ -94,6 +95,8 @@ var unpacker = unpack.New(
 	Where{},
 	Yield{},
 	Sample{},
+	Delete{},
+	LakeMeta{},
 )
 
 // UnmarshalOp transforms a JSON representation of an operator into an Op.

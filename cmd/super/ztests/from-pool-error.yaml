@@ -3,7 +3,5 @@ script: |
 
 outputs:
   - name: stderr
-    data: |
-      super: "from pool" cannot be used without a lake at line 1, column 8:
-      from ( pool a )
-             ~~~~~~
+    regexp: |
+      a: file:///.*/a: file does not exist

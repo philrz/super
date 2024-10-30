@@ -92,7 +92,7 @@ func (j *Job) Parallelize(n int) error {
 // Parse concatenates the source files in filenames followed by src and parses
 // the resulting program.
 func Parse(src string, filenames ...string) (ast.Seq, *parser.SourceSet, error) {
-	return parser.ParseSuperPipe(filenames, src)
+	return parser.ParseSuperSQL(filenames, src)
 }
 
 // MustParse is like Parse but panics if an error is encountered.

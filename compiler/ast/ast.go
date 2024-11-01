@@ -73,6 +73,14 @@ type BinaryExpr struct {
 	Loc  `json:"loc"`
 }
 
+type Between struct {
+	Kind  string `json:"kind" unpack:""`
+	Expr  Expr   `json:"expr"`
+	Lower Expr   `json:"lower"`
+	Upper Expr   `json:"upper"`
+	Loc   `json:"loc"`
+}
+
 type Conditional struct {
 	Kind string `json:"kind" unpack:""`
 	Cond Expr   `json:"cond"`
@@ -294,6 +302,7 @@ func (*FStringExpr) FStringElem() {}
 
 func (*UnaryExpr) ExprAST()   {}
 func (*BinaryExpr) ExprAST()  {}
+func (*Between) ExprAST()     {}
 func (*Conditional) ExprAST() {}
 func (*Call) ExprAST()        {}
 func (*CaseExpr) ExprAST()    {}

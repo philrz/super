@@ -1,0 +1,24 @@
+skip: true
+
+script: |
+  super -z -c 'select value this from "a.jsup" |> search 13'
+  echo ===
+  super -z -c 'select value this from "messy.jsup" |> search bar or s==4'
+  echo ===
+  super -z -c 'select value this from "b.jsup" |> search len(b) >= 3'
+
+inputs:
+  - name: query.sql
+    data: |
+      SELECT NOT 10 BETWEEN 15 AND CASE 1 WHEN 1 THEN 20 END
+
+
+outputs:
+  - name: stdout
+    data: |
+      {c:3,a:13}
+      ===
+      {x:2,s:"bar"}
+      {x:3,s:4}
+      ===
+      {b:[3,4,5],c:3}

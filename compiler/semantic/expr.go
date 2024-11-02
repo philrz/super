@@ -81,6 +81,26 @@ func (a *analyzer) semExpr(e ast.Expr) dag.Expr {
 		}
 	case *ast.BinaryExpr:
 		return a.semBinary(e)
+	case *ast.Between:
+		val := a.semExpr(e.Expr)
+		lower := a.semExpr(e.Lower)
+		upper := a.semExpr(e.Upper)
+		return &dag.BinaryExpr{
+			Kind: "BinaryExpr",
+			Op:   "and",
+			LHS: &dag.BinaryExpr{
+				Kind: "BinaryExpr",
+				Op:   ">=",
+				LHS:  val,
+				RHS:  lower,
+			},
+			RHS: &dag.BinaryExpr{
+				Kind: "BinaryExpr",
+				Op:   "<=",
+				LHS:  val,
+				RHS:  upper,
+			},
+		}
 	case *ast.Conditional:
 		cond := a.semExpr(e.Cond)
 		thenExpr := a.semExpr(e.Then)

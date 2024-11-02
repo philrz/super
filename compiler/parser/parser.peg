@@ -922,11 +922,22 @@ LogicalOrExpr
     }
 
 LogicalAndExpr
-  = first:ComparisonExpr
-    rest:(__ op:AND __ expr:ComparisonExpr { return []any{op, expr}, nil })* {
+  = first:BetweenExpr
+    rest:(__ op:AND __ expr:BetweenExpr { return []any{op, expr}, nil })* {
         return makeBinaryExprChain(first, rest, c), nil
     }
 
+BetweenExpr
+  = expr:ComparisonExpr _ BETWEEN _ lower:ComparisonExpr _ AND _ upper:ComparisonExpr {
+      return &ast.Between{
+        Kind: "Between",
+        Expr: expr.(ast.Expr),
+        Lower: lower.(ast.Expr),
+        Upper: upper.(ast.Expr),
+      }, nil
+    }
+  / ComparisonExpr
+  
 ComparisonExpr
   = lhs:AdditiveExpr opAndRHS:(__ Comparator __ AdditiveExpr / __ ("~" { return string(c.text), nil }) __ Regexp)? {
       if opAndRHS == nil {
@@ -2168,6 +2179,7 @@ ASC        = "ASC"i             !IdentifierRest { return "asc", nil }
 ASSERT     = "ASSERT"i          !IdentifierRest
 AT         = "AT"i              !IdentifierRest
 AUTHOR     = "AUTHOR"i          !IdentifierRest
+BETWEEN    = "BETWEEN"i         !IdentifierRest
 BODY       = "BODY"i            !IdentifierRest
 BY         = "BY"i              !IdentifierRest
 CASE       = "CASE"i            !IdentifierRest

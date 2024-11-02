@@ -97,6 +97,9 @@ LeanOp
 EndOfOp = __ (Pipe / SearchKeywordGuard / "=>" / ")" / EOF)
 Pipe = "|>" / "|" !("{" / "[")
 
+// XXX run more tests to make sure we don't need !"|" after pipechar
+// because of SQL "||"
+
 ExprGuard = __ ((!"=>" Comparator) / AdditiveOperator / MultiplicativeOperator / ":" / "(" / "[" / "~")
 
 Comparator = ("==" / "=" / "!=" / IN / LIKE / "<=" / "<" / ">=" / ">") { return string(c.text), nil }
@@ -1015,15 +1018,21 @@ AdditiveExpr
         return makeBinaryExprChain(first, rest, c), nil
     }
 
-AdditiveOperator = ("+" / "-" / "||") { return string(c.text), nil }
+AdditiveOperator = ("+" / "-") { return string(c.text), nil }
 
 MultiplicativeExpr
-  = first:NegationExpr
-    rest:(__ op:MultiplicativeOperator __ expr:NegationExpr { return []any{op, expr}, nil })* {
+  = first:ConcatExpr
+    rest:(__ op:MultiplicativeOperator __ expr:ConcatExpr { return []any{op, expr}, nil })* {
         return makeBinaryExprChain(first, rest, c), nil
     }
 
 MultiplicativeOperator = ("*" / "/" / "%") { return string(c.text), nil }
+
+ConcatExpr 
+  = first:NegationExpr
+    rest:(__ "||" __ expr:NegationExpr { return []any{"||", expr}, nil })* {
+        return makeBinaryExprChain(first, rest, c), nil
+    }
 
 NegationExpr
   = !Literal "-" __ e:DerefExpr {

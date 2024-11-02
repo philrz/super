@@ -1029,12 +1029,12 @@ MultiplicativeExpr
 MultiplicativeOperator = ("*" / "/" / "%") { return string(c.text), nil }
 
 ConcatExpr 
-  = first:NegationExpr
-    rest:(__ "||" __ expr:NegationExpr { return []any{"||", expr}, nil })* {
+  = first:UnaryMinusExpr
+    rest:(__ "||" __ expr:UnaryMinusExpr { return []any{"||", expr}, nil })* {
         return makeBinaryExprChain(first, rest, c), nil
     }
 
-NegationExpr
+UnaryMinusExpr
   = !Literal "-" __ e:DerefExpr {
       return &ast.UnaryExpr{
           Kind: "UnaryExpr",

@@ -922,11 +922,22 @@ LogicalOrExpr
     }
 
 LogicalAndExpr
-  = first:TweenerExpr
-    rest:(__ op:AND __ expr:TweenerExpr { return []any{op, expr}, nil })* {
+  = first:NotExpr
+    rest:(__ op:AND __ expr:NotExpr { return []any{op, expr}, nil })* {
         return makeBinaryExprChain(first, rest, c), nil
     }
 
+NotExpr
+  = (NOT _ / "!" __) e:NotExpr {
+      return &ast.UnaryExpr{
+          Kind: "UnaryExpr",
+          Op: "!",
+          Operand: e.(ast.Expr),
+          Loc: loc(c),
+      }, nil
+    }
+  / TweenerExpr
+  
 TweenerExpr
   = expr:ComparisonExpr _ BETWEEN _ lower:ComparisonExpr _ AND _ upper:ComparisonExpr {
       return &ast.Between{
@@ -1007,23 +1018,12 @@ AdditiveExpr
 AdditiveOperator = ("+" / "-" / "||" / LIKE) { return string(c.text), nil }
 
 MultiplicativeExpr
-  = first:NotExpr
-    rest:(__ op:MultiplicativeOperator __ expr:NotExpr { return []any{op, expr}, nil })* {
+  = first:NegationExpr
+    rest:(__ op:MultiplicativeOperator __ expr:NegationExpr { return []any{op, expr}, nil })* {
         return makeBinaryExprChain(first, rest, c), nil
     }
 
 MultiplicativeOperator = ("*" / "/" / "%") { return string(c.text), nil }
-
-NotExpr
-  = (NOT _ / "!" __) e:NotExpr {
-      return &ast.UnaryExpr{
-          Kind: "UnaryExpr",
-          Op: "!",
-          Operand: e.(ast.Expr),
-          Loc: loc(c),
-      }, nil
-    }
-  / NegationExpr
 
 NegationExpr
   = !Literal "-" __ e:DerefExpr {

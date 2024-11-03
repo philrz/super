@@ -523,7 +523,7 @@ func runzq(path, zedProgram, input string, outputFlags []string, inputFlags []st
 	if err != nil {
 		return "", err
 	}
-	q, err := runtime.CompileQuery(context.Background(), zctx, compiler.NewCompiler(), ast, []zio.Reader{zrc})
+	q, err := runtime.CompileQuery(context.Background(), zctx, compiler.NewCompiler(nil), ast, []zio.Reader{zrc})
 	if err != nil {
 		zw.Close()
 		return "", err

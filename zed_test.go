@@ -143,7 +143,7 @@ func runOneBoomerang(t *testing.T, format, data string) {
 		ast, err := parser.ParseQuery("fuse")
 		require.NoError(t, err)
 		rctx := runtime.NewContext(context.Background(), zctx)
-		q, err := compiler.NewCompiler().NewQuery(rctx, ast, []zio.Reader{dataReadCloser})
+		q, err := compiler.NewCompiler(nil).NewQuery(rctx, ast, []zio.Reader{dataReadCloser}, 0)
 		require.NoError(t, err)
 		defer q.Pull(true)
 		dataReader = runtime.AsReader(q)

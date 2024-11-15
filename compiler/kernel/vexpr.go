@@ -17,6 +17,8 @@ func (b *Builder) compileVamExpr(e dag.Expr) (vamexpr.Evaluator, error) {
 		return nil, errors.New("null expression not allowed")
 	}
 	switch e := e.(type) {
+	case *dag.ArrayExpr:
+		return b.compileVamArrayExpr(e)
 	case *dag.Literal:
 		val, err := zson.ParseValue(b.zctx(), e.Value)
 		if err != nil {
@@ -47,8 +49,6 @@ func (b *Builder) compileVamExpr(e dag.Expr) (vamexpr.Evaluator, error) {
 	//	return b.compileVamRegexpSearch(e)
 	case *dag.RecordExpr:
 		return b.compileVamRecordExpr(e)
-	//case *dag.ArrayExpr:
-	//	return b.compileVamArrayExpr(e)
 	//case *dag.SetExpr:
 	//	return b.compileVamSetExpr(e)
 	//case *dag.MapCall:
@@ -217,4 +217,35 @@ func (b *Builder) compileVamRecordExpr(e *dag.RecordExpr) (vamexpr.Evaluator, er
 		})
 	}
 	return vamexpr.NewRecordExpr(b.zctx(), elems), nil
+}
+
+func (b *Builder) compileVamArrayExpr(e *dag.ArrayExpr) (vamexpr.Evaluator, error) {
+	elems, err := b.compileVamListElems(e.Elems)
+	if err != nil {
+		return nil, err
+	}
+	return vamexpr.NewArrayExpr(b.zctx(), elems), nil
+}
+
+func (b *Builder) compileVamListElems(elems []dag.VectorElem) ([]vamexpr.ListElem, error) {
+	var out []vamexpr.ListElem
+	for _, elem := range elems {
+		switch elem := elem.(type) {
+		case *dag.Spread:
+			e, err := b.compileVamExpr(elem.Expr)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, vamexpr.ListElem{Spread: e})
+		case *dag.VectorValue:
+			e, err := b.compileVamExpr(elem.Expr)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, vamexpr.ListElem{Value: e})
+		default:
+			panic(elem)
+		}
+	}
+	return out, nil
 }

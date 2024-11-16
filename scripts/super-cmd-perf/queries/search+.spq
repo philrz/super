@@ -1,0 +1,3 @@
+SELECT count()
+FROM 'gha.bsup'
+WHERE grep('in case you have any feedback 😊')

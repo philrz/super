@@ -1,6 +1,5 @@
 #!/bin/bash
 set -euo pipefail
-pushd "$(cd "$(dirname "$0")" && pwd)"
 
 sudo apt update
 sudo apt -y upgrade
@@ -53,8 +52,8 @@ fi
 
 # Install SuperDB
 if ! command -v super > /dev/null 2>&1; then
-  git clone https://github.com/brimdata/super.git
+  git clone -b super-cmd-perf https://github.com/brimdata/super.git
   cd super
   make install
-  cd ..
+  cd scripts/super-cmd-perf
 fi

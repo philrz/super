@@ -13,6 +13,22 @@ if [ "$(uname)" = "Linux" ]; then
   cd /mnt
 fi
 
+function run_cmd {
+  outputfile="$1"
+  shift
+  timefile="$1"
+  shift
+  { hyperfine \
+      --output "$outputfile" \
+      --warmup 0 \
+      --runs 1 \
+      --time-unit second \
+      "$@" ;
+  } \
+    > "$timefile" \
+    2>&1
+}
+
 mkdir gharchive_gz
 cd gharchive_gz
 for num in $(seq 0 23)
@@ -21,8 +37,19 @@ do
 done
 cd ..
 
-time duckdb gha.db -c "CREATE TABLE gha AS FROM read_json('gharchive_gz/*.json.gz', union_by_name=true)" 2>&1 | tee "$rundir/duckdb-table-create.time"
-time duckdb gha.db -c "COPY (from gha) TO 'gha.parquet'" 2>&1 | tee "$rundir/duckdb-parquet-create.time"
-time super -o gha.bsup gharchive_gz/*.json.gz 2>&1 | tee "$rundir/super-bsup-create.time"
+run_cmd \
+  "$rundir/duckdb-table-create.out" \
+  "$rundir/duckdb-table-create.time" \
+  "duckdb gha.db -c \"CREATE TABLE gha AS FROM read_json('gharchive_gz/*.json.gz', union_by_name=true)\""
+
+run_cmd \
+  "$rundir/duckdb-parquet-create.out" \
+  "$rundir/duckdb-parquet-create.time" \
+  "duckdb gha.db -c \"COPY (from gha) TO 'gha.parquet'\""
+
+run_cmd \
+  "$rundir/super-bsup-create.out" \
+  "$rundir/super-bsup-create.time" \
+  "super -o gha.bsup gharchive_gz/*.json.gz"
 
 du -h gha.db gha.parquet gha.bsup gharchive_gz

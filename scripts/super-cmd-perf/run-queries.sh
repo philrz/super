@@ -52,7 +52,7 @@ function run_query {
     cmd="clickhouse --queries-file $final_query"
   fi
 
-  echo -e "About to execute: $cmd\n\nwith query:" > "$timefile"
+  echo -e "About to execute\n================$cmd\n\nWith query\n==========" > "$timefile"
   cat "$final_query" >> "$timefile"
   echo >> "$timefile"
 

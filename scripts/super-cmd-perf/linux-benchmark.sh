@@ -2,7 +2,6 @@
 set -euo pipefail
 
 sudo apt update
-sudo apt -y upgrade
 sudo apt -y install make gcc unzip hyperfine
 
 # Prepare local SSD for best I/O performance

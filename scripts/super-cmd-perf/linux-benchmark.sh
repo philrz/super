@@ -1,4 +1,4 @@
-#!/bin/bash -xv
+#!/bin/bash
 set -euo pipefail
 
 sudo apt update
@@ -32,14 +32,18 @@ if ! command -v duckdb > /dev/null 2>&1; then
 fi
 
 # Install Rust
-wget https://static.rust-lang.org/dist/rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
-tar xf rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
-sudo rust-1.82.0-x86_64-unknown-linux-gnu/install.sh
-# shellcheck disable=SC2016
-echo 'export PATH="$PATH:$HOME/.cargo/bin"' >> "$HOME"/.profile
+if ! command -v cargo > /dev/null 2>&1; then
+  wget https://static.rust-lang.org/dist/rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
+  tar xf rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
+  sudo rust-1.82.0-x86_64-unknown-linux-gnu/install.sh
+  # shellcheck disable=SC2016
+  echo 'export PATH="$PATH:$HOME/.cargo/bin"' >> "$HOME"/.profile
+fi
 
 # Install DataFusion CLI
-cargo install datafusion-cli
+if ! command -v datafusion-cli > /dev/null 2>&1; then
+  cargo install datafusion-cli
+fi
 
 # Install Go
 if ! command -v go > /dev/null 2>&1; then

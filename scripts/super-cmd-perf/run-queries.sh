@@ -1,4 +1,4 @@
-#!/bin/bash -xv
+#!/bin/bash
 set -euo pipefail
 pushd "$(cd "$(dirname "$0")" && pwd)"
 

@@ -33,7 +33,7 @@ mkdir gharchive_gz
 cd gharchive_gz
 for num in $(seq 0 23)
 do
-  wget "https://data.gharchive.org/2023-02-08-${num}.json.gz"
+  wget --quiet "https://data.gharchive.org/2023-02-08-${num}.json.gz"
 done
 cd ..
 

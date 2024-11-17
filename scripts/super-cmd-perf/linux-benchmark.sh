@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xv
 set -euo pipefail
 
 sudo apt update
@@ -64,7 +64,7 @@ rundir="$(date +%F_%T)"
 mkdir "$rundir"
 
 # Prepare the test data
-./prep-data.sh "$rundir" | tee "$rundir/runlog.txt" 2>&1
+./prep-data.sh "$rundir"
 
 # Run the queries and generate the summary report
-./run-queries.sh "$rundir" | tee -a "$rundir/runlog.txt" 2>&1
+./run-queries.sh "$rundir"

@@ -6,7 +6,8 @@ if [ "$#" -ne 1 ]; then
   echo "Specify results directory string"
   exit 1
 fi
-rundir="$1"
+rundir="$(pwd)/$1"
+mkdir -p "$rundir"
 
 if [ "$(uname)" = "Linux" ]; then
   cd /mnt

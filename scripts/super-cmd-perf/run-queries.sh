@@ -6,7 +6,8 @@ if [ "$#" -ne 1 ]; then
   echo "Specify results directory string"
   exit 1
 fi
-rundir="$1"
+rundir="$(pwd)/$1"
+mkdir -p "$rundir"
 
 if [ "$(uname)" = "Linux" ]; then
   storage="/mnt/"
@@ -16,8 +17,7 @@ fi
 
 warmups=1
 runs=1
-mkdir "$rundir"
-report="report_$rundir.md"
+report="$rundir/report_$(basename "$rundir").md"
 
 function run_query {
   cmd="$1"
@@ -54,6 +54,7 @@ function run_query {
 
   echo -e "About to execute: $cmd\n\nwith query:" > "$timefile"
   cat "$final_query" >> "$timefile"
+  echo >> "$timefile"
 
   { hyperfine \
       --output "$outputfile" \

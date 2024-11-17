@@ -3,7 +3,7 @@ set -euo pipefail
 
 sudo apt update
 sudo apt -y upgrade
-sudo apt -y install make unzip cargo hyperfine
+sudo apt -y install make unzip hyperfine
 
 # Prepare local SSD for best I/O performance
 sudo fdisk -l /dev/nvme1n1

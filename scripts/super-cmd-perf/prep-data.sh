@@ -21,8 +21,8 @@ do
 done
 cd ..
 
-time duckdb gha.db -c "CREATE TABLE gha AS FROM read_json('gharchive_gz/*.json.gz', union_by_name=true)" | tee "$rundir/duckdb-table-create.time" 2>&1
-time duckdb gha.db -c "COPY (from gha) TO 'gha.parquet'" | tee "$rundir/duckdb-parquet-create.time" 2>&1
-time super -o gha.bsup gharchive_gz/*.json.gz | tee "$rundir/super-bsup-create.time" 2>&1
+time duckdb gha.db -c "CREATE TABLE gha AS FROM read_json('gharchive_gz/*.json.gz', union_by_name=true)" 2>&1 | tee "$rundir/duckdb-table-create.time"
+time duckdb gha.db -c "COPY (from gha) TO 'gha.parquet'" 2>&1 | tee "$rundir/duckdb-parquet-create.time"
+time super -o gha.bsup gharchive_gz/*.json.gz 2>&1 | tee "$rundir/super-bsup-create.time"
 
 du -h gha.db gha.parquet gha.bsup gharchive_gz

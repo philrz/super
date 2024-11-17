@@ -1,3 +1,3 @@
 SELECT count()
-FROM 'gha.bsup'
+FROM '__SOURCE__'
 WHERE grep('in case you have any feedback 😊')

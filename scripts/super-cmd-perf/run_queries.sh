@@ -2,7 +2,12 @@
 set -euo pipefail
 pushd "$(cd "$(dirname "$0")" && pwd)"
 source "$HOME"/.profile
-cd /mnt
+
+if [ "$(uname)" = "Linux" ]; then
+  storage="/mnt/"
+else
+  storage=""
+fi
 
 warmups=1
 runs=1
@@ -21,7 +26,11 @@ function run_query {
   timefile="$runstamp/$cmd-$queryfile-$source.time"
 
   final_query=$(mktemp)
-  sed -e "s/__SOURCE__/$source/" "queries/$queryfile" > "$final_query"
+  if [ "$source" == "gha" ]; then
+    sed -e "s/__SOURCE__/$source/" "queries/$queryfile" > "$final_query"
+  else
+    sed -e "s/__SOURCE__/${storage//\//\\/}${source}/" "queries/$queryfile" > "$final_query"
+  fi
 
   if [ "$cmd" == "super" ]; then
     if [ "$source" == "gha.parquet" ]; then
@@ -30,7 +39,7 @@ function run_query {
     cmd="$cmd -z -I $final_query"
   elif [ "$cmd" == "duckdb" ]; then
     if [ "$source" == "gha" ]; then
-      cmd="duckdb gha.db"
+      cmd="duckdb ${storage}gha.db"
     fi
     cmd="$cmd < $final_query"
   elif [ "$cmd" == "datafusion" ]; then

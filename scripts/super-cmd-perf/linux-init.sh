@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xv
 set -euo pipefail
 
 sudo apt update
@@ -55,5 +55,4 @@ if ! command -v super > /dev/null 2>&1; then
   git clone -b super-cmd-perf https://github.com/brimdata/super.git
   cd super
   make install
-  cd scripts/super-cmd-perf
 fi

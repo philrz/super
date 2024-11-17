@@ -1,7 +1,12 @@
 #!/bin/bash -xv
 set -euo pipefail
 pushd "$(cd "$(dirname "$0")" && pwd)"
-source "$HOME"/.profile
+
+if [ "$#" -ne 1 ]; then
+  echo "Specify results directory string"
+  exit 1
+fi
+rundir="$1"
 
 if [ "$(uname)" = "Linux" ]; then
   storage="/mnt/"
@@ -11,9 +16,8 @@ fi
 
 warmups=1
 runs=1
-runstamp="$(date +%F_%T)"
-mkdir "$runstamp"
-report="report_$runstamp.md"
+mkdir "$rundir"
+report="report_$rundir.md"
 
 function run_query {
   cmd="$1"
@@ -22,8 +26,8 @@ function run_query {
   shift
   source="$1"
   shift
-  outputfile="$runstamp/$cmd-$queryfile-$source.out"
-  timefile="$runstamp/$cmd-$queryfile-$source.time"
+  outputfile="$rundir/$cmd-$queryfile-$source.out"
+  timefile="$rundir/$cmd-$queryfile-$source.time"
 
   final_query=$(mktemp)
   if [ "$source" == "gha" ]; then
@@ -48,7 +52,7 @@ function run_query {
     cmd="clickhouse --queries-file $final_query"
   fi
 
-  echo -e "About to execute: $cmd\nWith query:" > "$timefile"
+  echo -e "About to execute: $cmd\n\nwith query:" > "$timefile"
   cat "$final_query" >> "$timefile"
 
   { hyperfine \
@@ -77,7 +81,7 @@ do
       continue
     fi
     run_query super $queryfile "$source"
-    echo -n "$(grep Time < "$runstamp/super-$queryfile-$source.time" | awk '{ print $4 }')" >> "$report"
+    echo -n "$(grep Time < "$rundir/super-$queryfile-$source.time" | awk '{ print $4 }')" >> "$report"
     echo -n "|" >> "$report"
   done
   echo >> "$report"
@@ -91,7 +95,7 @@ do
   for queryfile in search.sql search+.sql count.sql agg.sql union.sql
   do
     run_query duckdb $queryfile "$source"
-    echo -n "$(grep Time < "$runstamp/duckdb-$queryfile-$source.time" | awk '{ print $4 }')" >> "$report"
+    echo -n "$(grep Time < "$rundir/duckdb-$queryfile-$source.time" | awk '{ print $4 }')" >> "$report"
     echo -n "|" >> "$report"
   done
   echo >> "$report"
@@ -101,7 +105,7 @@ echo -n "|\`datafusion\`|\`parquet\`|" >> "$report"
 for queryfile in search.sql search+.sql count.sql agg.sql union-datafusion.sql
 do
   run_query datafusion $queryfile gha.parquet
-  echo -n "$(grep Time < "$runstamp/datafusion-$queryfile-$source.time" | awk '{ print $4 }')" >> "$report"
+  echo -n "$(grep Time < "$rundir/datafusion-$queryfile-$source.time" | awk '{ print $4 }')" >> "$report"
   echo -n "|" >> "$report"
 done
 echo >> "$report"
@@ -110,7 +114,7 @@ echo -n "|\`clickhouse\`|\`parquet\`|" >> "$report"
 for queryfile in search.sql search+.sql count.sql agg.sql union-clickhouse.sql
 do
   run_query clickhouse $queryfile gha.parquet
-  echo -n "$(grep Time < "$runstamp/clickhouse-$queryfile-$source.time" | awk '{ print $4 }')" >> "$report"
+  echo -n "$(grep Time < "$rundir/clickhouse-$queryfile-$source.time" | awk '{ print $4 }')" >> "$report"
   echo -n "|" >> "$report"
 done
 echo >> "$report"

@@ -56,3 +56,13 @@ if ! command -v super > /dev/null 2>&1; then
   cd super
   make install
 fi
+
+cd scripts/super-cmd-perf
+rundir="$(date +%F_%T)"
+mkdir "$rundir"
+
+# Prepare the test data
+./prep-data.sh "$rundir" | tee "$rundir/runlog.txt" 2>&1
+
+# Run the queries and generate the summary report
+./run-queries.sh "$rundir" | tee -a "$rundir/runlog.txt" 2>&1

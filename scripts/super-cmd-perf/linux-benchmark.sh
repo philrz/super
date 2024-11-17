@@ -32,13 +32,11 @@ if ! command -v duckdb > /dev/null 2>&1; then
 fi
 
 # Install Rust
-if ! command -v cargo > /dev/null 2>&1; then
-  wget https://static.rust-lang.org/dist/rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
-  tar xf rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
-  sudo rust-1.82.0-x86_64-unknown-linux-gnu/install.sh
-  # shellcheck disable=SC2016
-  echo 'export PATH="$PATH:$HOME/.cargo/bin"' >> "$HOME"/.profile
-fi
+wget https://static.rust-lang.org/dist/rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
+tar xf rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
+sudo rust-1.82.0-x86_64-unknown-linux-gnu/install.sh
+# shellcheck disable=SC2016
+echo 'export PATH="$PATH:$HOME/.cargo/bin"' >> "$HOME"/.profile
 
 # Install DataFusion CLI
 if ! command -v datafusion-cli > /dev/null 2>&1; then

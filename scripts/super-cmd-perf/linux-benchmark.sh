@@ -25,13 +25,13 @@ fi
 
 # Install DuckDB
 if ! command -v duckdb > /dev/null 2>&1; then
-  wget https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-linux-amd64.zip
+  curl -O https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-linux-amd64.zip
   unzip duckdb_cli-linux-amd64.zip
   sudo mv duckdb /usr/local/bin
 fi
 
 # Install Rust
-wget https://static.rust-lang.org/dist/rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
+curl -O https://static.rust-lang.org/dist/rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
 tar xf rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
 sudo rust-1.82.0-x86_64-unknown-linux-gnu/install.sh
 # shellcheck disable=SC2016
@@ -44,7 +44,7 @@ fi
 
 # Install Go
 if ! command -v go > /dev/null 2>&1; then
-  wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
+  curl -O https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
   rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz
   # shellcheck disable=SC2016
   echo 'export PATH="$PATH:/usr/local/go/bin:$HOME/go/bin"' >> "$HOME"/.profile

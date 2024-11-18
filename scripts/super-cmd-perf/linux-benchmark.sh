@@ -58,6 +58,12 @@ if ! command -v super > /dev/null 2>&1; then
   make install
 fi
 
+echo -e "Installed software\n=================="
+echo "super: $(super -version)"
+echo "duckdb: $(duckdb --version)"
+echo "datafusion-cli: $(datafusion-cli --version)"
+echo "clickhouse: $(clickhouse --version)"
+
 cd scripts/super-cmd-perf
 rundir="$(date +%F_%T)"
 mkdir "$rundir"

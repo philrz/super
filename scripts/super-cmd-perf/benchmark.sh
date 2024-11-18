@@ -91,6 +91,6 @@ echo >> "$report"
 # Run the queries and generate the summary report
 ./run-queries.sh "$rundir"
 
-if [ -z "$RUNNING_ON_AWS_EC2" ]; then
+if [ -n "$RUNNING_ON_AWS_EC2" ]; then
   mv "$HOME/runlog.txt" "$rundir"
 fi

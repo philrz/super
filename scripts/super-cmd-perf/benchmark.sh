@@ -65,14 +65,12 @@ if command -v dmidecode && [ "$(sudo dmidecode --string system-uuid | cut -c1-3)
     git clone -b super-cmd-perf https://github.com/brimdata/super.git
     cd super
     make install
+    cd scripts/super-cmd-perf
   fi
-
   pwd
-  cd scripts/super-cmd-perf
+  ls -l
   echo "Done installing SuperDB"
-
 fi
-
 echo "About to set rundir"
 rundir="$(date +%F_%T)"
 mkdir "$rundir"

@@ -9,8 +9,8 @@ if command -v dmidecode && [ "$(sudo dmidecode --string system-uuid | cut -c1-3)
 
   export RUNNING_ON_AWS_EC2=true
 
-  sudo apt-get update
-  sudo apt-get upgrade
+  sudo apt-get -y update
+  sudo apt-get -y upgrade
   sudo apt-get -y install make gcc unzip hyperfine
 
   # Prepare local SSD for best I/O performance

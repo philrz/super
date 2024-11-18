@@ -35,13 +35,19 @@ do
 done
 cd ..
 
+if [ -v DUCKDB_PREP_MEMORY_LIMIT ]; then
+  increase_duckdb_memory_limit="SET memory_limit = \"${DUCKDB_PREP_MEMORY_LIMIT}GB\"; "
+else
+  increase_duckdb_memory_limit=""
+fi
+
 run_cmd \
   "$rundir/duckdb-table-create.out" \
-  "duckdb gha.db -c \"CREATE TABLE gha AS FROM read_json('gharchive_gz/*.json.gz', union_by_name=true)\""
+  "duckdb gha.db -c \"${increase_duckdb_memory_limit}CREATE TABLE gha AS FROM read_json('gharchive_gz/*.json.gz', union_by_name=true)\""
 
 run_cmd \
   "$rundir/duckdb-parquet-create.out" \
-  "duckdb gha.db -c \"COPY (from gha) TO 'gha.parquet'\""
+  "duckdb gha.db -c \"${increase_duckdb_memory_limit}COPY (from gha) TO 'gha.parquet'\""
 
 run_cmd \
   "$rundir/super-bsup-create.out" \

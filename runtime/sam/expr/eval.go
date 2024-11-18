@@ -658,7 +658,7 @@ func indexVector(zctx *super.Context, ectx Context, inner super.Type, vector zco
 	} else {
 		idx = int(index.Uint())
 	}
-	zv := getNthFromContainer(vector, idx)
+	zv := getNthFromContainer(vector, idx-1)
 	if zv == nil {
 		return zctx.Missing()
 	}

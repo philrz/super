@@ -73,3 +73,7 @@ mkdir "$rundir"
 
 # Run the queries and generate the summary report
 ./run-queries.sh "$rundir"
+
+if [ -e runlog.txt ]; then
+  mv runlog.txt "$rundir"
+fi

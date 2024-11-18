@@ -39,7 +39,7 @@ if command -v dmidecode && [ "$(sudo dmidecode --string system-uuid | cut -c1-3)
   fi
 
   # Install Rust
-  curl -O https://static.rust-lang.org/dist/rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
+  curl -L -O https://static.rust-lang.org/dist/rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
   tar xf rust-1.82.0-x86_64-unknown-linux-gnu.tar.xz
   sudo rust-1.82.0-x86_64-unknown-linux-gnu/install.sh
   # shellcheck disable=SC2016
@@ -52,7 +52,7 @@ if command -v dmidecode && [ "$(sudo dmidecode --string system-uuid | cut -c1-3)
 
   # Install Go
   if ! command -v go > /dev/null 2>&1; then
-    curl -O https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
+    curl -L -O https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
     rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz
     # shellcheck disable=SC2016
     echo 'export PATH="$PATH:/usr/local/go/bin:$HOME/go/bin"' >> "$HOME"/.profile
@@ -85,6 +85,6 @@ mkdir "$rundir"
 # Run the queries and generate the summary report
 ./run-queries.sh "$rundir"
 
-if [ -e "$HOME/runlog.txt" ]; then
+if [ -v RUNNING_ON_AWS_EC2 ]; then
   mv "$HOME/runlog.txt" "$rundir"
 fi

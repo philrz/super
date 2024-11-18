@@ -31,7 +31,7 @@ mkdir gharchive_gz
 cd gharchive_gz
 for num in $(seq 0 23)
 do
-  curl -O "https://data.gharchive.org/2023-02-08-${num}.json.gz"
+  curl -L -O "https://data.gharchive.org/2023-02-08-${num}.json.gz"
 done
 cd ..
 

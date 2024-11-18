@@ -66,15 +66,15 @@ if command -v dmidecode && [ "$(sudo dmidecode --string system-uuid | cut -c1-3)
     make install
   fi
 
-  echo -e "Installed software\n=================="
-  echo "super: $(super -version)"
-  echo "duckdb: $(duckdb --version)"
-  echo "datafusion-cli: $(datafusion-cli --version)"
-  echo "clickhouse: $(clickhouse --version)"
-
   cd scripts/super-cmd-perf
 
 fi
+
+echo -e "Installed software\n=================="
+echo "super: $(super -version)"
+echo "duckdb: $(duckdb --version)"
+echo "datafusion-cli: $(datafusion-cli --version)"
+echo "clickhouse: $(clickhouse --version)"
 
 rundir="$(date +%F_%T)"
 mkdir "$rundir"

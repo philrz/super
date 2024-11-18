@@ -9,7 +9,7 @@ fi
 rundir="$(pwd)/$1"
 mkdir -p "$rundir"
 
-if [ "$(uname)" = "Linux" ]; then
+if [ -v RUNNING_ON_AWS_EC2 ]; then
   storage="/mnt/"
 else
   storage=""
@@ -62,7 +62,7 @@ function run_query {
       --time-unit second \
       "$cmd" ;
   } \
-    >> "$output" \
+    >> "$outputfile" \
     2>&1
 
   rm -f "$final_query"

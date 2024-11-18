@@ -9,7 +9,7 @@ fi
 rundir="$(pwd)/$1"
 mkdir -p "$rundir"
 
-if [ "$(uname)" = "Linux" ]; then
+if [ -v RUNNING_ON_AWS_EC2 ]; then
   cd /mnt
 fi
 

@@ -67,10 +67,13 @@ if command -v dmidecode && [ "$(sudo dmidecode --string system-uuid | cut -c1-3)
     make install
   fi
 
+  pwd
   cd scripts/super-cmd-perf
+  echo "Done installing SuperDB"
 
 fi
 
+echo "About to set rundir"
 rundir="$(date +%F_%T)"
 mkdir "$rundir"
 report="$rundir/report_$rundir.md"

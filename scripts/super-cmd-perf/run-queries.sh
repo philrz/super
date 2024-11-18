@@ -19,6 +19,7 @@ fi
 warmups=1
 runs=1
 report="$rundir/report_$(basename "$rundir").md"
+csv_report="$rundir/report_$(basename "$rundir").csv"
 
 function run_query {
   cmd="$1"
@@ -71,21 +72,27 @@ function run_query {
 
 echo "|**Tool**|**Format**|**search**|**search+**|**count**|**agg**|**union**|" >> "$report"
 echo "|-|-|-|-|-|-|-|" >> "$report"
+echo "Tool,Format,search,search+,count,agg,union" > "$csv_report"
 
 for source in gha.bsup gha.parquet
 do
   echo -n "|\`super\`|\`${source/gha./}\`|" >> "$report"
+  echo -n "super,${source/gha./}" >> "$csv_report"
   for queryfile in search.spq search+.spq count.sql agg.sql union.spq
   do
     if [ "$source" == "gha.parquet" ] && { [ "$queryfile" == "search.spq" ] || [ "$queryfile" == "search+.spq" ] || [ "$queryfile" == "union.spq" ]; }; then
       echo -n "N/A|" >> "$report"
+      echo -n ",N/A" >> "$csv_report"
       continue
     fi
     run_query super $queryfile "$source"
-    echo -n "$(grep Time < "$rundir/super-$queryfile-$source.out" | awk '{ print $4 }')" >> "$report"
+    result=$(grep Time < "$rundir/super-$queryfile-$source.out" | awk '{ print $4 }')
+    echo -n "$result" >> "$report"
     echo -n "|" >> "$report"
+    echo -n ",$result" >> "$csv_report"
   done
   echo >> "$report"
+  echo >> "$csv_report"
 done
 
 for source in gha gha.parquet
@@ -93,29 +100,41 @@ do
   duckdb_source=${source/gha\./}
   duckdb_source=${duckdb_source/gha/db}
   echo -n "|\`duckdb\`|\`$duckdb_source\`|" >> "$report"
+  echo -n "duckdb,$duckdb_source" >> "$csv_report"
   for queryfile in search.sql search+.sql count.sql agg.sql union.sql
   do
     run_query duckdb $queryfile "$source"
-    echo -n "$(grep Time < "$rundir/duckdb-$queryfile-$source.out" | awk '{ print $4 }')" >> "$report"
+    result=$(grep Time < "$rundir/duckdb-$queryfile-$source.out" | awk '{ print $4 }')
+    echo -n "$result" >> "$report"
     echo -n "|" >> "$report"
+    echo -n ",$result" >> "$csv_report"
   done
   echo >> "$report"
+  echo >> "$csv_report"
 done
 
 echo -n "|\`datafusion\`|\`parquet\`|" >> "$report"
+echo -n "datafusion,parquet" >> "$csv_report"
 for queryfile in search.sql search+.sql count.sql agg.sql union-datafusion.sql
 do
   run_query datafusion $queryfile gha.parquet
-  echo -n "$(grep Time < "$rundir/datafusion-$queryfile-$source.out" | awk '{ print $4 }')" >> "$report"
+  result=$(grep Time < "$rundir/datafusion-$queryfile-$source.out" | awk '{ print $4 }')
+  echo -n "$result" >> "$report"
   echo -n "|" >> "$report"
+  echo -n ",$result" >> "$csv_report"
 done
 echo >> "$report"
+echo >> "$csv_report"
 
 echo -n "|\`clickhouse\`|\`parquet\`|" >> "$report"
+echo -n "clickhouse,parquet" >> "$csv_report"
 for queryfile in search.sql search+.sql count.sql agg.sql union-clickhouse.sql
 do
   run_query clickhouse $queryfile gha.parquet
-  echo -n "$(grep Time < "$rundir/clickhouse-$queryfile-$source.out" | awk '{ print $4 }')" >> "$report"
+  result=$(grep Time < "$rundir/clickhouse-$queryfile-$source.out" | awk '{ print $4 }')
+  echo -n "$result" >> "$report"
   echo -n "|" >> "$report"
+  echo -n ",$result" >> "$csv_report"
 done
 echo >> "$report"
+echo >> "$csv_report"

@@ -36,7 +36,7 @@ done
 cd ..
 
 if [ -v DUCKDB_PREP_MEMORY_LIMIT ]; then
-  increase_duckdb_memory_limit="SET memory_limit = \"${DUCKDB_PREP_MEMORY_LIMIT}GB\"; "
+  increase_duckdb_memory_limit="SET memory_limit = \"${DUCKDB_PREP_MEMORY_LIMIT}\"; "
 else
   increase_duckdb_memory_limit=""
 fi

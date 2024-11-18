@@ -74,6 +74,6 @@ mkdir "$rundir"
 # Run the queries and generate the summary report
 ./run-queries.sh "$rundir"
 
-if [ -e runlog.txt ]; then
-  mv runlog.txt "$rundir"
+if [ -e "$HOME/runlog.txt" ]; then
+  mv "$HOME/runlog.txt" "$rundir"
 fi

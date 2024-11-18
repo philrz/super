@@ -70,14 +70,20 @@ if command -v dmidecode && [ "$(sudo dmidecode --string system-uuid | cut -c1-3)
 
 fi
 
-echo -e "Installed software\n=================="
-echo "super: $(super -version)"
-echo "duckdb: $(duckdb --version)"
-echo "datafusion-cli: $(datafusion-cli --version)"
-echo "clickhouse: $(clickhouse --version)"
-
 rundir="$(date +%F_%T)"
 mkdir "$rundir"
+report="$rundir/report_$rundir.md"
+
+echo -e "|**Software**|**Version**|\n|-|-|" | tee -a "$report"
+for software in super duckdb datafusion-cli clickhouse
+do
+  if ! command -v $software > /dev/null; then
+    echo "error: \"$software\" not found in PATH"
+    exit 1
+  fi
+  echo "|$software|$($software --version)|" | tee -a "$report"
+done
+echo >> "$report"
 
 # Prepare the test data
 ./prep-data.sh "$rundir"

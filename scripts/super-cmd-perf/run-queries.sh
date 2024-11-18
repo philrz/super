@@ -68,7 +68,7 @@ function run_query {
   rm -f "$final_query"
 }
 
-echo "|**Tool**|**Format**|**search**|**search+**|**count**|**agg**|**union**|" > "$report"
+echo "|**Tool**|**Format**|**search**|**search+**|**count**|**agg**|**union**|" >> "$report"
 echo "|-|-|-|-|-|-|-|" >> "$report"
 
 for source in gha.bsup gha.parquet

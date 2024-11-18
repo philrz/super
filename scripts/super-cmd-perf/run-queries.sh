@@ -31,10 +31,16 @@ function run_query {
   outputfile="$rundir/$cmd-$queryfile-$source.out"
 
   final_query=$(mktemp)
+
+  DUCKDB_MEMORY_LIMIT="${DUCKDB_MEMORY_LIMIT:-}"
+  if [ "$cmd" == "duckdb" ] && [ -n "$DUCKDB_MEMORY_LIMIT" ]; then
+    echo 'SET memory_limit = '\'"${DUCKDB_MEMORY_LIMIT}"\''; ' >> "$final_query"
+  fi
+
   if [ "$source" == "gha" ]; then
-    sed -e "s/__SOURCE__/$source/" "queries/$queryfile" > "$final_query"
+    sed -e "s/__SOURCE__/$source/" "queries/$queryfile" >> "$final_query"
   else
-    sed -e "s/__SOURCE__/${storage//\//\\/}${source}/" "queries/$queryfile" > "$final_query"
+    sed -e "s/__SOURCE__/${storage//\//\\/}${source}/" "queries/$queryfile" >> "$final_query"
   fi
 
   if [ "$cmd" == "super" ]; then

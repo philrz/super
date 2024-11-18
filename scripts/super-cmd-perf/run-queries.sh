@@ -9,6 +9,7 @@ fi
 rundir="$(pwd)/$1"
 mkdir -p "$rundir"
 
+RUNNING_ON_AWS_EC2="${RUNNING_ON_AWS_EC2:-}"
 if [ -n "$RUNNING_ON_AWS_EC2" ]; then
   storage="/mnt/"
 else

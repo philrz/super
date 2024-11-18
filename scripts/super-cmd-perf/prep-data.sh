@@ -9,6 +9,7 @@ fi
 rundir="$(pwd)/$1"
 mkdir -p "$rundir"
 
+RUNNING_ON_AWS_EC2="${RUNNING_ON_AWS_EC2:-}"
 if [ -n "$RUNNING_ON_AWS_EC2" ]; then
   cd /mnt
 fi
@@ -35,6 +36,7 @@ do
 done
 cd ..
 
+DUCKDB_PREP_MEMORY_LIMIT="${DUCKDB_PREP_MEMORY_LIMIT:-}"
 if [ -n "$DUCKDB_PREP_MEMORY_LIMIT" ]; then
   increase_duckdb_memory_limit="SET memory_limit = \"${DUCKDB_PREP_MEMORY_LIMIT}\"; "
 else

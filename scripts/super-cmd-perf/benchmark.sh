@@ -1,5 +1,6 @@
 #!/bin/bash -xv
 set -euo pipefail
+export RUNNING_ON_AWS_EC2=""
 
 # If we can detect we're running on an AWS EC2 m6idn.2xlarge instance, we'll
 # treat it as a scratch host, installing all needed software and using the

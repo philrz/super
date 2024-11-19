@@ -59,7 +59,7 @@ function run_query {
     cmd="clickhouse --queries-file $final_query"
   fi
 
-  echo -e "About to execute\n================$cmd\n\nWith query\n==========" > "$outputfile"
+  echo -e "About to execute\n================\n$cmd\n\nWith query\n==========" > "$outputfile"
   cat "$final_query" >> "$outputfile"
   echo >> "$outputfile"
 

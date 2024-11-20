@@ -22,6 +22,7 @@ Zed's [primitive types](../../formats/zed.md#1-primitive-types), e.g.,
 * [coalesce](coalesce.md) - return first value that is not null, a "missing" error, or a "quiet" error
 * [crop](crop.md) - remove fields from a value that are missing in a specified type
 * [error](error.md) - wrap a value as an error
+* [eval](eval.md) - turn upstream values into [`from` operator](../operators/from.md) data sources
 * [every](every.md) - bucket `ts` using a duration
 * [fields](fields.md) - return the flattened path names of a record
 * [fill](fill.md) - add null values for missing record fields

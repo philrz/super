@@ -14,7 +14,7 @@ in the Zed documentation include several type classes as follows:
 * _int_ - any signed or unsigned Zed integer type
 * _number_ - either float or int
 * _record_ - any [record](../formats/jsup.md#251-record-type) type
-
+* _expr_ - any [expression](../language/expressions.md)
 Note that there is no "any" type in Zed as all super-structured data is
 comprehensively typed; "any" here simply refers to a value that is allowed
 to take on any Zed type.

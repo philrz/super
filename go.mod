@@ -1,4 +1,4 @@
-module github.com/brimdata/super
+module github.com/philrz/super
 
 go 1.23
 

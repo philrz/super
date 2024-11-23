@@ -10,6 +10,7 @@ require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/aws/aws-sdk-go v1.36.17
 	github.com/axiomhq/hyperloglog v0.0.0-20191112132149-a4c4c47bc57f
+	github.com/brimdata/super v0.0.0-00010101000000-000000000000
 	github.com/go-redis/redis/v8 v8.4.11
 	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/golang/mock v1.5.0
@@ -83,3 +84,5 @@ require (
 	google.golang.org/grpc v1.67.1 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 )
+
+replace github.com/brimdata/super => github.com/philrz/super v1.18.1-0.20241123002056-61c8e157f246

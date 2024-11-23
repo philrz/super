@@ -83,3 +83,5 @@ require (
 	google.golang.org/grpc v1.67.1 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 )
+
+replace github.com/brimdata/super => github.com/philrz/super v1.18.1-0.20241123001741-e2f485df72b1

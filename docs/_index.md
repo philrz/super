@@ -10,6 +10,7 @@ Push change 3
 Push change 4
 Push change 5
 Push change 6
+Push change 7
 
 SuperDB offers a new approach that makes it easier to manipulate and manage
 your data.  With its [super-structured data model](formats/README.md#2-a-super-structured-pattern),

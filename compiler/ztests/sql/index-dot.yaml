@@ -1,0 +1,16 @@
+
+script: |
+  super -z -c "select value val[1].r from demo.json where kind='list'"
+
+inputs:
+  - name: demo.json
+    data: |
+      {"kind":"number","val":1}
+      {"kind":"number","val":2}
+      {"kind":"complex","val":{"r":3,"i":4}}
+      {"kind":"list","val":[5,{"r":6,"c":7}]}
+
+outputs:
+  - name: stdout
+    data: |
+      6

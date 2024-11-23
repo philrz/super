@@ -1,12 +1,15 @@
 package semantic
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/compiler/ast"
 	"github.com/brimdata/super/compiler/dag"
 	"github.com/brimdata/super/compiler/kernel"
+	"github.com/brimdata/super/pkg/field"
 	"github.com/brimdata/super/zson"
 )
 
@@ -14,6 +17,7 @@ type Scope struct {
 	parent  *Scope
 	nvar    int
 	symbols map[string]*entry
+	schema  schema
 }
 
 func NewScope(parent *Scope) *Scope {
@@ -102,4 +106,213 @@ func (s *Scope) nvars() int {
 		n += scope.nvar
 	}
 	return n
+}
+
+// resolve paths based on SQL semantics in order of precedence
+// and replace with dag path with schemafied semantics.
+// In the case of unqualified col ref, check that it is not ambiguous
+// when there are multiple tables (i.e., from joins).
+// An unqualified field reference is valid only in dynamic schemas.
+func (s *Scope) resolve(path field.Path) (field.Path, error) {
+	// If there's no schema, we're not in a SQL context so we just
+	// return the path unmodified.  Otherwise, we apply SQL scoping
+	// rules to transform the abstract path to the dataflow path
+	// implied by the schema.
+	if s.schema == nil {
+		return path, nil
+	}
+	if len(path) == 0 {
+		// XXX this should really treat this as a column in sql context but
+		// but this will cause dynamic stuff to silently fail so I think we
+		// should flag and maybe make it part of a strict mode (like bitwise |)
+		return nil, errors.New("cannot reference 'this' in relational context; consider the 'yield' operator")
+	}
+	if len(path) == 1 {
+		return resolveColumn(s.schema, path[0], nil)
+	}
+	if out, err := resolveTable(s.schema, path[0], path[1:]); out != nil || err != nil {
+		return out, err
+	}
+	out, err := resolveColumn(s.schema, path[0], path[1:])
+	if out == nil && err == nil {
+		err = fmt.Errorf("%q: not a column or table", path[0])
+	}
+	return out, err
+}
+
+func resolveTable(schema schema, table string, path field.Path) (field.Path, error) {
+	switch schema := schema.(type) {
+	case *schemaDynamic:
+		if strings.EqualFold(schema.name, table) {
+			return path, nil
+		}
+	case *schemaStatic:
+		if strings.EqualFold(schema.name, table) {
+			if len(path) == 0 {
+				return []string{}, nil
+			}
+			return resolveColumn(schema, path[0], path[1:])
+		}
+	case *schemaSelect:
+		if schema.out != nil {
+			target, err := resolveTable(schema.out, table, path)
+			if err != nil {
+				return nil, err
+			}
+			if target != nil {
+				return append([]string{"out"}, target...), nil
+			}
+		}
+		target, err := resolveTable(schema.in, table, path)
+		if err != nil {
+			return nil, err
+		}
+		if target != nil {
+			return append([]string{"in"}, target...), nil
+		}
+
+	case *schemaJoin:
+		out, err := resolveTable(schema.left, table, path)
+		if err != nil {
+			return nil, err
+		}
+		if out != nil {
+			chk, err := resolveTable(schema.right, table, path)
+			if err != nil {
+				return nil, err
+			}
+			if chk != nil {
+				return nil, fmt.Errorf("%q: ambiguous table reference", table)
+			}
+			return append([]string{"left"}, out...), nil
+		}
+		out, err = resolveTable(schema.right, table, path)
+		if err != nil {
+			return nil, err
+		}
+		if out != nil {
+			return append([]string{"right"}, out...), nil
+		}
+	}
+	return nil, nil
+}
+
+func resolveColumn(schema schema, col string, path field.Path) (field.Path, error) {
+	switch schema := schema.(type) {
+	case *schemaDynamic:
+		return append([]string{col}, path...), nil
+	case *schemaStatic:
+		for _, c := range schema.columns {
+			if c == col {
+				return append([]string{col}, path...), nil
+			}
+		}
+	case *schemaAnon:
+		for _, c := range schema.columns {
+			if c == col {
+				return append([]string{col}, path...), nil
+			}
+		}
+	case *schemaSelect:
+		if schema.out != nil {
+			resolved, err := resolveColumn(schema.out, col, path)
+			if err != nil {
+				return nil, err
+			}
+			if resolved != nil {
+				return append([]string{"out"}, resolved...), nil
+			}
+		}
+		resolved, err := resolveColumn(schema.in, col, path)
+		if err != nil {
+			return nil, err
+		}
+		if resolved != nil {
+			return append([]string{"in"}, resolved...), nil
+		}
+	case *schemaJoin:
+		out, err := resolveColumn(schema.left, col, path)
+		if err != nil {
+			return nil, err
+		}
+		if out != nil {
+			chk, err := resolveColumn(schema.right, col, path)
+			if err != nil {
+				return nil, err
+			}
+			if chk != nil {
+				return nil, fmt.Errorf("%q: ambiguous column reference", col)
+			}
+			return append([]string{"left"}, out...), nil
+		}
+		out, err = resolveColumn(schema.right, col, path)
+		if err != nil {
+			return nil, err
+		}
+		if out != nil {
+			return append([]string{"right"}, out...), nil
+		}
+	}
+	return nil, nil
+}
+
+// derefSchema adds logic to seq to yield out the value from a SQL-schema-contained
+// value set and returns the resulting schema.  If name is non-zero, then a new
+// schema is returned that represents the aliased table name that results.
+func derefSchema(sch schema, seq dag.Seq, name string) (dag.Seq, schema) {
+	switch sch := sch.(type) {
+	case *schemaDynamic:
+		if name != "" {
+			sch = &schemaDynamic{name: name}
+		}
+		return seq, sch
+	case *schemaStatic:
+		if name != "" {
+			sch = &schemaStatic{name: name, columns: sch.columns}
+		}
+		return seq, sch
+	case *schemaAnon:
+		return seq, sch
+	case *schemaSelect:
+		if name == "" {
+			// postgres and duckdb oddly do this
+			name = "unamed_subquery"
+		}
+		var outSchema schema
+		if anon, ok := sch.out.(*schemaAnon); ok {
+			// Hide any enclosing schema hierarchy by just exporting the
+			// select columns.
+			outSchema = &schemaStatic{name: name, columns: anon.columns}
+		} else {
+			// This is a select value.
+			// XXX we should eventually have a way to propagate schema info here,
+			// e.g., record expression with fixed columns as an anonSchema.
+			outSchema = &schemaDynamic{}
+		}
+		return append(seq, &dag.Yield{
+			Kind:  "Yield",
+			Exprs: []dag.Expr{pathOf("out")},
+		}), outSchema
+	case *schemaJoin:
+		// spread left/right join legs into "this"
+		e := &dag.RecordExpr{
+			Kind: "RecordExpr",
+			Elems: []dag.RecordElem{
+				&dag.Spread{
+					Kind: "Spread",
+					Expr: &dag.This{Kind: "This", Path: []string{"left"}},
+				},
+				&dag.Spread{
+					Kind: "Spread",
+					Expr: &dag.This{Kind: "This", Path: []string{"right"}},
+				},
+			},
+		}
+		return append(seq, &dag.Yield{
+			Kind:  "Yield",
+			Exprs: []dag.Expr{e},
+		}), &schemaDynamic{name: name}
+	default:
+		panic(fmt.Sprintf("unknown schema type: %T", sch))
+	}
 }

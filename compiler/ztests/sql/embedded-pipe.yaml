@@ -4,13 +4,14 @@ script: |
 inputs:
   - name: query.sql
     data: |
-      select value this
+      select *
       from (
-        select value this from "a.jsup"
+        select * from "a.jsup"
         | drop c
         | put a:=a-10
       ) l
       join "b.jsup" r on l.a==r.c
+      order by l.a 
   - name: a.jsup
     data: |
       {c:1,a:11}
@@ -26,5 +27,5 @@ inputs:
 outputs:
   - name: stdout
     data: |
-      {l:{a:2},r:{b:[1,2],c:2}}
-      {l:{a:3},r:{b:[3,4,5],c:3}}
+      {a:2,b:[1,2],c:2}
+      {a:3,b:[3,4,5],c:3}

@@ -1,0 +1,15 @@
+script: |
+  super -z -c 'select -a as x from a.jsup where x>=-12 and a<12'
+
+inputs:
+  - name: a.jsup
+    data: |
+      {a:11,c:1}
+      {a:12,c:2}
+      {a:13,c:3}
+      {a:14,c:4}
+
+outputs:
+  - name: stdout
+    data: |
+      {x:-11}

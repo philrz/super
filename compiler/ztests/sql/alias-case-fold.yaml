@@ -1,5 +1,5 @@
 script: |
-  super -z -c 'Select * FROM "a.jsup" | droP c'
+  super -z -c 'SELECT t.c FROM "a.jsup" T'
 
 inputs:
   - name: a.jsup
@@ -12,7 +12,7 @@ inputs:
 outputs:
   - name: stdout
     data: |
-      {a:11}
-      {a:12}
-      {a:13}
-      {a:14}
+      {c:1}
+      {c:2}
+      {c:3}
+      {c:4}

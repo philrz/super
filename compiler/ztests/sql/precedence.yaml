@@ -13,9 +13,9 @@ inputs:
     data: |
       SELECT NOT 10 BETWEEN 15 AND
           CASE WHEN true THEN 20 END
-         AND 1+2 IN [3,4,5] OR 'foo'||'bar' IN NULL,
-       'foo' LIKE 'f' || '%' OR false,
-       CASE WHEN true THEN 'x' END || 'y'
+         AND 1+2 IN [3,4,5] OR 'foo'||'bar' IN NULL as c0,
+       'foo' LIKE 'f' || '%' OR false as c1,
+       CASE WHEN true THEN 'x' END || 'y' as c2
   - name: data.csv
     data: |
       Country,Language
@@ -25,7 +25,7 @@ inputs:
 outputs:
   - name: stdout
     data: |
-      {"!(10>=15 and 10<=(true) ? 20 : error(\"missing\")) and 1+2 in [3,4,5] or \"foo\"+\"bar\" in null":true,"regexp_search(/(?s)^f.*?$/, \"foo\") or false":true,"(true) ? \"x\" : error(\"missing\")+\"y\"":"xy"}
+      {c0:true,c1:true,c2:"xy"}
       ===
       {Country:"France",Language:"French"}
       ===

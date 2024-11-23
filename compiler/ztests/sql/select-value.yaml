@@ -1,13 +1,13 @@
 script: |
-  super -z -c 'select value this from "a.jsup"'
+  super -z -c 'select value {c,a} from "a.jsup"'
   echo ===
-  super -z -c 'select value this from "messy.jsup"'
+  super -z -c 'select value {x,s} from "messy.jsup"'
   echo ===
-  super -z -c 'select value this from "b.jsup"'
+  super -z -c 'select value {b,c} from "b.jsup"'
   echo ===
-  super -z -c 'select value this from a.jsup order by c desc'
+  super -z -c 'select value {c,a} from a.jsup order by c desc'
   echo ===
-  super -z -c 'select value this from b.jsup order by b desc limit 1'
+  super -z -c 'select value {b,c} from b.jsup order by b desc limit 1'
 
 
 inputs:

@@ -37,6 +37,11 @@ The run proceeds in three phases:
 2. Test data is downloaded and loaded into needed storage formats
 3. Queries are executed on all data platforms
 
+The scripts only run with ClickHouse's [beta JSON type](https://clickhouse.com/blog/a-new-powerful-json-data-type-for-clickhouse)
+on AWS because when we attempted to load data to this type on our Macbooks
+that have 16 GB of RAM it consistently failed with a "too many open files"
+error.
+
 As the benchmarks may take a long time to run, the use of [`screen`](https://www.gnu.org/software/screen/)
 or a similar "detachable" terminal tool is recommended in case your remote
 network connection drops during a run.

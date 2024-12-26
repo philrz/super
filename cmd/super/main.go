@@ -2,7 +2,12 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	_ "github.com/brimdata/super/cmd/super/compile"
 	_ "github.com/brimdata/super/cmd/super/db/auth"
@@ -38,6 +43,10 @@ import (
 )
 
 func main() {
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(collectors.NewGoCollector())
+	http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+	go http.ListenAndServe(":9867", nil)
 	if err := root.Super.Exec(os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)

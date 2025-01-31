@@ -1,6 +1,6 @@
 ### Function
 
-&emsp; **grok** &mdash; parse a string using a Grok pattern
+&emsp; **grok** &mdash; parse a string using Grok patterns
 
 ### Synopsis
 
@@ -11,11 +11,16 @@ grok(p: string, s: string, definitions: string) -> record
 
 ### Description
 
-The _grok_ function parses a string `s` using Grok pattern `p` and returns
-a record containing the parsed fields. The syntax for pattern `p`
-is `%{pattern:field_name}` where _pattern_ is the name of the pattern
-to match in `s` and _field_name_ is the resultant field name of the capture
-value.
+The _grok_ function parses a string `s` using patterns in string `p` and
+returns a record containing parsed fields.
+
+The string `p` may contain one or more Grok patterns of syntax
+`%{pattern:field_name}` where _pattern_ is the name of the pattern to match in
+`s` and _field_name_ is the resultant field name of the captured value. If the
+_field_name_ portion is not included, the _pattern_ must still match but the
+captured value will not be present in the returned record. Any non-pattern
+portions of `p` must also match against the contents of `s`. Non-pattern
+portions of `p` may contain regular expressions.
 
 When provided with three arguments, `definitions` is a string
 of named patterns in the format `PATTERN_NAME PATTERN` each separated by
@@ -155,6 +160,17 @@ yield grok("%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level} %{GREEDYDATA:messag
 {timestamp:"2020-09-16T04:20:42.45+01:00",level:"DEBUG",message:"This is a sample debug log message"}
 ```
 
+Parsing the log line using the same patterns but only capturing the log level:
+```mdtest-spq {data-layout="stacked"}
+# spq
+yield grok("%{TIMESTAMP_ISO8601} %{LOGLEVEL:level} %{GREEDYDATA}",
+           this)
+# input
+"2020-09-16T04:20:42.45+01:00 DEBUG This is a sample debug log message"
+# expected output
+{level:"DEBUG"}
+```
+
 As with any [string literal](../expressions.md#literals), the
 leading backslash in escape sequences in string arguments must be doubled,
 such as changing the `\d` to `\\d` if we repurpose the
@@ -175,7 +191,7 @@ In addition to using `\n` newline escapes to separate multiple named patterns
 in the `definitions` argument, string concatenation via `+` may further enhance
 readability.
 
-```mdtest-spq
+```mdtest-spq {data-layout="stacked"}
 # spq
 yield grok("\\(%{PH_PREFIX:prefix}\\)-%{PH_LINE_NUM:line_number}",
            this,
@@ -185,4 +201,47 @@ yield grok("\\(%{PH_PREFIX:prefix}\\)-%{PH_LINE_NUM:line_number}",
 "(555)-1212"
 # expected output
 {prefix:"555",line_number:"1212"}
+```
+
+Failure to parse due to non-matching Grok pattern:
+
+```mdtest-spq {data-layout="stacked"}
+# spq
+grok("%{EMAILADDRESS:email}", this)
+# input
+"www.example.com"
+# expected output
+error({message:"grok(): value does not match pattern",on:"www.example.com"})
+```
+
+Failure to parse due to mismatch outside of Grok patterns:
+
+```mdtest-spq {data-layout="stacked"}
+# spq
+grok("%{WORD:one}     %{WORD:two}", this)
+# input
+"hello world"
+# expected output
+error({message:"grok(): value does not match pattern",on:"hello world"})
+```
+
+Using a regular expression to match outside of Grok patterns:
+```mdtest-spq
+# spq
+grok("%{WORD:one}\\s+%{WORD:two}", this)
+# input
+"hello     world"
+# expected output
+{one:"hello",two:"world"}
+```
+
+Successful parsing in the absence of any named fields in Grok patterns returns
+an empty record:
+```mdtest-spq {data-layout="stacked"}
+# spq
+grok("%{WORD}\\s+%{WORD}", this)
+# input
+"hello world"
+# expected output
+{}
 ```

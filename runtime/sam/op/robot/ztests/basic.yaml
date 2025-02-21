@@ -1,7 +1,7 @@
 script: |
   super -z -c 'from files.jsup | from eval(f)'
   echo ===
-  super -z -c 'from files.jsup | select value this from eval(f)'
+  super -z -c 'from files.jsup | select value s from eval(f)'
 
 inputs:
   - name: files.jsup
@@ -10,16 +10,16 @@ inputs:
       {f:"b.jsup"}
   - name: a.jsup
     data: |
-      "hello"
+      {s:"hello"}
   - name: b.jsup
     data: |
-      "world"
+      {s:"world"}
 
 outputs:
   - name: stdout
     data: |
-      "hello"
-      "world"
+      {s:"hello"}
+      {s:"world"}
       ===
       "hello"
       "world"

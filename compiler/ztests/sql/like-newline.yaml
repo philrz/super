@@ -1,5 +1,5 @@
 script: |
-  super -z -c "select value this from a.json where a like '%bar%'"
+  super -z -c "select * from a.json where a like '%bar%'"
 
 inputs:
   - name: a.json

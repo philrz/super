@@ -53,15 +53,15 @@ an S3 URL, or standard input specified with `-`.
 These input arguments are treated as if a SQL `FROM` operator precedes
 the provided query, e.g.,
 ```
-super -c "FROM example.json | SELECT typeof(this)"
+super -c "FROM example.json | SELECT a,b,c"
 ```
 is equivalent to
 ```
-super -c "SELECT typeof(this)" example.json
+super -c "SELECT a,b,c" example.json
 ```
 and both are equivalent to the classic SQL
 ```
-super -c "SELECT typeof(this) FROM example.json"
+super -c "SELECT a,b,c FROM example.json"
 ```
 Output is written to one or more files or to standard output in the format specified.
 
@@ -658,12 +658,12 @@ produces this Super JSON output
 _Some values of available [data types](../language/data-types.md)_
 ```mdtest-spq
 # spq
-SELECT VALUE this
+SELECT VALUE in
 # input
-1
-1.5
-[1,"foo"]
-|["apple","banana"]|
+{in:1}
+{in:1.5}
+{in:[1,"foo"]}
+{in:|["apple","banana"]|}
 # expected output
 1
 1.5
@@ -674,12 +674,12 @@ SELECT VALUE this
 _The types of various data_
 ```mdtest-spq
 # spq
-SELECT VALUE typeof(this)
+SELECT VALUE typeof(in)
 # input
-1
-1.5
-[1,"foo"]
-|["apple","banana"]|
+{in:1}
+{in:1.5}
+{in:[1,"foo"]}
+{in:|["apple","banana"]|}
 # expected output
 <int64>
 <float64>

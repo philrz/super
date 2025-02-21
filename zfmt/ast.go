@@ -21,6 +21,17 @@ func AST(p ast.Seq) string {
 	return c.String()
 }
 
+func ASTExpr(e ast.Expr) string {
+	d := &canon{
+		canonZed: canonZed{formatter: formatter{tab: 2}},
+		head:     true,
+		first:    true,
+	}
+	d.expr(e, "")
+	d.flush()
+	return d.String()
+}
+
 type canon struct {
 	canonZed
 	head  bool
@@ -226,6 +237,14 @@ func (c *canon) expr(e ast.Expr, parent string) {
 			}
 		}
 		c.write(`"`)
+	case *ast.Between:
+		c.write("(")
+		c.expr(e.Expr, "")
+		c.write(" between ")
+		c.expr(e.Lower, "")
+		c.write(" and ")
+		c.expr(e.Upper, "")
+		c.write(")")
 	default:
 		c.write("(unknown expr %T)", e)
 	}

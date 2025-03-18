@@ -146,6 +146,7 @@ func walkEntries(seq dag.Seq, post func(dag.Seq) (dag.Seq, error)) (dag.Seq, err
 // source's pushdown predicate.  This should be called before ParallelizeScan().
 // TBD: we need to do pushdown for search/cut to optimize columnar extraction.
 func (o *Optimizer) Optimize(seq dag.Seq) (dag.Seq, error) {
+	seq = liftFilterOps(seq)
 	seq = mergeFilters(seq)
 	seq = mergeYieldOps(seq)
 	seq = inlineRecordExprSpreads(seq)
@@ -498,9 +499,45 @@ func inlineRecordExprSpreads(seq dag.Seq) dag.Seq {
 	return seq
 }
 
+func liftFilterOps(seq dag.Seq) dag.Seq {
+	walkT(reflect.ValueOf(&seq), func(seq dag.Seq) dag.Seq {
+		for i := len(seq) - 2; i >= 0; i-- {
+			y, ok := seq[i].(*dag.Yield)
+			if !ok || len(y.Exprs) != 1 {
+				continue
+			}
+			re, ok1 := y.Exprs[0].(*dag.RecordExpr)
+			f, ok2 := seq[i+1].(*dag.Filter)
+			if !ok1 || !ok2 || hasThisWithEmptyPath(f) {
+				continue
+			}
+			fields, spread, ok := recordElemsFieldsAndSpread(re.Elems)
+			if !ok {
+				continue
+			}
+			walkT(reflect.ValueOf(f), func(e dag.Expr) dag.Expr {
+				this, ok := e.(*dag.This)
+				if !ok {
+					return e
+				}
+				e1, ok := fields[this.Path[0]]
+				if !ok {
+					if spread != nil {
+						return addPathToExpr(spread, this.Path)
+					}
+					return e
+				}
+				return addPathToExpr(e1, this.Path[1:])
+			})
+			seq[i], seq[i+1] = seq[i+1], seq[i]
+		}
+		return seq
+	})
+	return seq
+}
+
 func mergeYieldOps(seq dag.Seq) dag.Seq {
 	return walk(seq, true, func(seq dag.Seq) dag.Seq {
-	Loop:
 		for i := 0; i+1 < len(seq); i++ {
 			y1, ok1 := seq[i].(*dag.Yield)
 			y2, ok2 := seq[i+1].(*dag.Yield)
@@ -511,20 +548,9 @@ func mergeYieldOps(seq dag.Seq) dag.Seq {
 			if !ok {
 				continue
 			}
-			y1TopLevelFields := map[string]dag.Expr{}
-			var y1TopLevelSpread dag.Expr
-			for i, e := range re1.Elems {
-				switch e := e.(type) {
-				case *dag.Field:
-					y1TopLevelFields[e.Name] = e.Value
-				case *dag.Spread:
-					if i > 0 {
-						continue Loop
-					}
-					y1TopLevelSpread = e.Expr
-				default:
-					panic(e)
-				}
+			y1TopLevelFields, y1TopLevelSpread, ok := recordElemsFieldsAndSpread(re1.Elems)
+			if !ok {
+				continue
 			}
 			walkT(reflect.ValueOf(y2), func(e2 dag.Expr) dag.Expr {
 				this2, ok := e2.(*dag.This)
@@ -570,6 +596,25 @@ func addPathToExpr(e dag.Expr, path []string) dag.Expr {
 		dot = &dag.Dot{Kind: "Dot", LHS: dot, RHS: s}
 	}
 	return dot
+}
+
+func recordElemsFieldsAndSpread(elems []dag.RecordElem) (map[string]dag.Expr, dag.Expr, bool) {
+	fields := map[string]dag.Expr{}
+	var spread dag.Expr
+	for i, e := range elems {
+		switch e := e.(type) {
+		case *dag.Field:
+			fields[e.Name] = e.Value
+		case *dag.Spread:
+			if i > 0 {
+				return nil, nil, false
+			}
+			spread = e.Expr
+		default:
+			panic(e)
+		}
+	}
+	return fields, spread, true
 }
 
 func walkT[T any](v reflect.Value, post func(T) T) {

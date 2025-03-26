@@ -294,10 +294,6 @@ func metadataValue(zctx *super.Context, b *zcode.Builder, m Metadata) super.Type
 		}
 		b.EndContainer()
 		return zctx.MustLookupTypeRecord(fields)
-	case *Array:
-	case *Set:
-	case *Map:
-	case *Union:
 	case *Primitive:
 		min, max := super.NewValue(m.Typ, nil), super.NewValue(m.Typ, nil)
 		if m.Min != nil {
@@ -313,8 +309,10 @@ func metadataValue(zctx *super.Context, b *zcode.Builder, m Metadata) super.Type
 		return metadataLeaf(zctx, b, super.NewUint(m.Typ, m.Min), super.NewUint(m.Typ, m.Max))
 	case *Const:
 		return metadataLeaf(zctx, b, m.Value, m.Value)
+	default:
+		b.Append(nil)
+		return super.TypeNull
 	}
-	panic(m)
 }
 
 func metadataLeaf(zctx *super.Context, b *zcode.Builder, min, max super.Value) super.Type {

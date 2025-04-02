@@ -50,6 +50,7 @@ func project(zctx *super.Context, paths Path, s shadow) vector.Any {
 		return s.vec
 	case *dict:
 		if len(paths) > 0 {
+			//XXX this doesn't seem right
 			return vector.NewMissing(zctx, s.length())
 		}
 		vals := project(zctx, paths, s.vals)

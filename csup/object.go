@@ -37,6 +37,7 @@ type Object struct {
 	readerAt io.ReaderAt
 	header   Header
 	meta     Metadata
+	metaval  *super.Value
 }
 
 func NewObject(r io.ReaderAt) (*Object, error) {
@@ -52,6 +53,22 @@ func NewObject(r io.ReaderAt) (*Object, error) {
 		readerAt: io.NewSectionReader(r, int64(HeaderSize+hdr.MetaSize), int64(hdr.DataSize)),
 		header:   hdr,
 		meta:     meta,
+	}, nil
+}
+
+func NewObjectRaw(r io.ReaderAt) (*Object, error) {
+	hdr, err := ReadHeader(io.NewSectionReader(r, 0, HeaderSize))
+	if err != nil {
+		return nil, err
+	}
+	val, err := readMetadataRaw(super.NewContext(), io.NewSectionReader(r, HeaderSize, int64(hdr.MetaSize)))
+	if err != nil {
+		return nil, err
+	}
+	return &Object{
+		readerAt: io.NewSectionReader(r, int64(HeaderSize+hdr.MetaSize), int64(hdr.DataSize)),
+		header:   hdr,
+		metaval:  val,
 	}, nil
 }
 
@@ -75,23 +92,31 @@ func (o *Object) Size() uint64 {
 }
 
 func readMetadata(r io.Reader) (Metadata, error) {
-	zctx := super.NewContext()
-	zr := bsupio.NewReader(zctx, r)
-	defer zr.Close()
-	val, err := zr.Read()
+	sctx := super.NewContext()
+	val, err := readMetadataRaw(sctx, r)
 	if err != nil {
 		return nil, err
 	}
 	u := sup.NewBSUPUnmarshaler()
-	u.SetContext(zctx)
+	u.SetContext(sctx)
 	u.Bind(Template...)
 	var meta Metadata
 	if err := u.Unmarshal(*val, &meta); err != nil {
+		return nil, err
+	}
+	return meta, nil
+}
+
+func readMetadataRaw(sctx *super.Context, r io.Reader) (*super.Value, error) {
+	zr := zngio.NewReader(sctx, r)
+	defer zr.Close()
+	val, err := zr.Read()
+	if err != nil {
 		return nil, err
 	}
 	// Read another val to make sure there is no extra stuff after the metadata.
 	if extra, _ := zr.Read(); extra != nil {
 		return nil, errors.New("corrupt CSUP: metadata section has more than one Zed value")
 	}
-	return meta, nil
+	return val, nil
 }

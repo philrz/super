@@ -45,7 +45,7 @@ func NewObject(ctx context.Context, engine storage.Engine, uri *storage.URI) (*O
 func NewObjectFromCSUP(object *csup.Object) *Object {
 	return &Object{
 		object: object,
-		root:   newShadow(object.Metadata(), nil, 0),
+		root:   unmarshal(object.Metadata(), nil, 0), //XXX
 	}
 }
 

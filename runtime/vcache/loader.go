@@ -17,6 +17,24 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+//XXX
+// Old model:
+// unmarshal entire csup metadata into vng.MetaData
+// build entire shadow tree from vng.MetaData
+// for any projection, loader loads any missing leaf vectors from shadow
+//   (along with unraveling null vectors into leaves) and returns
+//   a vector.Any while computing any needed shared-context types
+//
+// New model:
+//  csup metadata is read as a single super value
+//  the meta value is parsed on the fly according to the metadata definitions
+//    and only the portions of the type that are needed for any projection
+//    are parsed.  The shadow is updated in place and nulls are left behind for
+//    pieces that are not yet parsed.
+//  when the entire value is needed, the shadow is built in its entirety by the
+//    same code path a bit more efficiently because we're not using reflect and unmarshal
+//XXX
+
 // loader handles loading vector data on demand for only the fields needed
 // as specified in the projection.  Each load is executed with a multiphase
 // process: first, we build a mirror of the CSUP metadata where each node has a

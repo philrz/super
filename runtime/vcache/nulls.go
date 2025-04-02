@@ -4,16 +4,25 @@ import (
 	"io"
 	"sync"
 
+	"github.com/brimdata/super"
 	"github.com/brimdata/super/csup"
 	"github.com/brimdata/super/vector"
 	"golang.org/x/sync/errgroup"
 )
 
 type nulls struct {
-	mu    sync.Mutex
-	meta  *csup.Nulls
-	local *vector.Bool
-	flat  *vector.Bool
+	mu     sync.Mutex
+	loc    csup.Segment // location of Runs
+	count  uint32       //XXX might not need this
+	vals   shadow
+	meta   super.Value //XXX
+	local  *vector.Bool
+	flat   *vector.Bool
+	loaded bool
+}
+
+func (n *nulls) length() uint32 {
+	panic("vcacne.nulls.length shouldn't be called")
 }
 
 func (n *nulls) fetch(g *errgroup.Group, reader io.ReaderAt) {
@@ -21,7 +30,7 @@ func (n *nulls) fetch(g *errgroup.Group, reader io.ReaderAt) {
 		return
 	}
 	n.mu.Lock()
-	if n.meta == nil {
+	if n.loaded {
 		n.mu.Unlock()
 		return
 	}
@@ -29,12 +38,13 @@ func (n *nulls) fetch(g *errgroup.Group, reader io.ReaderAt) {
 	g.Go(func() error {
 		n.mu.Lock()
 		defer n.mu.Unlock()
-		if n.meta == nil {
+		if n.loaded {
 			return nil
 		}
-		length := n.meta.Count + n.meta.Values.Len()
+		n.loaded = true
+		length := n.count + n.vals.length()
 		n.local = vector.NewBoolEmpty(length, nil)
-		runlens, err := csup.ReadUint32s(n.meta.Runs, reader)
+		runlens, err := csup.ReadUint32s(n.loc, reader)
 		if err != nil {
 			return err
 		}

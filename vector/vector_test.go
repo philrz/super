@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/brimdata/super"
+	"github.com/brimdata/super/csup"
 	"github.com/brimdata/super/fuzz"
-	"github.com/brimdata/super/vng"
 )
 
 func FuzzQuery(f *testing.F) {
@@ -33,11 +33,11 @@ func FuzzQuery(f *testing.F) {
 		fuzz.WriteZNG(t, values, &zngBuf)
 		resultZNG := fuzz.RunQueryZNG(t, &zngBuf, querySource)
 
-		var vngBuf bytes.Buffer
-		fuzz.WriteVNG(t, values, &vngBuf)
-		resultVNG := fuzz.RunQueryVNG(t, &vngBuf, querySource)
+		var csupBuf bytes.Buffer
+		fuzz.WriteCSUP(t, values, &csupBuf)
+		resultCSUP := fuzz.RunQueryCSUP(t, &csupBuf, querySource)
 
-		fuzz.CompareValues(t, resultZNG, resultVNG)
+		fuzz.CompareValues(t, resultZNG, resultCSUP)
 	})
 }
 
@@ -64,19 +64,19 @@ func BenchmarkReadZng(b *testing.B) {
 	}
 }
 
-func BenchmarkReadVng(b *testing.B) {
+func BenchmarkReadCSUP(b *testing.B) {
 	rand := rand.New(rand.NewSource(42))
 	valuesIn := make([]super.Value, N)
 	for i := range valuesIn {
 		valuesIn[i] = super.NewValue(super.TypeInt64, super.EncodeInt(int64(rand.Intn(N))))
 	}
 	var buf bytes.Buffer
-	fuzz.WriteVNG(b, valuesIn, &buf)
+	fuzz.WriteCSUP(b, valuesIn, &buf)
 	bs := buf.Bytes()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		bytesReader := bytes.NewReader(bs)
-		object, err := vng.NewObject(bytesReader)
+		object, err := csup.NewObject(bytesReader)
 		if err != nil {
 			panic(err)
 		}

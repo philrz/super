@@ -108,7 +108,7 @@ func readMetadata(r io.Reader) (Metadata, error) {
 }
 
 func readMetadataRaw(sctx *super.Context, r io.Reader) (*super.Value, error) {
-	zr := zngio.NewReader(sctx, r)
+	zr := bsupio.NewReader(sctx, r)
 	defer zr.Close()
 	val, err := zr.Read()
 	if err != nil {

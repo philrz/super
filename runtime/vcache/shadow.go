@@ -105,7 +105,10 @@ type map_ struct {
 type primitive struct {
 	mu sync.Mutex
 	count
-	csup  *csup.Primitive
+	loc   csup.Segment
+	typ   super.Type
+	min   super.Value
+	max   super.Value
 	vec   vector.Any
 	nulls *nulls
 }
@@ -116,7 +119,7 @@ type int_ struct {
 	typ   super.Type
 	min   int64
 	max   int64
-	loc   *csup.Segment
+	loc   csup.Segment
 	vec   vector.Any
 	nulls *nulls
 }
@@ -124,7 +127,10 @@ type int_ struct {
 type uint_ struct {
 	mu sync.Mutex
 	count
-	csup  *csup.Uint
+	typ   super.Type
+	min   uint64
+	max   uint64
+	loc   csup.Segment
 	vec   vector.Any
 	nulls *nulls
 }
@@ -141,7 +147,8 @@ type const_ struct {
 type dict struct {
 	mu sync.Mutex
 	count
-	csup   *csup.Dict
+	iloc   csup.Segment
+	cloc   csup.Segment
 	nulls  *nulls
 	vals   shadow
 	counts []uint32
@@ -297,46 +304,18 @@ func unmarshal(target shadow, meta super.Value, paths Path, n *nulls, nullsCnt u
 			u.vals[k] = unmarshal(u.vals[k], u.meta[k], paths, nil, 0)
 		}
 		return u
-	case *csup.Int:
-		type Int struct {
-			Typ      super.Type `zed:"Type"`
-			Location Segment
-			Min      int64
-			Max      int64
-			Count    uint32
-		}
-		return &int_{
-			count: count{m.Len(), nullsCnt},
-			csup:  m,
-			nulls: nulls{meta: n},
-		}
-	case *csup.Uint:
-		return &uint_{
-			count: count{m.Len(), nullsCnt},
-			csup:  m,
-			nulls: nulls{meta: n},
-		}
-	case *csup.Primitive:
-		return &primitive{
-			count: count{m.Len(), nullsCnt},
-			csup:  m,
-			nulls: nulls{meta: n},
-		}
-	case *csup.Const:
-		return &const_{
-			count: count{m.Len(), nullsCnt},
-			val:   m.Value,
-			nulls: nulls{meta: n},
-		}
-	case *csup.Dict:
-		return &dict{
-			vals:  newShadow(m.Values, nil, 0),
-			count: count{m.Len(), nullsCnt},
-			csup:  m,
-			nulls: nulls{meta: n},
-		}
+	case "Int":
+		return unmarshalInt(metaType, meta.Bytes(), nullsCnt, n)
+	case "Uint":
+		return unmarshalUint(metaType, meta.Bytes(), nullsCnt, n)
+	case "Primitive":
+		return unmarshalPrimitive(metaType, meta.Bytes(), nullsCnt, n)
+	case "Const":
+		return unmarshalConst(metaType, meta.Bytes(), nullsCnt, n)
+	case "Dict":
+		return unmarshalDict(metaType, meta.Bytes(), nullsCnt, n, paths)
 	default:
-		panic(fmt.Sprintf("vector cache: type %T not supported", m))
+		panic(fmt.Sprintf("vector cache: type %T not supported", metaTypeNamed))
 	}
 }
 
@@ -571,11 +550,6 @@ func unmarshalNamed(typ *super.TypeRecord, bytes zcode.Bytes) *named {
 	}
 }
 
-func decodePrimitiveTypeValue(tv []byte) super.Type {
-	//XXX
-	return nil
-}
-
 func unmarshalInt(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, nulls *nulls) *int_ {
 	//type Int struct {
 	//	Typ      super.Type `zed:"Type"`
@@ -590,7 +564,7 @@ func unmarshalInt(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, nul
 	if i.typ == nil {
 		panic("TBD")
 	}
-	unmarshalSegment(i.loc, it.Next())
+	unmarshalSegment(&i.loc, it.Next())
 	i.min = super.DecodeInt(it.Next())
 	i.max = super.DecodeInt(it.Next())
 	i.count = count{uint32(super.DecodeUint(it.Next())), nullsCnt}
@@ -599,6 +573,102 @@ func unmarshalInt(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, nul
 	}
 	i.nulls = nulls
 	return &i
+}
+
+func unmarshalUint(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, nulls *nulls) *uint_ {
+	//type Uint struct {
+	//	Typ      super.Type `zed:"Type"`
+	//	Location Segment
+	//	Min      uint64
+	//	Max      uint64
+	//	Count    uint32
+	//}
+	var u uint_
+	it := zcode.Iter(bytes)
+	u.typ = decodePrimitiveTypeValue(it.Next())
+	if u.typ == nil {
+		panic("TBD")
+	}
+	unmarshalSegment(&u.loc, it.Next())
+	u.min = super.DecodeUint(it.Next())
+	u.max = super.DecodeUint(it.Next())
+	u.count = count{uint32(super.DecodeUint(it.Next())), nullsCnt}
+	if !it.Done() {
+		panic("TBD")
+	}
+	u.nulls = nulls
+	return &u
+}
+
+func unmarshalPrimitive(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, nulls *nulls) *primitive {
+	//type Primitive struct {
+	//	Typ      super.Type `zed:"Type"`
+	//	Location Segment
+	//	Min      *super.Value
+	//	Max      *super.Value
+	//	Count    uint32
+	//}
+	var p primitive
+	it := zcode.Iter(bytes)
+	p.typ = decodePrimitiveTypeValue(it.Next())
+	if p.typ == nil {
+		panic("TBD")
+	}
+	unmarshalSegment(&p.loc, it.Next())
+	p.min = super.NewValue(p.typ, it.Next())
+	p.max = super.NewValue(p.typ, it.Next())
+	p.count = count{uint32(super.DecodeUint(it.Next())), nullsCnt}
+	if !it.Done() {
+		panic("TBD")
+	}
+	p.nulls = nulls
+	return &p
+}
+
+func unmarshalConst(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, nulls *nulls) *const_ {
+	//type Const struct {
+	//	Value super.Value
+	//	Count uint32
+	//}
+	var c const_
+	it := zcode.Iter(bytes)
+	//XXX how do we make the type?... m
+	valType, ok := typ.TypeOfField("Value")
+	if !ok {
+		panic("TBD")
+	}
+	c.val = super.NewValue(valType, it.Next())
+	c.count = count{uint32(super.DecodeUint(it.Next())), nullsCnt}
+	if !it.Done() {
+		panic("TBD")
+	}
+	c.nulls = nulls
+	return &c
+}
+
+func unmarshalDict(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, nulls *nulls, paths Path) *dict {
+	//type Dict struct {
+	//	Values Metadata
+	//	Counts Segment
+	//	Index  Segment
+	//	Length uint32
+	//}
+	var d dict
+	valType, ok := typ.TypeOfField("Values")
+	if !ok {
+		panic("TBD")
+	}
+	it := zcode.Iter(bytes)
+	meta := super.NewValue(valType, it.Next())
+	unmarshalSegment(&d.cloc, it.Next())
+	unmarshalSegment(&d.iloc, it.Next())
+	d.count = count{uint32(super.DecodeUint(it.Next())), nullsCnt}
+	if !it.Done() {
+		panic("TBD")
+	}
+	d.vals = unmarshal(nil, meta, paths, nil, 0)
+	d.nulls = nulls
+	return &d
 }
 
 // XXX error
@@ -653,4 +723,15 @@ func unmarshalProjection(r *record, paths Path) {
 	default:
 		panic(fmt.Sprintf("bad path in vcache loadRecord: %T", elem))
 	}
+}
+
+func decodePrimitiveTypeValue(tv []byte) super.Type {
+	if len(tv) != 1 {
+		return nil //XXX not a primitive
+	}
+	typ, err := super.LookupPrimitiveByID(int(tv[0]))
+	if err != nil {
+		return nil
+	}
+	return typ
 }

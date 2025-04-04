@@ -173,13 +173,13 @@ func (l *loader) loadInt(g *errgroup.Group, s *int_) {
 		if s.vec != nil {
 			return nil
 		}
-		bytes := make([]byte, s.csup.Location.MemLength)
-		if err := s.csup.Location.Read(l.r, bytes); err != nil {
+		bytes := make([]byte, s.loc.MemLength)
+		if err := s.loc.Read(l.r, bytes); err != nil {
 			return err
 		}
 		vals := intcomp.UncompressInt64(byteconv.ReinterpretSlice[uint64](bytes), nil)
 		vals = extendForNulls(vals, s.nulls.flat, s.count)
-		s.vec = vector.NewInt(s.csup.Type(l.zctx), vals, s.nulls.flat)
+		s.vec = vector.NewInt(s.typ, vals, s.nulls.flat)
 		return nil
 	})
 }
@@ -197,13 +197,13 @@ func (l *loader) loadUint(g *errgroup.Group, s *uint_) {
 		if s.vec != nil {
 			return nil
 		}
-		bytes := make([]byte, s.csup.Location.MemLength)
-		if err := s.csup.Location.Read(l.r, bytes); err != nil {
+		bytes := make([]byte, s.loc.MemLength)
+		if err := s.loc.Read(l.r, bytes); err != nil {
 			return err
 		}
 		vals := intcomp.UncompressUint64(byteconv.ReinterpretSlice[uint64](bytes), nil)
 		vals = extendForNulls(vals, s.nulls.flat, s.count)
-		s.vec = vector.NewUint(s.csup.Type(l.zctx), vals, s.nulls.flat)
+		s.vec = vector.NewUint(s.typ, vals, s.nulls.flat)
 		return nil
 	})
 }
@@ -221,8 +221,7 @@ func (l *loader) loadPrimitive(g *errgroup.Group, paths Path, s *primitive) {
 		if s.vec != nil {
 			return nil
 		}
-		typ := s.csup.Type(l.zctx)
-		vec, err := l.loadVals(typ, s, s.nulls.flat)
+		vec, err := l.loadVals(s.typ, s, s.nulls.flat)
 		if err != nil {
 			return err
 		}
@@ -232,11 +231,12 @@ func (l *loader) loadPrimitive(g *errgroup.Group, paths Path, s *primitive) {
 }
 
 func (l *loader) loadVals(typ super.Type, s *primitive, nulls *vector.Bool) (vector.Any, error) {
-	if s.csup.Count == 0 {
+	if s.count.vals == 0 {
+		// no vals, just nulls
 		return empty(typ, s.length(), nulls), nil
 	}
-	bytes := make([]byte, s.csup.Location.MemLength)
-	if err := s.csup.Location.Read(l.r, bytes); err != nil {
+	bytes := make([]byte, s.loc.MemLength)
+	if err := s.loc.Read(l.r, bytes); err != nil {
 		return nil, err
 	}
 	length := s.length()
@@ -353,7 +353,7 @@ func (l *loader) loadVals(typ super.Type, s *primitive, nulls *vector.Bool) (vec
 }
 
 func (l *loader) loadDict(g *errgroup.Group, paths Path, s *dict) {
-	if s.csup.Length == 0 {
+	if s.count.vals == 0 {
 		panic("empty dict") // empty dictionaries should not happen!
 	}
 	l.loadVector(g, paths, s.vals)
@@ -361,7 +361,7 @@ func (l *loader) loadDict(g *errgroup.Group, paths Path, s *dict) {
 	g.Go(func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		loc := s.csup.Index
+		loc := s.iloc
 		s.index = make([]byte, loc.MemLength)
 		if err := loc.Read(l.r, s.index); err != nil {
 			return err

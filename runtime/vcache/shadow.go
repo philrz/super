@@ -204,7 +204,7 @@ func unmarshal(target shadow, meta super.Value, paths Path, n *nulls, nullsCnt u
 	metaType, ok := metaTypeNamed.Type.(*super.TypeRecord)
 	if !ok {
 		//XXX return error
-		panic(fmt.Sprint("csup metadata not a record: %s", sup.String(metaTypeNamed.Type)))
+		panic(fmt.Sprintf("csup metadata not a record: %s", sup.String(metaTypeNamed.Type)))
 	}
 	switch metaTypeNamed.Name {
 	case "Dynamic":

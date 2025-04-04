@@ -35,7 +35,7 @@ func NewObject(ctx context.Context, engine storage.Engine, uri *storage.URI) (*O
 	if err != nil {
 		return nil, err
 	}
-	object, err := csup.NewObject(reader)
+	object, err := csup.NewObjectRaw(reader)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func NewObject(ctx context.Context, engine storage.Engine, uri *storage.URI) (*O
 func NewObjectFromCSUP(object *csup.Object) *Object {
 	return &Object{
 		object: object,
-		root:   unmarshal(object.Metadata(), nil, 0), //XXX
+		root:   nil,
 	}
 }
 
@@ -58,6 +58,8 @@ func (o *Object) Close() error {
 // storage and cached in memory so that subsequent calls run from memory.
 // The vectors returned will have types from the provided zctx.  Multiple
 // Fetch calls to the same object may run concurrently.
-func (o *Object) Fetch(zctx *super.Context, projection Path) (vector.Any, error) {
-	return (&loader{zctx, o.object.DataReader()}).load(projection, o.root)
+func (o *Object) Fetch(sctx *super.Context, projection Path) (vector.Any, error) {
+	//XXX need to work through model where o.root is returned from newshadow
+	o.root = unmarshal(o.root, *o.object.MetadataAsValue(), projection, nil, 0)
+	return (&loader{sctx, o.object.DataReader()}).load(projection, o.root)
 }

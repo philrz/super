@@ -208,7 +208,7 @@ func (l *loader) loadUint(g *errgroup.Group, s *uint_) {
 	})
 }
 
-func (l *loader) loadPrimitive(g *errgroup.Group, paths Path, s *primitive) {
+func (l *loader) loadPrimitive(g *errgroup.Group, _ Path, s *primitive) {
 	s.mu.Lock()
 	if s.vec != nil {
 		s.mu.Unlock()
@@ -357,7 +357,7 @@ func (l *loader) loadDict(g *errgroup.Group, paths Path, s *dict) {
 		panic("empty dict") // empty dictionaries should not happen!
 	}
 	l.loadVector(g, paths, s.vals)
-	l.loadUint32(g, &s.mu, &s.counts, s.csup.Counts)
+	l.loadUint32(g, &s.mu, &s.counts, s.cloc)
 	g.Go(func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()

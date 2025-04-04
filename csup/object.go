@@ -83,6 +83,10 @@ func (o *Object) Metadata() Metadata {
 	return o.meta
 }
 
+func (o *Object) MetadataAsValue() *super.Value {
+	return o.metaval
+}
+
 func (o *Object) DataReader() io.ReaderAt {
 	return o.readerAt
 }

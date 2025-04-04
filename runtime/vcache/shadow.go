@@ -6,9 +6,9 @@ import (
 
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/csup"
+	"github.com/brimdata/super/sup"
 	"github.com/brimdata/super/vector"
 	"github.com/brimdata/super/zcode"
-	"github.com/brimdata/super/zson"
 )
 
 // The shadow type mirrors the vector.Any implementations here with locks and
@@ -113,6 +113,7 @@ type primitive struct {
 type int_ struct {
 	mu sync.Mutex
 	count
+	typ   super.Type
 	min   int64
 	max   int64
 	loc   *csup.Segment
@@ -196,7 +197,7 @@ func unmarshal(target shadow, meta super.Value, paths Path, n *nulls, nullsCnt u
 	metaType, ok := metaTypeNamed.Type.(*super.TypeRecord)
 	if !ok {
 		//XXX return error
-		panic(fmt.Sprint("csup metadata not a record: %s", zson.String(metaTypeNamed.Type)))
+		panic(fmt.Sprint("csup metadata not a record: %s", sup.String(metaTypeNamed.Type)))
 	}
 	switch metaTypeNamed.Name {
 	case "Dynamic":
@@ -380,19 +381,26 @@ func unmarshalRecord(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, 
 		panic("TBD")
 	}
 	elemType := arrayType.(*super.TypeArray).Type //XXX error
+	fit := it.Next().Iter()
+	if !it.Done() {
+		panic("TBD")
+	}
 	var fields []field_
-	for _, f := range m.Fields {
+	for !fit.Done() {
 		//type Field struct {
 		//	Name   string
 		//	Values Metadata
 		//}
 		//XXX decode FIeld...
-		fit := it.Next().Iter()
-		name := super.DecodeString(fit.Next())
+		item := fit.Next().Iter()
+		name := super.DecodeString(item.Next())
 		fields = append(fields, field_{
 			name: name,
-			meta: deunion(elemType, fit.Next()),
+			meta: deunion(elemType, item.Next()),
 		})
+		if !item.Done() {
+			panic("TBD")
+		}
 	}
 	return &record{
 		count:  count{length, nullsCnt},
@@ -563,6 +571,11 @@ func unmarshalNamed(typ *super.TypeRecord, bytes zcode.Bytes) *named {
 	}
 }
 
+func decodePrimitiveTypeValue(tv []byte) super.Type {
+	//XXX
+	return nil
+}
+
 func unmarshalInt(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, nulls *nulls) *int_ {
 	//type Int struct {
 	//	Typ      super.Type `zed:"Type"`
@@ -573,21 +586,19 @@ func unmarshalInt(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, nul
 	//}
 	var i int_
 	it := zcode.Iter(bytes)
-	typeval := super.DecodeTypeValue(it.Next()) //XXX look at unmarshal
-	i.Typ = nil                                 //XXX lookup primitive typeval
+	i.typ = decodePrimitiveTypeValue(it.Next())
+	if i.typ == nil {
+		panic("TBD")
+	}
 	unmarshalSegment(i.loc, it.Next())
-	i.min = super.Decodent(it.Next())
-	i.max = super.Decodent(it.Next())
-	meta := super.NewValue(valType, it.Next())
+	i.min = super.DecodeInt(it.Next())
+	i.max = super.DecodeInt(it.Next())
+	i.count = count{uint32(super.DecodeUint(it.Next())), nullsCnt}
 	if !it.Done() {
 		panic("TBD")
 	}
-	return &int_{
-		count: count{length, nullsCnt},
-		min:   min,
-		max:   max,
-		nulls: nulls,
-	}
+	i.nulls = nulls
+	return &i
 }
 
 // XXX error

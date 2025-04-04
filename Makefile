@@ -65,11 +65,8 @@ test-services: build
 		ZTEST_TAG=services \
 		go test -run TestZed/ppl/zqd/ztests/redis .
 
-perf-compare: build $(SAMPLEDATA)
-	scripts/perf-compare.sh
-
-output-check: build $(SAMPLEDATA)
-	scripts/output-check.sh
+perf-compare-jq: build $(SAMPLEDATA)
+	scripts/perf-compare-jq.sh
 
 build: $(PEG_DEP)
 	@mkdir -p dist

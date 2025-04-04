@@ -6,9 +6,11 @@ set -eo pipefail
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 cd "$script_dir" || exit 1
 
-wget https://data.gharchive.org/2023-02-08-0.json.gz
-gunzip 2023-02-08-0.json.gz
+#wget https://data.gharchive.org/2023-02-08-0.json.gz
+#gunzip -f 2023-02-08-0.json.gz
 data="2023-02-08-0"
+md="report.md"
+rm -f "$md"
 
 for cmd in super jq; do
   if ! [[ $(type -P "$cmd") ]]; then
@@ -16,15 +18,6 @@ for cmd in super jq; do
     exit 1
   fi
 done
-
-declare -a markdowns=(
-  '00_all_unmodified.md'
-  '01_search.md'
-  '02_search+.md'
-  '03_count.md'
-  '04_agg.md'
-  '05_union.md'
-)
 
 declare -a descriptions=(
   'Output all events unmodified'
@@ -59,12 +52,12 @@ declare -a jq_flags=(
   '-c -s'
   '-c -s'
   '-c -s'
+  '-c -s'
 )
 
 for (( n=0; n<"${#superdb_queries[@]}"; n++ )); do
   desc=${descriptions[$n]}
-  md=${markdowns[$n]}
-  echo -e "### $desc\n" | tee "$md"
+  echo -e "### $desc\n" | tee -a "$md"
   echo "|**<br>Tool**|**<br>Arguments**|**Input<br>Format**|**Output<br>Format**|**<br>Real**|**<br>User**|**<br>Sys**|" | tee -a "$md"
   echo "|:----------:|:---------------:|:-----------------:|:------------------:|-----------:|-----------:|----------:|" | tee -a "$md"
   for input_format in json sup bsup csup; do
@@ -72,19 +65,26 @@ for (( n=0; n<"${#superdb_queries[@]}"; n++ )); do
       if [ $n -gt 0 ] && [ $output_format != "json" ]; then
         continue
       fi
-      superdb_query=${superdb_queries[$n]}
-      echo -n "|\`super\`|\`$superdb_query\`|$input_format|$output_format|" | tee -a "$md"
       if [ $input_format = "json" ]; then
         input_file="${data}.json"
       else
-        input_file="$TMPDIR/${data}.${input_format}"
+        input_file="${data}.${input_format}"
       fi
+      superdb_query=${superdb_queries[$n]/__SOURCE__/${data}.${input_format}}
+      echo -n "|\`super\`|\`$superdb_query\`|$input_format|$output_format|" | tee -a "$md"
       output_file=$(mktemp)
       all_times=$(mktemp)
-      time -p super -i $input_format -f $output_format -c "$superdb_query" "$input_file" > "$output_file" 2> "$all_times"
+      if [ $input_format = "csup" ]; then
+        export SUPER_VAM=1
+      else
+        unset SUPER_VAM
+      fi
+      { time -p super -i $input_format -f $output_format -c "$superdb_query" "$input_file"; } > "$output_file" 2> "$all_times"
       < "$all_times" tr '\n' ' ' | awk '{ print $2 "|" $4 "|" $6 "|" }' | tee -a "$md"
       rm "$all_times"
-      mv "$output_file" "$TMPDIR/${data}.${output_format}"
+      if [ $output_format != "json" ]; then
+        mv "$output_file" "${data}.${output_format}"
+      fi
     done
   done
 
@@ -93,7 +93,7 @@ for (( n=0; n<"${#superdb_queries[@]}"; n++ )); do
   echo -n "|\`jq\`|\`$jq_flag ""'""${jq_query//|/\\|}""'""\`|json|json|" | tee -a "$md"
   all_times=$(mktemp)
   # shellcheck disable=SC2086      # For expanding JQ_FLAG
-  time -p jq $jq_flag "$jq_query" "${data}.json" > /dev/null 2>&1 "$all_times"
+  { time -p jq $jq_flag "$jq_query" "${data}.json"; } > /dev/null 2> "$all_times"
   < "$all_times" tr '\n' ' ' | awk '{ print $2 "|" $4 "|" $6 "|" }' | tee -a "$md"
 
   echo | tee -a "$md"

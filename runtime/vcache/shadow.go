@@ -353,6 +353,7 @@ func unmarshalRecord(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, 
 	//	Length uint32
 	//	Fields []Field
 	//}
+	fmt.Println("REC", sup.String(super.NewValue(typ, bytes)))
 	it := zcode.Iter(bytes)
 	length := uint32(super.DecodeUint(it.Next()))
 	arrayType, ok := typ.TypeOfField("Fields")
@@ -360,22 +361,30 @@ func unmarshalRecord(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, 
 		panic("TBD")
 	}
 	elemType := arrayType.(*super.TypeArray).Type //XXX error
+	fmt.Println("ARRAY TYPE", sup.String(arrayType))
+	fmt.Println("ELEM TYPE", sup.String(elemType))
 	fit := it.Next().Iter()
 	if !it.Done() {
 		panic("TBD")
 	}
 	var fields []field_
 	for !fit.Done() {
+		field := deunion(elemType, fit.Next())
 		//type Field struct {
 		//	Name   string
 		//	Values Metadata
 		//}
-		//XXX decode FIeld...
-		item := fit.Next().Iter()
+		//XXX decode Field...
+		item := field.Bytes().Iter()
 		name := super.DecodeString(item.Next())
+		fmt.Println("FIELD", name)
+		valType, ok := super.TypeUnder(field.Type()).(*super.TypeRecord).TypeOfField("Values")
+		if !ok {
+			panic("TBD")
+		}
 		fields = append(fields, field_{
 			name: name,
-			meta: deunion(elemType, item.Next()),
+			meta: super.NewValue(valType, item.Next()),
 		})
 		if !item.Done() {
 			panic("TBD")
@@ -489,7 +498,8 @@ func unmarshalUnion(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, n
 }
 
 func unmarshalNulls(typ *super.TypeRecord, bytes zcode.Bytes) *nulls {
-	valType, ok := typ.TypeOfField("Value")
+	fmt.Println("NULLS", sup.String(typ))
+	valType, ok := typ.TypeOfField("Values")
 	if !ok {
 		panic("TBD")
 	}
@@ -690,6 +700,7 @@ func unmarshalSegment(dst *csup.Segment, bytes zcode.Bytes) {
 }
 
 func deunion(typ super.Type, b zcode.Bytes) super.Value {
+	fmt.Println(sup.String(super.NewValue(typ, b)))
 	if union, ok := typ.(*super.TypeUnion); ok {
 		typ, b = union.Untag(b)
 	}

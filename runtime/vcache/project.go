@@ -16,16 +16,16 @@ func project(zctx *super.Context, paths Path, s shadow) vector.Any {
 	case *array:
 		vals := project(zctx, nil, s.vals)
 		typ := zctx.LookupTypeArray(vals.Type())
-		return vector.NewArray(typ, s.offs, vals, s.nulls.flat)
+		return vector.NewArray(typ, s.offs, vals, s.nulls.flattened())
 	case *set:
 		vals := project(zctx, nil, s.vals)
 		typ := zctx.LookupTypeSet(vals.Type())
-		return vector.NewSet(typ, s.offs, vals, s.nulls.flat)
+		return vector.NewSet(typ, s.offs, vals, s.nulls.flattened())
 	case *map_:
 		keys := project(zctx, nil, s.keys)
 		vals := project(zctx, nil, s.vals)
 		typ := zctx.LookupTypeMap(keys.Type(), vals.Type())
-		return vector.NewMap(typ, s.offs, keys, vals, s.nulls.flat)
+		return vector.NewMap(typ, s.offs, keys, vals, s.nulls.flattened())
 	case *union:
 		return projectUnion(zctx, nil, s)
 	case *int_:
@@ -54,11 +54,11 @@ func project(zctx *super.Context, paths Path, s shadow) vector.Any {
 			return vector.NewMissing(zctx, s.length())
 		}
 		vals := project(zctx, paths, s.vals)
-		return vector.NewDict(vals, s.index, s.counts, s.nulls.flat)
+		return vector.NewDict(vals, s.index, s.counts, s.nulls.flattened())
 	case *error_:
 		v := project(zctx, paths, s.vals)
 		typ := zctx.LookupTypeError(v.Type())
-		return vector.NewError(typ, v, s.nulls.flat)
+		return vector.NewError(typ, v, s.nulls.flattened())
 	case *named:
 		v := project(zctx, paths, s.vals)
 		typ, err := zctx.LookupTypeNamed(s.name, v.Type())
@@ -90,7 +90,7 @@ func projectRecord(zctx *super.Context, paths Path, s *record) vector.Any {
 			vals = append(vals, val)
 			types = append(types, super.Field{Name: f.name, Type: val.Type()})
 		}
-		return vector.NewRecord(zctx.MustLookupTypeRecord(types), vals, s.length(), s.nulls.flat)
+		return vector.NewRecord(zctx.MustLookupTypeRecord(types), vals, s.length(), s.nulls.flattened())
 	}
 	switch elem := paths[0].(type) {
 	case string:
@@ -103,7 +103,7 @@ func projectRecord(zctx *super.Context, paths Path, s *record) vector.Any {
 			val = vector.NewMissing(zctx, s.length())
 		}
 		fields := []super.Field{{Name: elem}}
-		return newRecord(zctx, s.length(), fields, []vector.Any{val}, s.nulls.flat)
+		return newRecord(zctx, s.length(), fields, []vector.Any{val}, s.nulls.flattened())
 	case Fork:
 		// Multiple paths into this record is projected.  Try to construct
 		// each one and slice together the children indicated in the projection.
@@ -120,7 +120,7 @@ func projectRecord(zctx *super.Context, paths Path, s *record) vector.Any {
 				vals = append(vals, vector.NewMissing(zctx, s.length()))
 			}
 		}
-		return newRecord(zctx, s.length(), fields, vals, s.nulls.flat)
+		return newRecord(zctx, s.length(), fields, vals, s.nulls.flattened())
 	default:
 		panic(fmt.Sprintf("bad path in vcache createRecord: %T", elem))
 	}
@@ -143,7 +143,7 @@ func projectUnion(zctx *super.Context, paths Path, s *union) vector.Any {
 	}
 	utyp := zctx.LookupTypeUnion(types)
 	tags := s.tags
-	nulls := s.nulls.flat
+	nulls := s.nulls.flattened()
 	// If there are nulls add a null vector and rebuild tags.
 	if nulls != nil {
 		var newtags []uint32

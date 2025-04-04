@@ -26,6 +26,7 @@ package csup
 
 import (
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/brimdata/super"
@@ -36,27 +37,11 @@ import (
 type Object struct {
 	readerAt io.ReaderAt
 	header   Header
-	meta     Metadata
+	meta     Metadata //XXX get rid of this
 	metaval  *super.Value
 }
 
 func NewObject(r io.ReaderAt) (*Object, error) {
-	hdr, err := ReadHeader(io.NewSectionReader(r, 0, HeaderSize))
-	if err != nil {
-		return nil, err
-	}
-	meta, err := readMetadata(io.NewSectionReader(r, HeaderSize, int64(hdr.MetaSize)))
-	if err != nil {
-		return nil, err
-	}
-	return &Object{
-		readerAt: io.NewSectionReader(r, int64(HeaderSize+hdr.MetaSize), int64(hdr.DataSize)),
-		header:   hdr,
-		meta:     meta,
-	}, nil
-}
-
-func NewObjectRaw(r io.ReaderAt) (*Object, error) {
 	hdr, err := ReadHeader(io.NewSectionReader(r, 0, HeaderSize))
 	if err != nil {
 		return nil, err
@@ -80,6 +65,12 @@ func (o *Object) Close() error {
 }
 
 func (o *Object) Metadata() Metadata {
+	if o.meta == nil {
+		if err := o.unmarshal(); err != nil {
+			panic(err) //XXX
+		}
+	}
+	fmt.Println("REMOVE csup.Object.Metadata")
 	return o.meta
 }
 
@@ -95,20 +86,15 @@ func (o *Object) Size() uint64 {
 	return HeaderSize + o.header.MetaSize + o.header.DataSize
 }
 
-func readMetadata(r io.Reader) (Metadata, error) {
+func (o *Object) unmarshal() error {
 	sctx := super.NewContext()
-	val, err := readMetadataRaw(sctx, r)
-	if err != nil {
-		return nil, err
-	}
 	u := sup.NewBSUPUnmarshaler()
 	u.SetContext(sctx)
 	u.Bind(Template...)
-	var meta Metadata
-	if err := u.Unmarshal(*val, &meta); err != nil {
-		return nil, err
+	if err := u.Unmarshal(*o.metaval, &o.meta); err != nil {
+		return err
 	}
-	return meta, nil
+	return nil
 }
 
 func readMetadataRaw(sctx *super.Context, r io.Reader) (*super.Value, error) {

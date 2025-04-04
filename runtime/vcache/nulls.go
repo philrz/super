@@ -25,6 +25,13 @@ func (n *nulls) length() uint32 {
 	panic("vcacne.nulls.length shouldn't be called")
 }
 
+func (n *nulls) flattened() *vector.Bool {
+	if n != nil {
+		return n.flat
+	}
+	return nil
+}
+
 func (n *nulls) fetch(g *errgroup.Group, reader io.ReaderAt) {
 	if n == nil {
 		return
@@ -35,6 +42,9 @@ func (n *nulls) fetch(g *errgroup.Group, reader io.ReaderAt) {
 		return
 	}
 	n.mu.Unlock()
+	if n.vals == nil {
+		panic(".")
+	}
 	g.Go(func() error {
 		n.mu.Lock()
 		defer n.mu.Unlock()

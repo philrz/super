@@ -13,6 +13,7 @@ import (
 	"github.com/brimdata/super/sup"
 	"github.com/brimdata/super/vector"
 	"github.com/brimdata/super/zcode"
+	"github.com/kr/pretty"
 	"github.com/ronanh/intcomp"
 	"golang.org/x/sync/errgroup"
 )
@@ -83,18 +84,20 @@ func (l *loader) loadVector(g *errgroup.Group, paths Path, s shadow) {
 		//XXX we need an ordered option to load tags only when needed
 		l.loadUint32(g, &s.mu, &s.tags, s.loc)
 		for _, m := range s.vals {
-			l.loadVector(g, paths, m)
+			if m != nil {
+				l.loadVector(g, paths, m)
+			}
 		}
 	case *record:
 		l.loadRecord(g, paths, s)
 	case *array:
-		l.loadOffsets(g, &s.mu, &s.offs, s.loc, s.length(), s.nulls.flat)
+		l.loadOffsets(g, &s.mu, &s.offs, s.loc, s.length(), s.nulls.flattened())
 		l.loadVector(g, paths, s.vals)
 	case *set:
-		l.loadOffsets(g, &s.mu, &s.offs, s.loc, s.length(), s.nulls.flat)
+		l.loadOffsets(g, &s.mu, &s.offs, s.loc, s.length(), s.nulls.flattened())
 		l.loadVector(g, paths, s.vals)
 	case *map_:
-		l.loadOffsets(g, &s.mu, &s.offs, s.loc, s.length(), s.nulls.flat)
+		l.loadOffsets(g, &s.mu, &s.offs, s.loc, s.length(), s.nulls.flattened())
 		l.loadVector(g, paths, s.keys)
 		l.loadVector(g, paths, s.vals)
 	case *union:
@@ -109,7 +112,7 @@ func (l *loader) loadVector(g *errgroup.Group, paths Path, s shadow) {
 		s.mu.Lock()
 		vec := s.vec
 		if vec == nil {
-			vec = vector.NewConst(s.val, s.length(), s.nulls.flat)
+			vec = vector.NewConst(s.val, s.length(), s.nulls.flattened())
 			s.vec = vec
 		}
 		s.mu.Unlock()
@@ -129,7 +132,9 @@ func (l *loader) loadRecord(g *errgroup.Group, paths Path, s *record) {
 		// Load the whole record.  We're either loading all on demand (nil paths)
 		// or loading this record because it's referenced at the end of a projected path.
 		for _, f := range s.fields {
-			l.loadVector(g, nil, f.val)
+			if f.val != nil {
+				l.loadVector(g, nil, f.val)
+			}
 		}
 		return
 	}
@@ -178,8 +183,9 @@ func (l *loader) loadInt(g *errgroup.Group, s *int_) {
 			return err
 		}
 		vals := intcomp.UncompressInt64(byteconv.ReinterpretSlice[uint64](bytes), nil)
-		vals = extendForNulls(vals, s.nulls.flat, s.count)
-		s.vec = vector.NewInt(s.typ, vals, s.nulls.flat)
+		vals = extendForNulls(vals, s.nulls.flattened(), s.count)
+		pretty.Println(s)
+		s.vec = vector.NewInt(s.typ, vals, s.nulls.flattened())
 		return nil
 	})
 }
@@ -202,8 +208,8 @@ func (l *loader) loadUint(g *errgroup.Group, s *uint_) {
 			return err
 		}
 		vals := intcomp.UncompressUint64(byteconv.ReinterpretSlice[uint64](bytes), nil)
-		vals = extendForNulls(vals, s.nulls.flat, s.count)
-		s.vec = vector.NewUint(s.typ, vals, s.nulls.flat)
+		vals = extendForNulls(vals, s.nulls.flattened(), s.count)
+		s.vec = vector.NewUint(s.typ, vals, s.nulls.flattened())
 		return nil
 	})
 }
@@ -221,7 +227,7 @@ func (l *loader) loadPrimitive(g *errgroup.Group, _ Path, s *primitive) {
 		if s.vec != nil {
 			return nil
 		}
-		vec, err := l.loadVals(s.typ, s, s.nulls.flat)
+		vec, err := l.loadVals(s.typ, s, s.nulls.flattened())
 		if err != nil {
 			return err
 		}
@@ -366,7 +372,7 @@ func (l *loader) loadDict(g *errgroup.Group, paths Path, s *dict) {
 		if err := loc.Read(l.r, s.index); err != nil {
 			return err
 		}
-		s.index = extendForNulls(s.index, s.nulls.flat, s.count)
+		s.index = extendForNulls(s.index, s.nulls.flattened(), s.count)
 		return nil
 	})
 

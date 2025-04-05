@@ -227,6 +227,10 @@ func unmarshal(target shadow, meta super.Value, paths Path, n *nulls, nullsCnt u
 		//	Values Metadata
 		//	Count  uint32 // Count of nulls
 		//}
+
+		//XXX we take the nulls out of the tree so if we hit this node when it
+		// is already unmarshaled we just short-circuit to the shadow, which must be
+		// unmarshalled since we had to have unmarshalled it on the first pass
 		var ns *nulls
 		if target != nil {
 			ns = target.(*nulls) // XXX add dummy length method?
@@ -234,7 +238,8 @@ func unmarshal(target shadow, meta super.Value, paths Path, n *nulls, nullsCnt u
 			ns = unmarshalNulls(metaType, meta.Bytes())
 		}
 		nullsCnt += ns.count
-		return unmarshal(ns.vals, ns.meta, paths, ns, nullsCnt)
+		ns.vals = unmarshal(ns.vals, ns.meta, paths, ns, nullsCnt)
+		return ns
 	case "Error":
 		var e *error_
 		if target != nil {

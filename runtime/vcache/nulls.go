@@ -14,8 +14,8 @@ type nulls struct {
 	mu     sync.Mutex
 	loc    csup.Segment // location of Runs
 	count  uint32       //XXX might not need this
-	vals   shadow
-	meta   super.Value //XXX
+	vals   shadow       // points back to the vector which has these nulls
+	meta   super.Value  //XXX don't think we need this because we always descend
 	local  *vector.Bool
 	flat   *vector.Bool
 	loaded bool

@@ -9,6 +9,8 @@ import (
 
 func project(zctx *super.Context, paths Path, s shadow) vector.Any {
 	switch s := s.(type) {
+	case *nulls:
+		return project(zctx, paths, s.vals)
 	case *dynamic:
 		return projectDynamic(zctx, paths, s)
 	case *record:

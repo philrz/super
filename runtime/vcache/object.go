@@ -2,12 +2,10 @@ package vcache
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/csup"
 	"github.com/brimdata/super/pkg/storage"
-	"github.com/brimdata/super/sup"
 	"github.com/brimdata/super/vector"
 )
 
@@ -62,8 +60,6 @@ func (o *Object) Close() error {
 // Fetch calls to the same object may run concurrently.
 func (o *Object) Fetch(sctx *super.Context, projection Path) (vector.Any, error) {
 	//XXX need to work through model where o.root is returned from newshadow
-	val := o.object.MetadataAsValue()
-	fmt.Println(sup.String(val))
-	o.root = unmarshal(o.root, *val, projection, nil, 0)
+	o.root = unmarshal(o.root, *o.object.MetadataAsValue(), projection, nil, 0)
 	return (&loader{sctx, o.object.DataReader()}).load(projection, o.root)
 }

@@ -358,7 +358,6 @@ func unmarshalRecord(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, 
 	//	Length uint32
 	//	Fields []Field
 	//}
-	fmt.Println("REC", sup.String(super.NewValue(typ, bytes)))
 	it := zcode.Iter(bytes)
 	length := uint32(super.DecodeUint(it.Next()))
 	arrayType, ok := typ.TypeOfField("Fields")
@@ -366,8 +365,6 @@ func unmarshalRecord(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, 
 		panic("TBD")
 	}
 	elemType := arrayType.(*super.TypeArray).Type //XXX error
-	fmt.Println("ARRAY TYPE", sup.String(arrayType))
-	fmt.Println("ELEM TYPE", sup.String(elemType))
 	fit := it.Next().Iter()
 	if !it.Done() {
 		panic("TBD")
@@ -379,10 +376,8 @@ func unmarshalRecord(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, 
 		//	Name   string
 		//	Values Metadata
 		//}
-		//XXX decode Field...
 		item := field.Bytes().Iter()
 		name := super.DecodeString(item.Next())
-		fmt.Println("FIELD", name)
 		valType, ok := super.TypeUnder(field.Type()).(*super.TypeRecord).TypeOfField("Values")
 		if !ok {
 			panic("TBD")
@@ -480,8 +475,10 @@ func unmarshalUnion(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, n
 	//	Tags   Segment
 	//	Values []Metadata
 	//}
+	var u union
 	it := zcode.Iter(bytes)
-	length := uint32(super.DecodeUint(it.Next()))
+	u.count = count{uint32(super.DecodeUint(it.Next())), nullsCnt}
+	unmarshalSegment(&u.loc, it.Next())
 	arrayType, ok := typ.TypeOfField("Values")
 	if !ok {
 		panic("TBD")
@@ -491,19 +488,13 @@ func unmarshalUnion(typ *super.TypeRecord, bytes zcode.Bytes, nullsCnt uint32, n
 	if !it.Done() {
 		panic("TBD")
 	}
-	var meta []super.Value
 	for !array.Done() {
-		meta = append(meta, deunion(elemType, array.Next()))
+		u.meta = append(u.meta, deunion(elemType, array.Next()))
 	}
-	return &union{
-		count: count{length, nullsCnt},
-		meta:  meta,
-		nulls: nulls,
-	}
+	return &u
 }
 
 func unmarshalNulls(typ *super.TypeRecord, bytes zcode.Bytes) *nulls {
-	fmt.Println("NULLS", sup.String(typ))
 	valType, ok := typ.TypeOfField("Values")
 	if !ok {
 		panic("TBD")
@@ -705,7 +696,6 @@ func unmarshalSegment(dst *csup.Segment, bytes zcode.Bytes) {
 }
 
 func deunion(typ super.Type, b zcode.Bytes) super.Value {
-	fmt.Println(sup.String(super.NewValue(typ, b)))
 	if union, ok := typ.(*super.TypeUnion); ok {
 		typ, b = union.Untag(b)
 	}

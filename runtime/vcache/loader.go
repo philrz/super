@@ -13,7 +13,6 @@ import (
 	"github.com/brimdata/super/sup"
 	"github.com/brimdata/super/vector"
 	"github.com/brimdata/super/zcode"
-	"github.com/kr/pretty"
 	"github.com/ronanh/intcomp"
 	"golang.org/x/sync/errgroup"
 )
@@ -186,7 +185,6 @@ func (l *loader) loadInt(g *errgroup.Group, s *int_) {
 		}
 		vals := intcomp.UncompressInt64(byteconv.ReinterpretSlice[uint64](bytes), nil)
 		vals = extendForNulls(vals, s.nulls.flattened(), s.count)
-		pretty.Println(s)
 		s.vec = vector.NewInt(s.typ, vals, s.nulls.flattened())
 		return nil
 	})

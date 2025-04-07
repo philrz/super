@@ -8,6 +8,7 @@ import (
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/compiler"
 	"github.com/brimdata/super/compiler/dag"
+	"github.com/brimdata/super/compiler/kernel"
 	"github.com/brimdata/super/compiler/parser"
 	"github.com/brimdata/super/runtime"
 	"github.com/brimdata/super/runtime/exec"
@@ -66,14 +67,14 @@ func runCasesHelper(t *testing.T, record string, cases []testcase, expectBufferF
 			require.NoError(t, err, "filter: %q", c.filter)
 			scan, ok := seq[0].(*dag.DefaultScan)
 			require.True(t, ok)
-			filterMaker := builder.PushdownOf(scan.Filter)
-			f, err := filterMaker.AsEvaluator()
+			filterMaker := kernel.NewPushdown(builder, scan.Filter)
+			f, err := filterMaker.DataFilter()
 			assert.NoError(t, err, "filter: %q", c.filter)
 			if f != nil {
 				assert.Equal(t, c.expected, filter(expr.NewContext(), rec, f),
 					"filter: %q\nrecord: %s", c.filter, sup.FormatValue(rec))
 			}
-			bf, err := filterMaker.AsBufferFilter()
+			bf, err := filterMaker.BSUPFilter()
 			assert.NoError(t, err, "filter: %q", c.filter)
 			if bf != nil {
 				expected := expectBufferFilterFalsePositives || c.expected

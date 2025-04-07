@@ -1,8 +1,14 @@
 # Performance
 
-The tables below provide a summary of simple operations and how `super`
-performs at them relative to `zeek-cut` and `jq`. All operations were performed
-on an AWS `t3.2xlarge` VM (8 vCPUs, 32 GB memory, 30 GB gp2 SSD).
+The tables below provide a summary of `super` read/write performance in
+several of its supported data formats as well as a performance comparison to
+`jq`. The sample data is the first of the GitHub Archive JSON files that
+are also used in the `super`
+[database performance comparisons](https://superdb.org/docs/commands/super/#performance).
+The same [test queries](https://superdb.org/docs/commands/super/#the-test-queries)
+and their `jq` equivalents were also used.
+
+All operations were performed on an AWS `t3.2xlarge` VM (8 vCPUs, 32 GB memory, 30 GB gp2 SSD).
 `make perf-compare` was used to generate the results.
 
 As there are many results to sift through, here's a few key summary take-aways:

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
-	"slices"
+	"sync"
 	"sync/atomic"
 
 	"github.com/brimdata/super"
@@ -21,11 +21,16 @@ type VectorReader struct {
 	zctx *super.Context
 
 	activeReaders *atomic.Int64
-	nextObject    *atomic.Int64
-	objects       []*csup.Object
+	stream        *stream
+	metaFilters   *sync.Pool
 	projection    field.Projection
 	readerAt      io.ReaderAt
 	hasClosed     bool
+}
+
+type metafilter struct {
+	filter     expr.Evaluator
+	projection field.Projection
 }
 
 func NewVectorReader(ctx context.Context, zctx *super.Context, r io.Reader, pushdown zbuf.Pushdown) (*VectorReader, error) {
@@ -33,24 +38,30 @@ func NewVectorReader(ctx context.Context, zctx *super.Context, r io.Reader, push
 	if !ok {
 		return nil, errors.New("Super Columnar requires a seekable input")
 	}
-	objects, err := readObjects(ra)
-	if err != nil {
-		return nil, err
-	}
-	var metaFilter expr.Evaluator
-	var metaProjection field.Projection
+	var mfPool *sync.Pool
 	if pushdown != nil {
-		metaFilter, metaProjection, err = pushdown.MetaFilter()
-		if err != nil {
-			return nil, err
+		filter, _, _ := pushdown.MetaFilter()
+		if filter != nil {
+			mfPool = &sync.Pool{
+				New: func() interface{} {
+					filter, projection, err := pushdown.MetaFilter()
+					if err != nil {
+						panic(err)
+					}
+					return &metafilter{
+						filter:     filter,
+						projection: projection,
+					}
+				},
+			}
 		}
 	}
 	return &VectorReader{
 		ctx:           ctx,
 		zctx:          zctx,
 		activeReaders: &atomic.Int64{},
-		nextObject:    &atomic.Int64{},
-		objects:       filterObjects(zctx, metaFilter, objects, metaProjection),
+		stream:        &stream{r: ra},
+		metaFilters:   mfPool,
 		projection:    pushdown.Projection(),
 		readerAt:      ra,
 	}, nil
@@ -62,8 +73,8 @@ func (v *VectorReader) NewConcurrentPuller() (vector.Puller, error) {
 		ctx:           v.ctx,
 		zctx:          v.zctx,
 		activeReaders: v.activeReaders,
-		nextObject:    v.nextObject,
-		objects:       v.objects,
+		metaFilters:   v.metaFilters,
+		stream:        v.stream,
 		projection:    v.projection,
 		readerAt:      v.readerAt,
 	}, nil
@@ -77,27 +88,27 @@ func (v *VectorReader) Pull(done bool) (vector.Any, error) {
 		v.close()
 		return nil, err
 	}
-	n := int(v.nextObject.Add(1) - 1)
-	if n >= len(v.objects) {
-		return nil, v.close()
+	for {
+		o, err := v.stream.next()
+		if o == nil || err != nil {
+			return nil, err
+		}
+		// XXX using the query context for the metadata filter unnecessarily
+		// pollutes the type context.  We should use the csup local context for
+		// this filtering but this will require a little compiler refactoring to be
+		// able to build runtime expressions that use different type contexts.
+		if v.metaFilters == nil || !pruneObject(v.zctx, v.metaFilters, o.Metadata()) {
+			return vcache.NewObjectFromCSUP(o).Fetch(v.zctx, v.projection)
+		}
 	}
-	o := v.objects[n]
-	return vcache.NewObjectFromCSUP(o).Fetch(v.zctx, v.projection)
 }
 
-func filterObjects(zctx *super.Context, pruner expr.Evaluator, objects []*csup.Object, projection field.Projection) []*csup.Object {
-	if pruner == nil {
-		return objects
-	}
-	return slices.DeleteFunc(objects, func(o *csup.Object) bool {
-		return pruneObject(zctx, pruner, o.Metadata(), projection)
-	})
-}
-
-func pruneObject(zctx *super.Context, pruner expr.Evaluator, m csup.Metadata, projection field.Projection) bool {
-	vals := csup.ProjectMetadata(zctx, m, projection)
+func pruneObject(zctx *super.Context, metaFilters *sync.Pool, m csup.Metadata) bool {
+	mf := metaFilters.Get().(*metafilter)
+	defer metaFilters.Put(mf)
+	vals := csup.ProjectMetadata(zctx, m, mf.projection)
 	for _, val := range vals {
-		if pruner.Eval(nil, val).Ptr().AsBool() {
+		if mf.filter.Eval(nil, val).Ptr().AsBool() {
 			return false
 		}
 	}

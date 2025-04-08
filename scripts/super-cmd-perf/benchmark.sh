@@ -24,7 +24,7 @@ if command -v dmidecode && [ "$(sudo dmidecode --string system-uuid | cut -c1-3)
 
   # Install DuckDB
   if ! command -v duckdb > /dev/null 2>&1; then
-    curl -L -O https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-linux-amd64.zip
+    curl -L -O https://github.com/duckdb/duckdb/releases/download/v1.2.2/duckdb_cli-linux-amd64.zip
     unzip duckdb_cli-linux-amd64.zip
     sudo mv duckdb /usr/local/bin
   fi

@@ -80,9 +80,7 @@ echo "|**Tool**|**Format**|**search**|**search+**|**count**|**agg**|**union**|" 
 echo "|-|-|-|-|-|-|-|" >> "$report"
 echo "Tool,Format,search,search+,count,agg,union" > "$csv_report"
 
-# Skipping CSUP for now due to https://github.com/brimdata/super/issues/5550
-#
-for source in gha.bsup gha.parquet # gha.csup
+for source in gha.bsup gha.csup gha.parquet
 do
   echo -n "|\`super\`|\`${source/gha./}\`|" >> "$report"
   echo -n "super,${source/gha./}" >> "$csv_report"

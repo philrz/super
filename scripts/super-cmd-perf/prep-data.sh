@@ -56,11 +56,9 @@ run_cmd \
   "$rundir/super-bsup-create.out" \
   "super -o gha.bsup gharchive_gz/*.json.gz"
 
-# Skipping CSUP for now due to https://github.com/brimdata/super/issues/5550
-#
-#run_cmd \
-#  "$rundir/super-csup-create.out" \
-#  "super -f csup -o gha.csup gharchive_gz/*.json.gz"
+run_cmd \
+  "$rundir/super-csup-create.out" \
+  "super -f csup -o gha.csup gharchive_gz/*.json.gz"
 
 if [ -n "$RUNNING_ON_AWS_EC2" ]; then
   sudo mkdir -p /var/lib/clickhouse/user_files

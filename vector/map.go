@@ -7,7 +7,7 @@ import (
 
 type Map struct {
 	Typ     *super.TypeMap
-	Offsets []uint32
+	Offsets []uint32 //XXX TBD
 	Keys    Any
 	Values  Any
 	Nulls   *Bool

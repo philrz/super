@@ -6,15 +6,20 @@ import (
 )
 
 type TypeValue struct {
-	Offsets []uint32
-	Bytes   []byte
-	Nulls   *Bool
+	loader Loader
+	table  BytesTable
+	length uint32
+	Nulls  *Bool
 }
 
 var _ Any = (*TypeValue)(nil)
 
 func NewTypeValue(offs []uint32, bytes []byte, nulls *Bool) *TypeValue {
-	return &TypeValue{Offsets: offs, Bytes: bytes, Nulls: nulls}
+	return &TypeValue{table: BytesTable{offs, bytes}, length: uint32(len(offs)), Nulls: nulls}
+}
+
+func NewTypeValueLoader(loader Loader, length uint32, nulls *Bool) *TypeValue {
+	return &TypeValue{loader: loader, length: length, Nulls: nulls}
 }
 
 func NewTypeValueEmpty(length uint32, nulls *Bool) *TypeValue {
@@ -22,8 +27,8 @@ func NewTypeValueEmpty(length uint32, nulls *Bool) *TypeValue {
 }
 
 func (t *TypeValue) Append(v []byte) {
-	t.Bytes = append(t.Bytes, v...)
-	t.Offsets = append(t.Offsets, uint32(len(t.Bytes)))
+	t.table.Append(v)
+	t.length = t.table.Len()
 }
 
 func (t *TypeValue) Type() super.Type {
@@ -31,11 +36,18 @@ func (t *TypeValue) Type() super.Type {
 }
 
 func (t *TypeValue) Len() uint32 {
-	return uint32(len(t.Offsets) - 1)
+	return t.length
+}
+
+func (t *TypeValue) Table() BytesTable {
+	if t.table.offsets == nil {
+		t.table = t.loader.Load().(BytesTable)
+	}
+	return t.table
 }
 
 func (t *TypeValue) Value(slot uint32) []byte {
-	return t.Bytes[t.Offsets[slot]:t.Offsets[slot+1]]
+	return t.Table().Bytes(slot)
 }
 
 func (t *TypeValue) Serialize(b *zcode.Builder, slot uint32) {

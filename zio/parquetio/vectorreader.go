@@ -208,7 +208,7 @@ func (v *vectorBuilder) build(a arrow.Array) (vector.Any, error) {
 	case arrow.STRING:
 		arr := a.(*array.String)
 		offsets := reinterpretSlice[uint32](arr.ValueOffsets())
-		return vector.NewString(offsets, arr.ValueBytes(), makeNulls(a)), nil
+		return vector.NewString(vector.NewBytesTable(offsets, arr.ValueBytes()), makeNulls(a)), nil
 	case arrow.BINARY:
 		arr := a.(*array.Binary)
 		offsets := reinterpretSlice[uint32](arr.ValueOffsets())
@@ -352,7 +352,7 @@ func (v *vectorBuilder) build(a arrow.Array) (vector.Any, error) {
 				return nil, fmt.Errorf("string offset exceeds uint32 range")
 			}
 		}
-		return vector.NewString(offsets, arr.ValueBytes(), makeNulls(a)), nil
+		return vector.NewString(vector.NewBytesTable(offsets, arr.ValueBytes()), makeNulls(a)), nil
 
 	}
 	return nil, fmt.Errorf("unimplemented Parquet type %q", dt.Name())

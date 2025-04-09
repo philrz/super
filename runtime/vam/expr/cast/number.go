@@ -145,7 +145,7 @@ func stringToInt(vec *vector.String, typ super.Type, index []uint32) (vector.Any
 	var ints []int64
 	var errs []uint32
 	n := lengthOf(vec, index)
-	stab := vec.StringTable()
+	stab := vec.Table()
 	for i := range n {
 		idx := i
 		if index != nil {
@@ -176,7 +176,7 @@ func stringToDuration(vec *vector.String, index []uint32) (vector.Any, []uint32)
 	var nulls *vector.Bool
 	var durs []int64
 	var errs []uint32
-	stab := vec.StringTable()
+	stab := vec.Table()
 	for i := range lengthOf(vec, index) {
 		idx := i
 		if index != nil {
@@ -190,7 +190,7 @@ func stringToDuration(vec *vector.String, index []uint32) (vector.Any, []uint32)
 			durs = append(durs, 0)
 			continue
 		}
-		b := stab.GetBytes(idx)
+		b := stab.Bytes(idx)
 		d, err := nano.ParseDuration(byteconv.UnsafeString(b))
 		if err != nil {
 			f, ferr := byteconv.ParseFloat64(b)
@@ -212,7 +212,7 @@ func stringToTime(vec *vector.String, index []uint32) (vector.Any, []uint32) {
 	var nulls *vector.Bool
 	var ts []int64
 	var errs []uint32
-	stab := vec.StringTable()
+	stab := vec.Table()
 	for i := range lengthOf(vec, index) {
 		idx := i
 		if index != nil {
@@ -226,7 +226,7 @@ func stringToTime(vec *vector.String, index []uint32) (vector.Any, []uint32) {
 			ts = append(ts, 0)
 			continue
 		}
-		b := stab.GetBytes(idx)
+		b := stab.Bytes(idx)
 		if gotime, err := dateparse.ParseAny(byteconv.UnsafeString(b)); err != nil {
 			f, ferr := byteconv.ParseFloat64(b)
 			if ferr != nil {
@@ -249,7 +249,7 @@ func stringToUint(vec *vector.String, typ super.Type, index []uint32) (vector.An
 	var nulls *vector.Bool
 	var ints []uint64
 	var errs []uint32
-	stab := vec.StringTable()
+	stab := vec.Table()
 	for i := range lengthOf(vec, index) {
 		idx := i
 		if index != nil {
@@ -280,7 +280,7 @@ func stringToFloat(vec *vector.String, typ super.Type, index []uint32) (vector.A
 	var nulls *vector.Bool
 	var floats []float64
 	var errs []uint32
-	stab := vec.StringTable()
+	stab := vec.Table()
 	for i := range lengthOf(vec, index) {
 		idx := i
 		if index != nil {
@@ -294,7 +294,7 @@ func stringToFloat(vec *vector.String, typ super.Type, index []uint32) (vector.A
 			floats = append(floats, 0)
 			continue
 		}
-		v, err := byteconv.ParseFloat64(stab.GetBytes(idx))
+		v, err := byteconv.ParseFloat64(stab.Bytes(idx))
 		if err != nil {
 			errs = append(errs, i)
 			continue

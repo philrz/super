@@ -179,27 +179,27 @@ func (c *countByString) updatePartial(keyvec, valvec vector.Any) {
 }
 
 func (c *countByString) count(vec *vector.String) {
-	stab := vec.StringTable()
+	stab := vec.Table()
 	if vec.Nulls == nil {
 		for k := range vec.Len() {
-			c.table[stab.Value(k)]++
+			c.table[stab.String(k)]++
 		}
 	} else {
 		for k := range vec.Len() {
 			if vec.Nulls.Value(k) {
 				c.nulls++
 			} else {
-				c.table[stab.Value(k)]++
+				c.table[stab.String(k)]++
 			}
 		}
 	}
 }
 
 func (c *countByString) countDict(vec *vector.String, counts []uint32, nulls *vector.Bool) {
-	stab := vec.StringTable()
+	stab := vec.Table()
 	for k := range vec.Len() {
 		if counts[k] > 0 {
-			c.table[stab.Value(k)] += uint64(counts[k])
+			c.table[stab.String(k)] += uint64(counts[k])
 		}
 	}
 	if nulls != nil {
@@ -268,7 +268,7 @@ func (c *countByString) materialize() vector.Any {
 		nulls = vector.NewBoolEmpty(uint32(length), nil)
 		nulls.Set(uint32(length - 1))
 	}
-	keyVec := vector.NewString(offs, bytes, nulls)
+	keyVec := vector.NewString(vector.NewBytesTable(offs, bytes), nulls)
 	countVec := vector.NewUint(super.TypeUint64, counts, nil)
 	return c.builder.New([]vector.Any{keyVec, countVec}, nil)
 }

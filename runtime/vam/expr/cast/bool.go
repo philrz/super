@@ -53,7 +53,7 @@ func stringToBool(vec *vector.String, index []uint32) (vector.Any, []uint32) {
 	}
 	var errs []uint32
 	var boollen uint32
-	stab := vec.StringTable()
+	stab := vec.Table()
 	for i := range n {
 		idx := i
 		if index != nil {
@@ -64,7 +64,7 @@ func stringToBool(vec *vector.String, index []uint32) (vector.Any, []uint32) {
 			boollen++
 			continue
 		}
-		b, err := byteconv.ParseBool(stab.GetBytes(idx))
+		b, err := byteconv.ParseBool(stab.Bytes(idx))
 		if err != nil {
 			errs = append(errs, i)
 			continue

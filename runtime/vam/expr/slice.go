@@ -227,7 +227,7 @@ func (s *sliceExpr) bytesOrStringVec(typ super.Type, offsets []uint32, bytes []b
 	case super.IDBytes:
 		return vector.NewBytes(offsets, bytes, nulls)
 	case super.IDString:
-		return vector.NewString(offsets, bytes, nulls)
+		return vector.NewString(vector.NewBytesTable(offsets, bytes), nulls)
 	default:
 		panic(typ)
 	}
@@ -239,7 +239,7 @@ func (s *sliceExpr) bytesAt(val vector.Any, slot uint32) ([]byte, bool) {
 		if val.Nulls.Value(slot) {
 			return nil, true
 		}
-		return val.StringTable().GetBytes(slot), false
+		return val.Table().Bytes(slot), false
 	case *vector.Bytes:
 		if val.Nulls.Value(slot) {
 			return nil, true
@@ -301,8 +301,8 @@ func sliceBytesOrString(slice []byte, id int, start, end int) []byte {
 func stringOrBytesContents(vec vector.Any) ([]uint32, []byte, *vector.Bool) {
 	switch vec := vec.(type) {
 	case *vector.String:
-		stab := vec.StringTable()
-		return stab.Offsets, stab.Bytes, vec.Nulls
+		offsets, bytes := vec.Table().Slices()
+		return offsets, bytes, vec.Nulls
 	case *vector.Bytes:
 		return vec.Offs, vec.Bytes, vec.Nulls
 	default:

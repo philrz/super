@@ -2,7 +2,6 @@ package vector
 
 import (
 	"github.com/brimdata/super"
-	"github.com/brimdata/super/pkg/byteconv"
 	"github.com/brimdata/super/zcode"
 )
 
@@ -78,45 +77,4 @@ func StringValue(val Any, slot uint32) (string, bool) {
 		return StringValue(val.Any, val.Index[slot])
 	}
 	panic(val)
-}
-
-type BytesTable struct {
-	offsets []uint32
-	bytes   []byte
-}
-
-func NewBytesTable(offsets []uint32, bytes []byte) BytesTable {
-	return BytesTable{offsets, bytes}
-}
-
-func NewBytesTableEmpty(cap uint32) BytesTable {
-	return BytesTable{make([]uint32, 1, cap+1), nil}
-}
-
-func (b BytesTable) Bytes(slot uint32) []byte {
-	return b.bytes[b.offsets[slot]:b.offsets[slot+1]]
-}
-
-func (b BytesTable) String(slot uint32) string {
-	return string(b.bytes[b.offsets[slot]:b.offsets[slot+1]])
-}
-
-func (b BytesTable) UnsafeString(slot uint32) string {
-	return byteconv.UnsafeString(b.bytes[b.offsets[slot]:b.offsets[slot+1]])
-}
-
-func (b BytesTable) Slices() ([]uint32, []byte) {
-	return b.offsets, b.bytes
-}
-
-func (b *BytesTable) Append(bytes []byte) {
-	b.bytes = append(b.bytes, bytes...)
-	b.offsets = append(b.offsets, uint32(len(b.bytes)))
-}
-
-func (b *BytesTable) Len() uint32 {
-	if b.offsets == nil {
-		return 0
-	}
-	return uint32(len(b.offsets) - 1)
 }

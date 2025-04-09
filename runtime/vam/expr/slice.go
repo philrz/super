@@ -225,7 +225,7 @@ func (s *sliceExpr) evalStringOrBytesFast(vec vector.Any, from, to int) (vector.
 func (s *sliceExpr) bytesOrStringVec(typ super.Type, offsets []uint32, bytes []byte, nulls *vector.Bool) vector.Any {
 	switch typ.ID() {
 	case super.IDBytes:
-		return vector.NewBytes(offsets, bytes, nulls)
+		return vector.NewBytes(vector.NewBytesTable(offsets, bytes), nulls)
 	case super.IDString:
 		return vector.NewString(vector.NewBytesTable(offsets, bytes), nulls)
 	default:
@@ -304,7 +304,8 @@ func stringOrBytesContents(vec vector.Any) ([]uint32, []byte, *vector.Bool) {
 		offsets, bytes := vec.Table().Slices()
 		return offsets, bytes, vec.Nulls
 	case *vector.Bytes:
-		return vec.Offs, vec.Bytes, vec.Nulls
+		offsets, bytes := vec.Table().Slices()
+		return offsets, bytes, vec.Nulls
 	default:
 		panic(vec)
 	}

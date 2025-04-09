@@ -302,7 +302,7 @@ func (l *loader) loadVals(typ super.Type, s *primitive, nulls *vector.Bool) (vec
 			}
 		}
 		offs[length] = off
-		return vector.NewBytes(offs, bytes, nulls), nil
+		return vector.NewBytes(vector.NewBytesTable(offs, bytes), nulls), nil
 	case *super.TypeOfString:
 		var bytes []byte
 		offs := make([]uint32, length+1)
@@ -407,7 +407,7 @@ func empty(typ super.Type, length uint32, nulls *vector.Bool) vector.Any {
 	case *super.TypeOfBool:
 		return vector.NewBool(make([]uint64, (length+63)/64), length, nulls)
 	case *super.TypeOfBytes:
-		return vector.NewBytes(make([]uint32, length+1), nil, nulls)
+		return vector.NewBytes(vector.NewBytesTableEmpty(length), nulls)
 	case *super.TypeOfString:
 		return vector.NewString(vector.NewBytesTableEmpty(length), nulls)
 	case *super.TypeOfIP:

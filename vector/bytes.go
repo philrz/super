@@ -2,28 +2,30 @@ package vector
 
 import (
 	"github.com/brimdata/super"
+	"github.com/brimdata/super/pkg/byteconv"
 	"github.com/brimdata/super/zcode"
 )
 
 type Bytes struct {
-	Offs  []uint32
-	Bytes []byte
-	Nulls *Bool
+	loader Loader
+	table  BytesTable
+	length uint32
+	Nulls  *Bool
 }
 
 var _ Any = (*Bytes)(nil)
 
-func NewBytes(offs []uint32, bytes []byte, nulls *Bool) *Bytes {
-	return &Bytes{Offs: offs, Bytes: bytes, Nulls: nulls}
+func NewBytes(table BytesTable, nulls *Bool) *Bytes {
+	return &Bytes{table: table, length: table.Len(), Nulls: nulls}
 }
 
-func NewBytesEmpty(length uint32, nulls *Bool) *Bytes {
-	return NewBytes(make([]uint32, 1, length+1), nil, nulls)
+func NewBytesEmpty(cap uint32, nulls *Bool) *Bytes {
+	return NewBytes(NewBytesTableEmpty(cap), nulls)
 }
 
 func (b *Bytes) Append(v []byte) {
-	b.Bytes = append(b.Bytes, v...)
-	b.Offs = append(b.Offs, uint32(len(b.Bytes)))
+	b.table.Append(v)
+	b.length = b.table.Len()
 }
 
 func (b *Bytes) Type() super.Type {
@@ -31,18 +33,25 @@ func (b *Bytes) Type() super.Type {
 }
 
 func (b *Bytes) Len() uint32 {
-	return uint32(len(b.Offs) - 1)
+	return b.length
 }
 
 func (b *Bytes) Serialize(builder *zcode.Builder, slot uint32) {
 	builder.Append(b.Value(slot))
 }
 
+func (b *Bytes) Table() BytesTable {
+	if b.table.offsets == nil {
+		b.table = b.loader.Load().(BytesTable)
+	}
+	return b.table
+}
+
 func (b *Bytes) Value(slot uint32) []byte {
 	if b.Nulls.Value(slot) {
 		return nil
 	}
-	return b.Bytes[b.Offs[slot]:b.Offs[slot+1]]
+	return b.Table().Bytes(slot)
 }
 
 func BytesValue(val Any, slot uint32) ([]byte, bool) {
@@ -66,4 +75,45 @@ func BytesValue(val Any, slot uint32) ([]byte, bool) {
 		return BytesValue(val.Any, slot)
 	}
 	panic(val)
+}
+
+type BytesTable struct {
+	offsets []uint32
+	bytes   []byte
+}
+
+func NewBytesTable(offsets []uint32, bytes []byte) BytesTable {
+	return BytesTable{offsets, bytes}
+}
+
+func NewBytesTableEmpty(cap uint32) BytesTable {
+	return BytesTable{make([]uint32, 1, cap+1), nil}
+}
+
+func (b BytesTable) Bytes(slot uint32) []byte {
+	return b.bytes[b.offsets[slot]:b.offsets[slot+1]]
+}
+
+func (b BytesTable) String(slot uint32) string {
+	return string(b.bytes[b.offsets[slot]:b.offsets[slot+1]])
+}
+
+func (b BytesTable) UnsafeString(slot uint32) string {
+	return byteconv.UnsafeString(b.bytes[b.offsets[slot]:b.offsets[slot+1]])
+}
+
+func (b BytesTable) Slices() ([]uint32, []byte) {
+	return b.offsets, b.bytes
+}
+
+func (b *BytesTable) Append(bytes []byte) {
+	b.bytes = append(b.bytes, bytes...)
+	b.offsets = append(b.offsets, uint32(len(b.bytes)))
+}
+
+func (b *BytesTable) Len() uint32 {
+	if b.offsets == nil {
+		return 0
+	}
+	return uint32(len(b.offsets) - 1)
 }

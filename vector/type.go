@@ -27,7 +27,7 @@ func NewTypeValueEmpty(cap uint32, nulls *Bool) *TypeValue {
 }
 
 func (t *TypeValue) Append(v []byte) {
-	t.table.Append(v)
+	t.table.append_(v)
 	t.length = t.table.Len()
 }
 

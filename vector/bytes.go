@@ -24,7 +24,7 @@ func NewBytesEmpty(cap uint32, nulls *Bool) *Bytes {
 }
 
 func (b *Bytes) Append(v []byte) {
-	b.table.Append(v)
+	b.table.append_(v)
 	b.length = b.table.Len()
 }
 
@@ -106,7 +106,7 @@ func (b BytesTable) Slices() ([]uint32, []byte) {
 	return b.offsets, b.bytes
 }
 
-func (b *BytesTable) Append(bytes []byte) {
+func (b *BytesTable) append_(bytes []byte) {
 	b.bytes = append(b.bytes, bytes...)
 	b.offsets = append(b.offsets, uint32(len(b.bytes)))
 }

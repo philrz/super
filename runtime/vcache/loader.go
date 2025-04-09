@@ -407,15 +407,15 @@ func empty(typ super.Type, length uint32, nulls *vector.Bool) vector.Any {
 	case *super.TypeOfBool:
 		return vector.NewBool(make([]uint64, (length+63)/64), length, nulls)
 	case *super.TypeOfBytes:
-		return vector.NewBytes(vector.NewBytesTableEmpty(length), nulls)
+		return vector.NewBytes(vector.NewBytesTable(make([]uint32, length+1), nil), nulls)
 	case *super.TypeOfString:
-		return vector.NewString(vector.NewBytesTableEmpty(length), nulls)
+		return vector.NewString(vector.NewBytesTable(make([]uint32, length+1), nil), nulls)
 	case *super.TypeOfIP:
 		return vector.NewIP(make([]netip.Addr, length), nulls)
 	case *super.TypeOfNet:
 		return vector.NewNet(make([]netip.Prefix, length), nulls)
 	case *super.TypeOfType:
-		return vector.NewTypeValue(vector.NewBytesTableEmpty(length), nulls)
+		return vector.NewTypeValue(vector.NewBytesTable(make([]uint32, length+1), nil), nulls)
 	case *super.TypeOfNull:
 		return vector.NewConst(super.Null, length, nil)
 	default:

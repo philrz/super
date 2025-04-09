@@ -73,12 +73,13 @@ func castToString(vec vector.Any, index []uint32) (vector.Any, []uint32, bool) {
 			offs = append(offs, uint32(len(bytes)))
 		}
 	case *vector.IP:
+		vals := vec.Values()
 		for i := range n {
 			idx := i
 			if index != nil {
 				idx = index[i]
 			}
-			bytes = append(bytes, vec.Values[idx].String()...)
+			bytes = append(bytes, vals[idx].String()...)
 			offs = append(offs, uint32(len(bytes)))
 		}
 	case *vector.Net:

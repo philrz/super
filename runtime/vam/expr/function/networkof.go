@@ -65,12 +65,13 @@ func (n *NetworkOf) singleIP(vec vector.Any) vector.Any {
 func (n *NetworkOf) singleIPLoop(vec *vector.IP, index []uint32) (*vector.Net, []uint32) {
 	var nets []netip.Prefix
 	var errs []uint32
+	vals := vec.Values()
 	for i := range vec.Len() {
 		idx := i
 		if index != nil {
 			idx = index[i]
 		}
-		ip := vec.Values[idx]
+		ip := vals[idx]
 		if !ip.Is4() {
 			errs = append(errs, i)
 			continue
@@ -182,12 +183,13 @@ func (n *NetworkOf) intMaskFast(vec vector.Any, bits int) (vector.Any, []uint32)
 func (n *NetworkOf) intMaskFastLoop(vec *vector.IP, index []uint32, bits int) (vector.Any, []uint32) {
 	var errs []uint32
 	var nets []netip.Prefix
+	vals := vec.Values()
 	for i := range vec.Len() {
 		idx := i
 		if index != nil {
 			idx = index[i]
 		}
-		ip := vec.Values[idx]
+		ip := vals[idx]
 		net := netip.PrefixFrom(ip, bits)
 		if net.Bits() < 0 {
 			errs = append(errs, i)

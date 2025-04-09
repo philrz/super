@@ -17,8 +17,7 @@ var _ Any = (*Int)(nil)
 var _ Promotable = (*Int)(nil)
 
 func NewInt(typ super.Type, values []int64, nulls *Bool) *Int {
-	length := uint32(len(values))
-	return &Int{Typ: typ, values: values, length: length, Nulls: nulls}
+	return &Int{Typ: typ, values: values, length: uint32(len(values)), Nulls: nulls}
 }
 
 func NewIntLoader(typ super.Type, loader Loader, length uint32, nulls *Bool) *Int {
@@ -32,6 +31,7 @@ func NewIntEmpty(typ super.Type, length uint32, nulls *Bool) *Int {
 
 func (i *Int) Append(v int64) {
 	i.values = append(i.values, v)
+	i.length++
 }
 
 func (i *Int) Type() super.Type {
@@ -45,6 +45,9 @@ func (i *Int) Len() uint32 {
 func (i *Int) Values() []int64 {
 	if i.values == nil {
 		i.values = i.loader.Load().([]int64)
+		if uint32(len(i.values)) != i.length {
+			panic("vector.Int bad length")
+		}
 	}
 	return i.values
 }

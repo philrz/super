@@ -16,6 +16,10 @@ type Promotable interface {
 	Promote(super.Type) Promotable
 }
 
+type Loader interface {
+	Load() any
+}
+
 type Puller interface {
 	Pull(done bool) (Any, error)
 }

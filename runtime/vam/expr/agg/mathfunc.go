@@ -62,7 +62,7 @@ func sumFlat[T numeric](state T, vec vector.Any, index []uint32, counts []uint32
 	case *vector.Uint:
 		return sumOf(state, vec.Values, index, counts)
 	case *vector.Int:
-		return sumOf(state, vec.Values, index, counts)
+		return sumOf(state, vec.Values(), index, counts)
 	case *vector.Float:
 		return sumOf(state, vec.Values, index, counts)
 	default:
@@ -110,7 +110,7 @@ func minFlat[T numeric](state T, vec vector.Any, index []uint32) T {
 	case *vector.Uint:
 		return minOf(state, vec.Values, index)
 	case *vector.Int:
-		return minOf(state, vec.Values, index)
+		return minOf(state, vec.Values(), index)
 	case *vector.Float:
 		return minOf(state, vec.Values, index)
 	default:
@@ -156,7 +156,7 @@ func maxFlat[T numeric](state T, vec vector.Any, index []uint32) T {
 	case *vector.Uint:
 		return maxOf(state, vec.Values, index)
 	case *vector.Int:
-		return maxOf(state, vec.Values, index)
+		return maxOf(state, vec.Values(), index)
 	case *vector.Float:
 		return maxOf(state, vec.Values, index)
 	default:

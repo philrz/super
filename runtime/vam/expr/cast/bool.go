@@ -9,7 +9,7 @@ func castToBool(vec vector.Any, index []uint32) (vector.Any, []uint32, bool) {
 	var out *vector.Bool
 	switch vec := vec.(type) {
 	case *vector.Int:
-		out = numberToBool(vec.Values, index)
+		out = numberToBool(vec.Values(), index)
 	case *vector.Uint:
 		out = numberToBool(vec.Values, index)
 	case *vector.Float:

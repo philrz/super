@@ -14,8 +14,9 @@ func date_time_dayofweek(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
+		vals := inner.Values()
 		for i, idx := range index {
-			v := inner.Values[idx]
+			v := vals[idx]
 			out[i] = int64(nano.Ts(v).Time().Weekday())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
@@ -24,7 +25,7 @@ func date_time_dayofweek(vec vector.Any) vector.Any {
 		return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		out := make([]int64, vec.Len())
-		for i, v := range vec.Values {
+		for i, v := range vec.Values() {
 			out[i] = int64(nano.Ts(v).Time().Weekday())
 		}
 		return vector.NewInt(super.TypeInt64, out, vec.Nulls)
@@ -39,9 +40,9 @@ func date_time_day(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
+		vals := inner.Values()
 		for i, idx := range index {
-			v := inner.Values[idx]
-			out[i] = int64(nano.Ts(v).Time().Day())
+			out[i] = int64(nano.Ts(vals[idx]).Time().Day())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
 	case *vector.Dict:
@@ -49,7 +50,7 @@ func date_time_day(vec vector.Any) vector.Any {
 		return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		out := make([]int64, vec.Len())
-		for i, v := range vec.Values {
+		for i, v := range vec.Values() {
 			out[i] = int64(nano.Ts(v).Time().Day())
 		}
 		return vector.NewInt(super.TypeInt64, out, vec.Nulls)
@@ -64,8 +65,9 @@ func date_time_dow(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
+		vals := inner.Values()
 		for i, idx := range index {
-			v := inner.Values[idx]
+			v := vals[idx]
 			out[i] = int64(nano.Ts(v).Time().Weekday())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
@@ -74,7 +76,7 @@ func date_time_dow(vec vector.Any) vector.Any {
 		return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		out := make([]int64, vec.Len())
-		for i, v := range vec.Values {
+		for i, v := range vec.Values() {
 			out[i] = int64(nano.Ts(v).Time().Weekday())
 		}
 		return vector.NewInt(super.TypeInt64, out, vec.Nulls)
@@ -89,9 +91,9 @@ func date_time_hour(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
+		vals := inner.Values()
 		for i, idx := range index {
-			v := inner.Values[idx]
-			out[i] = int64(nano.Ts(v).Time().Hour())
+			out[i] = int64(nano.Ts(vals[idx]).Time().Hour())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
 	case *vector.Dict:
@@ -99,7 +101,7 @@ func date_time_hour(vec vector.Any) vector.Any {
 		return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		out := make([]int64, vec.Len())
-		for i, v := range vec.Values {
+		for i, v := range vec.Values() {
 			out[i] = int64(nano.Ts(v).Time().Hour())
 		}
 		return vector.NewInt(super.TypeInt64, out, vec.Nulls)
@@ -114,8 +116,9 @@ func date_time_microseconds(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
+		vals :=inner.Values()
 		for i, idx := range index {
-			v := inner.Values[idx]
+			v := vals[idx]
 			out[i] = int64(nano.Ts(v).Time().Second()*1e6 + nano.Ts(v).Time().Nanosecond()/1e3)
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
@@ -124,7 +127,7 @@ func date_time_microseconds(vec vector.Any) vector.Any {
 		return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		out := make([]int64, vec.Len())
-		for i, v := range vec.Values {
+		for i, v := range vec.Values() {
 			out[i] = int64(nano.Ts(v).Time().Second()*1e6 + nano.Ts(v).Time().Nanosecond()/1e3)
 		}
 		return vector.NewInt(super.TypeInt64, out, vec.Nulls)
@@ -139,8 +142,9 @@ func date_time_milliseconds(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
+		vals := inner.Values()
 		for i, idx := range index {
-			v := inner.Values[idx]
+			v := vals[idx]
 			out[i] = int64(nano.Ts(v).Time().Second()*1e3 + nano.Ts(v).Time().Nanosecond()/1e6)
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
@@ -149,7 +153,7 @@ func date_time_milliseconds(vec vector.Any) vector.Any {
 		return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		out := make([]int64, vec.Len())
-		for i, v := range vec.Values {
+		for i, v := range vec.Values() {
 			out[i] = int64(nano.Ts(v).Time().Second()*1e3 + nano.Ts(v).Time().Nanosecond()/1e6)
 		}
 		return vector.NewInt(super.TypeInt64, out, vec.Nulls)
@@ -164,9 +168,9 @@ func date_time_minute(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
+		vals := inner.Values()
 		for i, idx := range index {
-			v := inner.Values[idx]
-			out[i] = int64(nano.Ts(v).Time().Minute())
+			out[i] = int64(nano.Ts(vals[idx]).Time().Minute())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
 	case *vector.Dict:
@@ -174,7 +178,7 @@ func date_time_minute(vec vector.Any) vector.Any {
 		return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		out := make([]int64, vec.Len())
-		for i, v := range vec.Values {
+		for i, v := range vec.Values() {
 			out[i] = int64(nano.Ts(v).Time().Minute())
 		}
 		return vector.NewInt(super.TypeInt64, out, vec.Nulls)
@@ -189,9 +193,9 @@ func date_time_month(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
+		vals := inner.Values()
 		for i, idx := range index {
-			v := inner.Values[idx]
-			out[i] = int64(nano.Ts(v).Time().Month())
+			out[i] = int64(nano.Ts(vals[idx]).Time().Month())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
 	case *vector.Dict:
@@ -199,7 +203,7 @@ func date_time_month(vec vector.Any) vector.Any {
 		return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		out := make([]int64, vec.Len())
-		for i, v := range vec.Values {
+		for i, v := range vec.Values() {
 			out[i] = int64(nano.Ts(v).Time().Month())
 		}
 		return vector.NewInt(super.TypeInt64, out, vec.Nulls)
@@ -214,8 +218,9 @@ func date_time_second(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
+		vals := inner.Values()
 		for i, idx := range index {
-			v := inner.Values[idx]
+			v := vals[idx]
 			out[i] = int64(nano.Ts(v).Time().Second())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
@@ -224,7 +229,7 @@ func date_time_second(vec vector.Any) vector.Any {
 		return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		out := make([]int64, vec.Len())
-		for i, v := range vec.Values {
+		for i, v := range vec.Values() {
 			out[i] = int64(nano.Ts(v).Time().Second())
 		}
 		return vector.NewInt(super.TypeInt64, out, vec.Nulls)
@@ -239,9 +244,9 @@ func date_time_year(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
+		vals := inner.Values()
 		for i, idx := range index {
-			v := inner.Values[idx]
-			out[i] = int64(nano.Ts(v).Time().Year())
+			out[i] = int64(nano.Ts(vals[idx]).Time().Year())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
 	case *vector.Dict:
@@ -249,7 +254,7 @@ func date_time_year(vec vector.Any) vector.Any {
 		return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		out := make([]int64, vec.Len())
-		for i, v := range vec.Values {
+		for i, v := range vec.Values() {
 			out[i] = int64(nano.Ts(v).Time().Year())
 		}
 		return vector.NewInt(super.TypeInt64, out, vec.Nulls)

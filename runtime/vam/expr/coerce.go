@@ -222,7 +222,7 @@ func ToBool(val super.Value) (bool, bool) {
 func intToFloat(val vector.Any) vector.Any {
 	switch val := val.(type) {
 	case *vector.Int:
-		vals := val.Values
+		vals := val.Values()
 		n := int(val.Len())
 		f := make([]float64, n)
 		for k := 0; k < n; k++ {

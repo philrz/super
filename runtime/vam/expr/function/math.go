@@ -44,7 +44,7 @@ func (a *Abs) abs(vec vector.Any) vector.Any {
 		return vector.NewDict(a.abs(vec.Any), vec.Index, vec.Counts, vec.Nulls)
 	case *vector.Int:
 		var ints []int64
-		for _, v := range vec.Values {
+		for _, v := range vec.Values() {
 			if v < 0 {
 				v = -v
 			}

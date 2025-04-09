@@ -67,9 +67,9 @@ func toNumeric[T numeric](vec vector.Any, typ super.Type, index []uint32) ([]T, 
 		return castNumbers[uint64, T](vec.Values, index), nil
 	case *vector.Int:
 		if min, max, check := coerce.FromIntOverflowCheck(vec.Type(), typ); check {
-			return checkAndCastNumbers[int64, T](vec.Values, min, max, index)
+			return checkAndCastNumbers[int64, T](vec.Values(), min, max, index)
 		}
-		return castNumbers[int64, T](vec.Values, index), nil
+		return castNumbers[int64, T](vec.Values(), index), nil
 	case *vector.Float:
 		if min, max, check := coerce.FromFloatOverflowCheck(vec.Type(), typ); check {
 			return checkAndCastNumbers[float64, T](vec.Values, min, max, index)

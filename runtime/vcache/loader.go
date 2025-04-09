@@ -346,7 +346,7 @@ func (l *loader) loadVals(typ super.Type, s *primitive, nulls *vector.Bool) (vec
 			}
 		}
 		offs[length] = off
-		return vector.NewTypeValue(offs, bytes, nulls), nil
+		return vector.NewTypeValue(vector.NewBytesTable(offs, bytes), nulls), nil
 	case *super.TypeEnum:
 		values := make([]uint64, length)
 		for slot := range length {
@@ -415,7 +415,7 @@ func empty(typ super.Type, length uint32, nulls *vector.Bool) vector.Any {
 	case *super.TypeOfNet:
 		return vector.NewNet(make([]netip.Prefix, length), nulls)
 	case *super.TypeOfType:
-		return vector.NewTypeValue(make([]uint32, length+1), nil, nulls)
+		return vector.NewTypeValue(vector.NewBytesTableEmpty(length), nulls)
 	case *super.TypeOfNull:
 		return vector.NewConst(super.Null, length, nil)
 	default:

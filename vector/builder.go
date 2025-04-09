@@ -371,7 +371,7 @@ func (b *bytesStringTypeBuilder) Build() Any {
 	case super.IDBytes:
 		return NewBytes(NewBytesTable(b.offs, b.bytes), nil)
 	default:
-		return NewTypeValue(b.offs, b.bytes, nil)
+		return NewTypeValue(NewBytesTable(b.offs, b.bytes), nil)
 	}
 }
 

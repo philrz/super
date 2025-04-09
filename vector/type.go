@@ -14,16 +14,16 @@ type TypeValue struct {
 
 var _ Any = (*TypeValue)(nil)
 
-func NewTypeValue(offs []uint32, bytes []byte, nulls *Bool) *TypeValue {
-	return &TypeValue{table: BytesTable{offs, bytes}, length: uint32(len(offs)), Nulls: nulls}
+func NewTypeValue(table BytesTable, nulls *Bool) *TypeValue {
+	return &TypeValue{table: table, length: table.Len(), Nulls: nulls}
 }
 
 func NewTypeValueLoader(loader Loader, length uint32, nulls *Bool) *TypeValue {
 	return &TypeValue{loader: loader, length: length, Nulls: nulls}
 }
 
-func NewTypeValueEmpty(length uint32, nulls *Bool) *TypeValue {
-	return NewTypeValue(make([]uint32, 1, length+1), nil, nulls)
+func NewTypeValueEmpty(cap uint32, nulls *Bool) *TypeValue {
+	return NewTypeValue(NewBytesTableEmpty(cap), nulls)
 }
 
 func (t *TypeValue) Append(v []byte) {

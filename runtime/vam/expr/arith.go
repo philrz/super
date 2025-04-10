@@ -91,7 +91,7 @@ func (a *Arith) evalDivideByZero(kind vector.Kind, lhs, rhs vector.Any) vector.A
 	switch kind {
 	case vector.KindInt:
 		var ints []int64
-		nulls := vector.NewBoolEmpty(lhs.Len(), nil)
+		nulls := vector.NewFalse2(lhs.Len())
 		for i := range lhs.Len() {
 			l, lnull := vector.IntValue(lhs, i)
 			r, rnull := vector.IntValue(rhs, i)
@@ -113,7 +113,7 @@ func (a *Arith) evalDivideByZero(kind vector.Kind, lhs, rhs vector.Any) vector.A
 		out = vector.NewInt(super.TypeInt64, ints, nulls)
 	case vector.KindUint:
 		var uints []uint64
-		nulls := vector.NewBoolEmpty(lhs.Len(), nil)
+		nulls := vector.NewFalse2(lhs.Len())
 		for i := range lhs.Len() {
 			l, lnull := vector.UintValue(lhs, i)
 			r, rnull := vector.UintValue(rhs, i)

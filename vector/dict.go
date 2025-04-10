@@ -45,7 +45,7 @@ func (d *Dict) RebuildDropTags(tags ...uint32) ([]byte, []uint32, *Bool, []uint3
 	}
 	var nulls *Bool
 	if d.Nulls != nil {
-		nulls = NewBoolEmpty(d.Len(), nil)
+		nulls = NewFalse2(d.Len())
 	}
 	counts := make([]uint32, int(d.Any.Len())-len(tags))
 	var index []byte

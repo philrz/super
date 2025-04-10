@@ -83,7 +83,7 @@ func (s *sliceExpr) evalArrayOrSlice(vec, fromVec, toVec vector.Any) vector.Any 
 		if nullsIn.Value(idx) {
 			newOffsets = append(newOffsets, newOffsets[len(newOffsets)-1])
 			if nullsOut == nil {
-				nullsOut = vector.NewBoolEmpty(vec.Len(), nil)
+				nullsOut = vector.NewFalse2(vec.Len())
 			}
 			nullsOut.Set(i)
 			continue
@@ -142,7 +142,7 @@ func (s *sliceExpr) evalStringOrBytes(vec, fromVec, toVec vector.Any) vector.Any
 		if isnull {
 			newOffsets = append(newOffsets, newOffsets[len(newOffsets)-1])
 			if nullsOut == nil {
-				nullsOut = vector.NewBoolEmpty(vec.Len(), nil)
+				nullsOut = vector.NewFalse2(vec.Len())
 			}
 			nullsOut.Set(i)
 			continue

@@ -19,7 +19,7 @@ func (c *Coalesce) Call(vecs ...vector.Any) vector.Any {
 	args := underAll(vecs)
 	c.tags = make([]uint32, args[0].Len())
 	c.viewIndexes = make([][]uint32, len(args))
-	c.setslots = vector.NewBoolEmpty(args[0].Len(), nil)
+	c.setslots = vector.NewFalse2(args[0].Len())
 	c.setcnt = 0
 	size := args[0].Len()
 	for i, arg := range args {

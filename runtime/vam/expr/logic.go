@@ -25,11 +25,7 @@ func (n *Not) Eval(val vector.Any) vector.Any {
 func (n *Not) eval(vecs ...vector.Any) vector.Any {
 	switch vec := vecs[0].(type) {
 	case *vector.Bool:
-		bits := make([]uint64, len(vec.Bits))
-		for k := range bits {
-			bits[k] = ^vec.Bits[k]
-		}
-		return vec.CopyWithBits(bits)
+		return vector.Not(vec)
 	case *vector.Const:
 		return vector.NewConst(super.NewBool(!vec.Value().Bool()), vec.Len(), vec.Nulls)
 	case *vector.Error:
@@ -173,14 +169,14 @@ func toBool(vec vector.Any) *vector.Bool {
 	case *vector.Const:
 		val := vec.Value()
 		if val.Bool() {
-			out := trueBool(vec.Len())
+			out := vector.NewTrue(vec.Len())
 			out.Nulls = vec.Nulls
 			return out
 		} else {
 			return vector.NewBoolEmpty(vec.Len(), vec.Nulls)
 		}
 	case *vector.Dynamic:
-		nulls := vector.NewBoolEmpty(vec.Len(), nil)
+		nulls := vector.NewFalse2(vec.Len())
 		out := vector.NewBoolEmpty(vec.Len(), nulls)
 		for i := range vec.Len() {
 			v, null := vector.BoolValue(vec, i)
@@ -196,14 +192,6 @@ func toBool(vec vector.Any) *vector.Bool {
 	default:
 		panic(vec)
 	}
-}
-
-func trueBool(n uint32) *vector.Bool {
-	vec := vector.NewBoolEmpty(n, nil)
-	for i := range vec.Bits {
-		vec.Bits[i] = ^uint64(0)
-	}
-	return vec
 }
 
 type In struct {
@@ -251,7 +239,7 @@ func (p *PredicateWalk) Eval(vecs ...vector.Any) vector.Any {
 	}
 	switch rhs := rhs.(type) {
 	case *vector.Record:
-		out := vector.NewBoolEmpty(lhs.Len(), nil)
+		out := vector.NewFalse2(lhs.Len())
 		for _, f := range rhs.Fields {
 			if index != nil {
 				f = vector.NewView(f, index)
@@ -282,7 +270,7 @@ func (p *PredicateWalk) Eval(vecs ...vector.Any) vector.Any {
 }
 
 func (p *PredicateWalk) evalForList(lhs, rhs vector.Any, offsets, index []uint32) *vector.Bool {
-	out := vector.NewBoolEmpty(lhs.Len(), nil)
+	out := vector.NewFalse2(lhs.Len())
 	var lhsIndex, rhsIndex []uint32
 	for j := range lhs.Len() {
 		idx := j

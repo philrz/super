@@ -32,7 +32,7 @@ func numberToBool[E numeric](s []E, index []uint32) *vector.Bool {
 	if index != nil {
 		n = uint32(len(index))
 	}
-	out := vector.NewBoolEmpty(n, nil)
+	out := vector.NewFalse2(n)
 	for i := range uint32(len(s)) {
 		idx := i
 		if index != nil {
@@ -47,9 +47,9 @@ func numberToBool[E numeric](s []E, index []uint32) *vector.Bool {
 
 func stringToBool(vec *vector.String, index []uint32) (vector.Any, []uint32) {
 	n := lengthOf(vec, index)
-	bools := vector.NewBoolEmpty(n, nil)
+	bools := vector.NewFalse2(n)
 	if vec.Nulls != nil {
-		bools.Nulls = vector.NewBoolEmpty(n, nil)
+		bools.Nulls = vector.NewFalse2(n)
 	}
 	var errs []uint32
 	var boollen uint32

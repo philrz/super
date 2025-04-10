@@ -24,7 +24,7 @@ func castToIP(vec vector.Any, index []uint32) (vector.Any, []uint32, bool) {
 			}
 			if vec.Nulls.Value(idx) {
 				if nulls == nil {
-					nulls = vector.NewBoolEmpty(n, nil)
+					nulls = vector.NewFalse2(n)
 				}
 				nulls.Set(i)
 				ips = append(ips, netip.Addr{})
@@ -59,7 +59,7 @@ func castToNet(vec vector.Any, index []uint32) (vector.Any, []uint32, bool) {
 			}
 			if vec.Nulls.Value(idx) {
 				if nulls == nil {
-					nulls = vector.NewBoolEmpty(n, nil)
+					nulls = vector.NewFalse2(n)
 				}
 				nulls.Set(i)
 				nets = append(nets, netip.Prefix{})

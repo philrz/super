@@ -22,7 +22,7 @@ func NewView(val Any, index []uint32) Any {
 		counts := make([]uint32, val.Any.Len())
 		var nulls *Bool
 		if val.Nulls != nil {
-			nulls = NewBoolEmpty(uint32(len(index)), nil)
+			nulls = NewFalse2(uint32(len(index)))
 			for k, idx := range index {
 				if val.Nulls.Value(idx) {
 					nulls.Set(uint32(k))

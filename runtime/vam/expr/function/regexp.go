@@ -48,7 +48,7 @@ func (r *Regexp) Call(args ...vector.Any) vector.Any {
 		match := r.re.FindStringSubmatch(s)
 		if match == nil {
 			if out.Nulls == nil {
-				out.Nulls = vector.NewBoolEmpty(regVec.Len(), nil)
+				out.Nulls = vector.NewFalse2(regVec.Len())
 			}
 			out.Nulls.Set(out.Len())
 			out.Offsets = append(out.Offsets, inner.Len())

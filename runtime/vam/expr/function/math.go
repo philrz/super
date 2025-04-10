@@ -156,7 +156,7 @@ func (l *Log) Call(args ...vector.Any) vector.Any {
 		v, isnull := vector.FloatValue(vec, i)
 		if isnull {
 			if nulls == nil {
-				nulls = vector.NewBoolEmpty(vec.Len(), nil)
+				nulls = vector.NewFalse2(vec.Len())
 			}
 			nulls.Set(uint32(len(floats)))
 			floats = append(floats, 0)

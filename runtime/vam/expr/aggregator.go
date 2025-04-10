@@ -50,8 +50,8 @@ func (a *Aggregator) apply(args ...vector.Any) vector.Any {
 	}
 	bools.Flip(0, uint64(vec.Len()))
 	if !bools.IsEmpty() {
-		nulls := vector.NewBoolEmpty(vec.Len(), nil)
-		bools.WriteDenseTo(nulls.Bits)
+		nulls := vector.NewFalse2(vec.Len())
+		bools.WriteDenseTo(nulls.GetBits())
 		if origNulls := vector.NullsOf(vec); origNulls != nil {
 			nulls = vector.Or(nulls, origNulls)
 		}

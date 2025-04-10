@@ -27,7 +27,7 @@ func (m *Missing) Call(args ...vector.Any) vector.Any {
 	var nbm roaring.Bitmap
 	for _, vec := range args {
 		if nulls := vector.NullsOf(vec); nulls != nil {
-			nbm.Or(roaring.FromDense(nulls.Bits, false))
+			nbm.Or(roaring.FromDense(nulls.GetBits(), false))
 		}
 		if err, ok := vec.(*vector.Error); ok {
 			b := missingOrQuiet(err)

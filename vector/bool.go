@@ -10,38 +10,64 @@ import (
 )
 
 type Bool struct {
-	len   uint32
-	Bits  []uint64
-	Nulls *Bool
+	loader Loader
+	bits   []uint64
+	length uint32
+	Nulls  *Bool
 }
 
 var _ Any = (*Bool)(nil)
 
-func NewBool(bits []uint64, len uint32, nulls *Bool) *Bool {
-	return &Bool{len: len, Bits: bits, Nulls: nulls}
+func NewBool(bits []uint64, length uint32, nulls *Bool) *Bool {
+	return &Bool{length: length, bits: bits, Nulls: nulls}
 }
 
 func NewBoolEmpty(length uint32, nulls *Bool) *Bool {
-	return &Bool{len: length, Bits: make([]uint64, (length+63)/64), Nulls: nulls}
+	b := NewFalse2(length)
+	b.Nulls = nulls
+	return b
+}
+
+func NewFalse2(length uint32) *Bool {
+	return &Bool{length: length, bits: make([]uint64, (length+63)/64)}
+}
+
+func NewTrue(n uint32) *Bool {
+	b := NewFalse2(n)
+	for i := range b.bits {
+		b.bits[i] = ^uint64(0)
+	}
+	return b
 }
 
 func (b *Bool) Type() super.Type {
 	return super.TypeBool
 }
 
+func (b *Bool) GetBits() []uint64 {
+	if b.bits == nil {
+		b.bits = b.loader.Load().([]uint64)
+	}
+	return b.bits
+}
+
 func (b *Bool) Value(slot uint32) bool {
 	// Because Bool is used to store nulls for many vectors and it is often
 	// nil check to see if receiver is nil and return false.
-	return b != nil && (b.Bits[slot>>6]&(1<<(slot&0x3f))) != 0
+	if b == nil {
+		return false
+	}
+	bits := b.GetBits()
+	return (bits[slot>>6] & (1 << (slot & 0x3f))) != 0
 }
 
 func (b *Bool) Set(slot uint32) {
-	b.Bits[slot>>6] |= (1 << (slot & 0x3f))
+	b.bits[slot>>6] |= (1 << (slot & 0x3f))
 }
 
-func (b *Bool) SetLen(len uint32) {
+func (b *Bool) SetLen(length uint32) {
 	if b != nil {
-		b.len = len
+		b.length = length
 	}
 }
 
@@ -49,12 +75,12 @@ func (b *Bool) Len() uint32 {
 	if b == nil {
 		return 0
 	}
-	return b.len
+	return b.length
 }
 
 func (b *Bool) CopyWithBits(bits []uint64) *Bool {
 	out := *b
-	out.Bits = bits
+	out.bits = bits
 	return &out
 }
 
@@ -71,12 +97,12 @@ func (b *Bool) TrueCount() uint32 {
 		return 0
 	}
 	var n uint32
-	for _, bs := range b.Bits {
+	for _, bs := range b.bits {
 		n += uint32(bits.OnesCount64(bs))
 	}
 	if numTailBits := b.Len() % 64; numTailBits > 0 {
 		mask := ^uint64(0) << numTailBits
-		unusedBits := b.Bits[len(b.Bits)-1] & mask
+		unusedBits := b.bits[len(b.bits)-1] & mask
 		n -= uint32(bits.OnesCount64(unusedBits))
 	}
 	return n
@@ -102,9 +128,9 @@ func Not(a *Bool) *Bool {
 	if a == nil {
 		panic("not: nil bool")
 	}
-	bits := slices.Clone(a.Bits)
+	bits := slices.Clone(a.bits) //XXX why clone then clobber the copy?
 	for i := range bits {
-		bits[i] = ^a.Bits[i]
+		bits[i] = ^a.bits[i]
 	}
 	return a.CopyWithBits(bits)
 }
@@ -119,9 +145,9 @@ func Or(a, b *Bool) *Bool {
 	if a.Len() != b.Len() {
 		panic("or'ing two different length bool vectors")
 	}
-	out := NewBoolEmpty(a.Len(), nil)
-	for i := range len(a.Bits) {
-		out.Bits[i] = a.Bits[i] | b.Bits[i]
+	out := NewFalse2(a.Len())
+	for i := range len(a.bits) {
+		out.bits[i] = a.bits[i] | b.bits[i]
 	}
 	return out
 }
@@ -136,9 +162,9 @@ func And(a, b *Bool) *Bool {
 	if a.Len() != b.Len() {
 		panic("and'ing two different length bool vectors")
 	}
-	out := NewBoolEmpty(a.Len(), nil)
-	for i := range len(a.Bits) {
-		out.Bits[i] = a.Bits[i] & b.Bits[i]
+	out := NewFalse2(a.Len())
+	for i := range len(a.bits) {
+		out.bits[i] = a.bits[i] & b.bits[i]
 	}
 	return out
 }
@@ -178,11 +204,7 @@ func NullsOf(v Any) *Bool {
 		return nil
 	case *Const:
 		if v.Value().IsNull() {
-			out := NewBoolEmpty(v.Len(), nil)
-			for i := range out.Bits {
-				out.Bits[i] = ^uint64(0)
-			}
-			return out
+			return NewTrue(v.Len())
 		}
 		return v.Nulls
 	case *Dict:

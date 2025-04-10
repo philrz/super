@@ -265,7 +265,7 @@ func (c *countByString) materialize() vector.Any {
 		length++
 		counts = append(counts, c.nulls)
 		offs = append(offs, uint32(len(bytes)))
-		nulls = vector.NewBoolEmpty(uint32(length), nil)
+		nulls = vector.NewFalse2(uint32(length))
 		nulls.Set(uint32(length - 1))
 	}
 	keyVec := vector.NewString(vector.NewBytesTable(offs, bytes), nulls)

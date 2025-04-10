@@ -34,7 +34,7 @@ func (b *Base64) Call(args ...vector.Any) vector.Any {
 	case super.IDString:
 		errvals := vector.NewStringEmpty(0, nil)
 		tags := make([]uint32, val.Len())
-		out := vector.NewBytesEmpty(0, vector.NewBoolEmpty(val.Len(), nil))
+		out := vector.NewBytesEmpty(0, vector.NewFalse2(val.Len()))
 		for i := uint32(0); i < val.Len(); i++ {
 			s, null := vector.StringValue(val, i)
 			if null {
@@ -81,7 +81,7 @@ func (h *Hex) Call(args ...vector.Any) vector.Any {
 	case super.IDString:
 		errvals := vector.NewStringEmpty(0, nil)
 		tags := make([]uint32, val.Len())
-		out := vector.NewBytesEmpty(0, vector.NewBoolEmpty(val.Len(), nil))
+		out := vector.NewBytesEmpty(0, vector.NewFalse2(val.Len()))
 		for i := uint32(0); i < val.Len(); i++ {
 			s, null := vector.StringValue(val, i)
 			if null {

@@ -21,7 +21,7 @@ func castToType(sctx *super.Context, vec vector.Any, index []uint32) (vector.Any
 			}
 			if vec.Nulls.Value(idx) {
 				if out.Nulls == nil {
-					out.Nulls = vector.NewBoolEmpty(n, nil)
+					out.Nulls = vector.NewFalse2(n)
 				}
 				out.Nulls.Set(i)
 				out.Append(nil)

@@ -107,7 +107,7 @@ func (c *Compare) compareTypeVals(lhs, rhs vector.Any) vector.Any {
 	if c.opCode == vector.CompLT || c.opCode == vector.CompGT {
 		return vector.NewConst(super.False, lhs.Len(), nil)
 	}
-	out := vector.NewBoolEmpty(lhs.Len(), nil)
+	out := vector.NewFalse2(lhs.Len())
 	for i := range lhs.Len() {
 		l, _ := vector.TypeValueValue(lhs, i)
 		r, _ := vector.TypeValueValue(rhs, i)

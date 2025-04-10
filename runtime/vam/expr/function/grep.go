@@ -19,7 +19,7 @@ func (g *Grep) Call(args ...vector.Any) vector.Any {
 		return vector.NewWrappedError(g.sctx, "grep: pattern argument must be a string", patternVec)
 	}
 	if inputVec.Len() == 0 {
-		return vector.NewBoolEmpty(0, nil)
+		return vector.NewFalse2(0)
 	}
 	if c, ok := vector.Under(patternVec).(*vector.Const); ok {
 		pattern, _ := c.AsString()

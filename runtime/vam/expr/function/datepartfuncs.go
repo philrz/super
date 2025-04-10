@@ -42,7 +42,8 @@ func date_time_day(vec vector.Any) vector.Any {
 		out := make([]int64, len(index))
 		vals := inner.Values()
 		for i, idx := range index {
-			out[i] = int64(nano.Ts(vals[idx]).Time().Day())
+			v := vals[idx]
+			out[i] = int64(nano.Ts(v).Time().Day())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
 	case *vector.Dict:
@@ -93,7 +94,8 @@ func date_time_hour(vec vector.Any) vector.Any {
 		out := make([]int64, len(index))
 		vals := inner.Values()
 		for i, idx := range index {
-			out[i] = int64(nano.Ts(vals[idx]).Time().Hour())
+			v := vals[idx]
+			out[i] = int64(nano.Ts(v).Time().Hour())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
 	case *vector.Dict:
@@ -116,7 +118,7 @@ func date_time_microseconds(vec vector.Any) vector.Any {
 		index := vec.Index
 		inner := vec.Any.(*vector.Int)
 		out := make([]int64, len(index))
-		vals :=inner.Values()
+		vals := inner.Values()
 		for i, idx := range index {
 			v := vals[idx]
 			out[i] = int64(nano.Ts(v).Time().Second()*1e6 + nano.Ts(v).Time().Nanosecond()/1e3)
@@ -170,7 +172,8 @@ func date_time_minute(vec vector.Any) vector.Any {
 		out := make([]int64, len(index))
 		vals := inner.Values()
 		for i, idx := range index {
-			out[i] = int64(nano.Ts(vals[idx]).Time().Minute())
+			v := vals[idx]
+			out[i] = int64(nano.Ts(v).Time().Minute())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
 	case *vector.Dict:
@@ -195,7 +198,8 @@ func date_time_month(vec vector.Any) vector.Any {
 		out := make([]int64, len(index))
 		vals := inner.Values()
 		for i, idx := range index {
-			out[i] = int64(nano.Ts(vals[idx]).Time().Month())
+			v := vals[idx]
+			out[i] = int64(nano.Ts(v).Time().Month())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
 	case *vector.Dict:
@@ -246,7 +250,8 @@ func date_time_year(vec vector.Any) vector.Any {
 		out := make([]int64, len(index))
 		vals := inner.Values()
 		for i, idx := range index {
-			out[i] = int64(nano.Ts(vals[idx]).Time().Year())
+			v := vals[idx]
+			out[i] = int64(nano.Ts(v).Time().Year())
 		}
 		return vector.NewInt(super.TypeInt64, out, vector.NewBoolView(inner.Nulls, index))
 	case *vector.Dict:

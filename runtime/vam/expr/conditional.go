@@ -114,7 +114,7 @@ func boolMaskRidx(ridx []uint32, bools, errs *roaring.Bitmap, vec vector.Any) {
 				}
 			}
 		} else {
-			bools.Or(roaring.FromDense(trues.Bits, true))
+			bools.Or(roaring.FromDense(trues.GetBits(), true))
 		}
 	case *vector.Error:
 		if ridx != nil {

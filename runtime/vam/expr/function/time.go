@@ -166,7 +166,7 @@ func (s *Strftime) slowPath(fvec vector.Any, tvec vector.Any) vector.Any {
 	var f *strftime.Strftime
 	var errIndex []uint32
 	errMsgs := vector.NewStringEmpty(0, nil)
-	out := vector.NewStringEmpty(0, vector.NewBoolEmpty(tvec.Len(), nil))
+	out := vector.NewStringEmpty(0, vector.NewFalse2(tvec.Len()))
 	for i := range fvec.Len() {
 		format, _ := vector.StringValue(fvec, i)
 		if f == nil || f.Pattern() != format {

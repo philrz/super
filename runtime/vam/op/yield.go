@@ -88,7 +88,7 @@ func quietMask(vec vector.Any) (vector.Any, bool) {
 		return vector.NewConst(super.True, vec.Len(), nil), false
 	}
 	n := vec.Len()
-	mask := vector.NewBoolEmpty(n, nil)
+	mask := vector.NewFalse2(n)
 	switch vec := vec.(type) {
 	case *vector.Error:
 		for i := uint32(0); i < n; i++ {

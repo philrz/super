@@ -117,7 +117,7 @@ func (u *unaryMinus) slowPath(vec vector.Any) vector.Any {
 		v, isnull := vector.IntValue(vec, i)
 		if isnull {
 			if nulls == nil {
-				nulls = vector.NewBoolEmpty(vec.Len(), nil)
+				nulls = vector.NewFalse2(vec.Len())
 			}
 			nulls.Set(uint32(len(ints)))
 			ints = append(ints, 0)

@@ -29,7 +29,7 @@ func NewSearch(s string, val super.Value, e Evaluator) Evaluator {
 	eq := NewCompare(super.NewContext() /* XXX */, nil, nil, "==")
 	vectorPred := func(vec vector.Any) vector.Any {
 		if net.IsValid() && vector.KindOf(vec) == vector.KindIP {
-			out := vector.NewBoolEmpty(vec.Len(), nil)
+			out := vector.NewFalse2(vec.Len())
 			for i := range vec.Len() {
 				if ip, null := vector.IPValue(vec, i); !null && net.Contains(ip) {
 					out.Set(i)
@@ -74,7 +74,7 @@ func (s *search) eval(vecs ...vector.Any) vector.Any {
 	}
 	switch vec := vec.(type) {
 	case *vector.Record:
-		out := vector.NewBoolEmpty(n, nil)
+		out := vector.NewFalse2(n)
 		for _, f := range vec.Fields {
 			if index != nil {
 				f = vector.NewView(f, index)
@@ -98,7 +98,7 @@ func (s *search) eval(vecs ...vector.Any) vector.Any {
 }
 
 func (s *search) evalForList(vec vector.Any, offsets, index []uint32, length uint32) *vector.Bool {
-	out := vector.NewBoolEmpty(length, nil)
+	out := vector.NewFalse2(length)
 	var index2 []uint32
 	for j := range length {
 		if index != nil {
@@ -123,7 +123,7 @@ func (s *search) evalForList(vec vector.Any, offsets, index []uint32, length uin
 
 func (s *search) match(vec vector.Any) vector.Any {
 	if vec.Type().ID() == super.IDString {
-		out := vector.NewBoolEmpty(vec.Len(), nil)
+		out := vector.NewFalse2(vec.Len())
 		for i := range vec.Len() {
 			str, null := vector.StringValue(vec, i)
 			// Prevent compiler from copying str, which it thinks
@@ -162,12 +162,12 @@ func (r *regexpMatch) eval(vecs ...vector.Any) vector.Any {
 	if vec.Type().ID() != super.IDString {
 		return vector.NewConst(super.False, vec.Len(), nil)
 	}
-	out := vector.NewBoolEmpty(vec.Len(), nil)
+	out := vector.NewFalse2(vec.Len())
 	for i := range vec.Len() {
 		s, isnull := vector.StringValue(vec, i)
 		if isnull {
 			if out.Nulls == nil {
-				out.Nulls = vector.NewBoolEmpty(vec.Len(), nil)
+				out.Nulls = vector.NewFalse2(vec.Len())
 			}
 			out.Nulls.Set(i)
 			continue

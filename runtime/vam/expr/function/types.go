@@ -71,7 +71,7 @@ func (t *TypeName) Call(args ...vector.Any) vector.Any {
 		s, isnull := vector.StringValue(vec, i)
 		if isnull {
 			if out.Nulls == nil {
-				out.Nulls = vector.NewBoolEmpty(vec.Len(), nil)
+				out.Nulls = vector.NewFalse2(vec.Len())
 			}
 			out.Nulls.Set(out.Len())
 			out.Append(nil)

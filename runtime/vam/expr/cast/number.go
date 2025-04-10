@@ -153,7 +153,7 @@ func stringToInt(vec *vector.String, typ super.Type, index []uint32) (vector.Any
 		}
 		if vec.Nulls.Value(idx) {
 			if nulls == nil {
-				nulls = vector.NewBoolEmpty(n, nil)
+				nulls = vector.NewFalse2(n)
 			}
 			nulls.Set(uint32(len(ints)))
 			ints = append(ints, 0)
@@ -184,7 +184,7 @@ func stringToDuration(vec *vector.String, index []uint32) (vector.Any, []uint32)
 		}
 		if vec.Nulls.Value(idx) {
 			if nulls == nil {
-				nulls = vector.NewBoolEmpty(vec.Len(), nil)
+				nulls = vector.NewFalse2(vec.Len())
 			}
 			nulls.Set(uint32(len(durs)))
 			durs = append(durs, 0)
@@ -220,7 +220,7 @@ func stringToTime(vec *vector.String, index []uint32) (vector.Any, []uint32) {
 		}
 		if vec.Nulls.Value(idx) {
 			if nulls == nil {
-				nulls = vector.NewBoolEmpty(vec.Len(), nil)
+				nulls = vector.NewFalse2(vec.Len())
 			}
 			nulls.Set(uint32(len(ts)))
 			ts = append(ts, 0)
@@ -257,7 +257,7 @@ func stringToUint(vec *vector.String, typ super.Type, index []uint32) (vector.An
 		}
 		if vec.Nulls.Value(idx) {
 			if nulls == nil {
-				nulls = vector.NewBoolEmpty(vec.Len(), nil)
+				nulls = vector.NewFalse2(vec.Len())
 			}
 			nulls.Set(uint32(len(ints)))
 			ints = append(ints, 0)
@@ -288,7 +288,7 @@ func stringToFloat(vec *vector.String, typ super.Type, index []uint32) (vector.A
 		}
 		if vec.Nulls.Value(idx) {
 			if nulls == nil {
-				nulls = vector.NewBoolEmpty(vec.Len(), nil)
+				nulls = vector.NewFalse2(vec.Len())
 			}
 			nulls.Set(uint32(len(floats)))
 			floats = append(floats, 0)

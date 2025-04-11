@@ -14,6 +14,8 @@ type const_ struct {
 	nulls *nulls
 }
 
+var _ shadow = (*const_)(nil)
+
 func newConst(cctx *csup.Context, meta *csup.Const, nulls *nulls) *const_ {
 	return &const_{
 		meta:  meta,
@@ -28,7 +30,18 @@ func (c *const_) project(loader *loader, projection field.Projection) vector.Any
 	if len(projection) > 0 {
 		return vector.NewMissing(loader.sctx, c.length())
 	}
-	nulls := c.load(loader)
+	return vector.NewConst(c.loadVal(loader), c.length(), c.load(loader))
+}
+
+func (c *const_) lazy(loader *loader, projection field.Projection) vector.Any {
+	if len(projection) > 0 {
+		return vector.NewMissing(loader.sctx, c.length())
+	}
+	val := c.loadVal(loader)
+	return vector.NewLazyConst(val, &constLoader{loader, c}, c.length())
+}
+
+func (c *const_) loadVal(loader *loader) super.Value {
 	// Map the const super.Value in the csup's type context to
 	// a new one in the query type context.
 	val := c.meta.Value
@@ -36,7 +49,7 @@ func (c *const_) project(loader *loader, projection field.Projection) vector.Any
 	if err != nil {
 		panic(err)
 	}
-	return vector.NewConst(super.NewValue(typ, val.Bytes()), c.length(), nulls)
+	return super.NewValue(typ, val.Bytes())
 }
 
 func (c *const_) load(loader *loader) bitvec.Bits {

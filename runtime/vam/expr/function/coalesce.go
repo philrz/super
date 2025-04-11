@@ -64,7 +64,7 @@ func (c *Coalesce) checkNulls(vec vector.Any, tag uint32) {
 	case *vector.View:
 		if nulls := vector.NullsOf(vec.Any); !nulls.IsZero() {
 			for i := range vec.Len() {
-				if !nulls.IsSetDirect(vec.Index[i]) {
+				if !nulls.IsSetDirect(vec.Index()[i]) {
 					c.setTag(i, tag)
 				}
 			}
@@ -81,7 +81,7 @@ func (c *Coalesce) checkNulls(vec vector.Any, tag uint32) {
 func (c *Coalesce) errString(tag uint32, vec *vector.Error) {
 	if cnst, ok := vec.Vals.(*vector.Const); ok {
 		if s, _ := cnst.AsString(); s != "missing" && s != "quiet" {
-			c.setAll(cnst.Nulls, tag)
+			c.setAll(cnst.Nulls(), tag)
 		}
 		return
 	}

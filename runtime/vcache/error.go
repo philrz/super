@@ -17,6 +17,8 @@ type error_ struct {
 	nulls  *nulls
 }
 
+var _ shadow = (*error_)(nil)
+
 func newError(cctx *csup.Context, meta *csup.Error, nulls *nulls) *error_ {
 	return &error_{
 		meta:  meta,
@@ -35,8 +37,14 @@ func (e *error_) unmarshal(cctx *csup.Context, projection field.Projection) {
 }
 
 func (e *error_) project(loader *loader, projection field.Projection) vector.Any {
-	nulls := e.load(loader)
 	vec := e.values.project(loader, projection)
+	typ := loader.sctx.LookupTypeError(vec.Type())
+	return vector.NewLazyError(typ, &errorLoader{loader, e}, vec)
+}
+
+func (e *error_) lazy(loader *loader, projection field.Projection) vector.Any {
+	nulls := e.load(loader)
+	vec := e.values.lazy(loader, projection)
 	typ := loader.sctx.LookupTypeError(vec.Type())
 	return vector.NewError(typ, vec, nulls)
 }

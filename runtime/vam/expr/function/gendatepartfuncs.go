@@ -27,23 +27,24 @@ var funcs = []struct {
 
 const datePartSwitch = `switch vec := vec.(type) {
 case *vector.View:
-	index := vec.Index
+	index := vec.Index()
 	inner := vec.Any.(*vector.Int)
 	out := make([]int64, len(index))
+	vals := inner.Values()
 	for i, idx := range index {
-		v := inner.Values[idx]
+		v := vals[idx]
 		out[i] = %s
 	}
-	return vector.NewInt(super.TypeInt64, out, inner.Nulls.Pick(index))
+	return vector.NewInt(super.TypeInt64, out, inner.Nulls().Pick(index))
 case *vector.Dict:
     out := %s(vec.Any).(*vector.Int)
-	return vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
+	return vector.NewDict(out, vec.Index(), vec.Counts(), vec.Nulls())
 case *vector.Int:
 	out := make([]int64, vec.Len())
-	for i, v := range vec.Values {
+	for i, v := range vec.Values() {
 		out[i] = %s
 	}
-	return vector.NewInt(super.TypeInt64, out, vec.Nulls)
+	return vector.NewInt(super.TypeInt64, out, vec.Nulls())
 default:
 	panic(vec)
 }

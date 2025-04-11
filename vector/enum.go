@@ -17,4 +17,11 @@ func NewEnum(typ *super.TypeEnum, vals []uint64, nulls bitvec.Bits) *Enum {
 	}
 }
 
+func NewLazyEnum(typ *super.TypeEnum, length uint32, loader UintLoader) *Enum {
+	return &Enum{
+		Typ:  typ,
+		Uint: NewLazyUint(super.TypeUint64, length, loader),
+	}
+}
+
 func (e *Enum) Type() super.Type { return e.Typ }

@@ -26,9 +26,9 @@ func (n *Not) Eval(val vector.Any) vector.Any {
 func (n *Not) eval(vecs ...vector.Any) vector.Any {
 	switch vec := vecs[0].(type) {
 	case *vector.Bool:
-		return vector.NewBool(bitvec.Not(vec.Bits), vec.Nulls)
+		return vector.NewBool(bitvec.Not(vec.Bits()), vec.Nulls())
 	case *vector.Const:
-		return vector.NewConst(super.NewBool(!vec.Value().Bool()), vec.Len(), vec.Nulls)
+		return vector.NewConst(super.NewBool(!vec.Value().Bool()), vec.Len(), vec.Nulls())
 	case *vector.Error:
 		return vec
 	default:
@@ -72,14 +72,14 @@ func (a *And) eval(vecs ...vector.Any) vector.Any {
 		return a.andError(rhs, lhs)
 	}
 	blhs, brhs := toBool(lhs), toBool(rhs)
-	and := bitvec.And(blhs.Bits, brhs.Bits)
-	if blhs.Nulls.IsZero() && brhs.Nulls.IsZero() {
+	and := bitvec.And(blhs.Bits(), brhs.Bits())
+	if blhs.Nulls().IsZero() && brhs.Nulls().IsZero() {
 		return vector.NewBool(and, bitvec.Zero)
 	}
 	// any and false = false
 	// null and true = null
-	notfalse := bitvec.And(bitvec.Or(blhs.Bits, blhs.Nulls), bitvec.Or(brhs.Bits, brhs.Nulls))
-	nulls := bitvec.And(notfalse, bitvec.Or(blhs.Nulls, brhs.Nulls))
+	notfalse := bitvec.And(bitvec.Or(blhs.Bits(), blhs.Nulls()), bitvec.Or(brhs.Bits(), brhs.Nulls()))
+	nulls := bitvec.And(notfalse, bitvec.Or(blhs.Nulls(), brhs.Nulls()))
 	return vector.NewBool(and, nulls)
 }
 
@@ -89,7 +89,7 @@ func (a *And) andError(err vector.Any, vec vector.Any) vector.Any {
 	}
 	b := toBool(vec)
 	// anything and FALSE = FALSE
-	isError := bitvec.Or(b.Bits, b.Nulls)
+	isError := bitvec.Or(b.Bits(), b.Nulls())
 	var index []uint32
 	for i := range err.Len() {
 		if isError.IsSetDirect(i) {
@@ -119,12 +119,12 @@ func (o *Or) eval(vecs ...vector.Any) vector.Any {
 		return o.orError(rhs, lhs)
 	}
 	blhs, brhs := toBool(lhs), toBool(rhs)
-	bits := bitvec.Or(blhs.Bits, brhs.Bits)
-	if blhs.Nulls.IsZero() && brhs.Nulls.IsZero() {
+	bits := bitvec.Or(blhs.Bits(), brhs.Bits())
+	if blhs.Nulls().IsZero() && brhs.Nulls().IsZero() {
 		// Fast path involves no nulls.
 		return vector.NewBool(bits, bitvec.Zero)
 	}
-	nulls := bitvec.Or(blhs.Nulls, brhs.Nulls)
+	nulls := bitvec.Or(blhs.Nulls(), brhs.Nulls())
 	nulls = bitvec.And(bitvec.Not(bits), nulls)
 	return vector.NewBool(bits, nulls)
 }
@@ -135,7 +135,7 @@ func (o *Or) orError(err, vec vector.Any) vector.Any {
 	}
 	b := toBool(vec)
 	// not error if true or null
-	notError := bitvec.Or(b.Bits, b.Nulls)
+	notError := bitvec.Or(b.Bits(), b.Nulls())
 	var index []uint32
 	for i := range b.Len() {
 		if !notError.IsSetDirect(i) {
@@ -172,10 +172,10 @@ func toBool(vec vector.Any) *vector.Bool {
 		val := vec.Value()
 		if val.Bool() {
 			out := vector.NewTrue(vec.Len())
-			out.Nulls = vec.Nulls
+			out.SetNulls(vec.Nulls())
 			return out
 		} else {
-			return vector.NewBoolEmpty(vec.Len(), vec.Nulls)
+			return vector.NewBoolEmpty(vec.Len(), vec.Nulls())
 		}
 	case *vector.Dynamic:
 		nulls := bitvec.NewFalse(vec.Len())
@@ -237,12 +237,12 @@ func (p *PredicateWalk) Eval(vecs ...vector.Any) vector.Any {
 	var index []uint32
 	if view, ok := rhs.(*vector.View); ok {
 		rhs = view.Any
-		index = view.Index
+		index = view.Index()
 	}
 	switch rhs := rhs.(type) {
 	case *vector.Record:
 		out := vector.NewFalse(lhs.Len())
-		for _, f := range rhs.Fields {
+		for _, f := range rhs.Fields() {
 			if index != nil {
 				f = vector.Pick(f, index)
 			}
@@ -250,12 +250,12 @@ func (p *PredicateWalk) Eval(vecs ...vector.Any) vector.Any {
 		}
 		return out
 	case *vector.Array:
-		return p.evalForList(lhs, rhs.Values, rhs.Offsets, index)
+		return p.evalForList(lhs, rhs.Values, rhs.Offsets(), index)
 	case *vector.Set:
-		return p.evalForList(lhs, rhs.Values, rhs.Offsets, index)
+		return p.evalForList(lhs, rhs.Values, rhs.Offsets(), index)
 	case *vector.Map:
-		return vector.Or(p.evalForList(lhs, rhs.Keys, rhs.Offsets, index),
-			p.evalForList(lhs, rhs.Values, rhs.Offsets, index))
+		return vector.Or(p.evalForList(lhs, rhs.Keys, rhs.Offsets(), index),
+			p.evalForList(lhs, rhs.Values, rhs.Offsets(), index))
 	case *vector.Union:
 		if index != nil {
 			panic("vector.Union unexpected in vector.View")
@@ -292,7 +292,7 @@ func (p *PredicateWalk) evalForList(lhs, rhs vector.Any, offsets, index []uint32
 		}
 		lhsView := vector.Pick(lhs, lhsIndex)
 		rhsView := vector.Pick(rhs, rhsIndex)
-		if toBool(p.Eval(lhsView, rhsView)).Bits.TrueCount() > 0 {
+		if toBool(p.Eval(lhsView, rhsView)).Bits().TrueCount() > 0 {
 			out.Set(j)
 		}
 	}

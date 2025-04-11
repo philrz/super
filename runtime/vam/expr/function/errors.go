@@ -31,12 +31,12 @@ func (q *Quiet) Call(args ...vector.Any) vector.Any {
 	for i := uint32(0); i < n; i++ {
 		s, null := vector.StringValue(arg.Vals, i)
 		if null {
-			vec.Nulls.Set(i)
+			vec.Nulls().Set(i)
 		}
 		if s == "missing" {
 			s = "quiet"
 		}
 		vec.Append(s)
 	}
-	return vector.NewError(arg.Typ, vec, arg.Nulls)
+	return vector.NewError(arg.Typ, vec, arg.Nulls())
 }

@@ -25,7 +25,7 @@ func compareEQIntFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -40,7 +40,7 @@ func compareEQIntFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -67,7 +67,7 @@ func compareEQIntFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareEQIntDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -82,10 +82,10 @@ func compareEQIntDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareEQIntDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -99,10 +99,10 @@ func compareEQIntDictDict(lhs, rhs vector.Any) vector.Any {
 func compareEQIntDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -116,7 +116,7 @@ func compareEQIntDictView(lhs, rhs vector.Any) vector.Any {
 func compareEQIntDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -131,7 +131,7 @@ func compareEQIntDictConst(lhs, rhs vector.Any) vector.Any {
 func compareEQIntViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -146,10 +146,10 @@ func compareEQIntViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareEQIntViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -163,10 +163,10 @@ func compareEQIntViewDict(lhs, rhs vector.Any) vector.Any {
 func compareEQIntViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -180,7 +180,7 @@ func compareEQIntViewView(lhs, rhs vector.Any) vector.Any {
 func compareEQIntViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -209,7 +209,7 @@ func compareEQIntConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -224,7 +224,7 @@ func compareEQIntConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -258,7 +258,7 @@ func compareEQUintFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -273,7 +273,7 @@ func compareEQUintFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -300,7 +300,7 @@ func compareEQUintFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareEQUintDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -315,10 +315,10 @@ func compareEQUintDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareEQUintDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -332,10 +332,10 @@ func compareEQUintDictDict(lhs, rhs vector.Any) vector.Any {
 func compareEQUintDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -349,7 +349,7 @@ func compareEQUintDictView(lhs, rhs vector.Any) vector.Any {
 func compareEQUintDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -364,7 +364,7 @@ func compareEQUintDictConst(lhs, rhs vector.Any) vector.Any {
 func compareEQUintViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -379,10 +379,10 @@ func compareEQUintViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareEQUintViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -396,10 +396,10 @@ func compareEQUintViewDict(lhs, rhs vector.Any) vector.Any {
 func compareEQUintViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -413,7 +413,7 @@ func compareEQUintViewView(lhs, rhs vector.Any) vector.Any {
 func compareEQUintViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -442,7 +442,7 @@ func compareEQUintConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -457,7 +457,7 @@ func compareEQUintConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -491,7 +491,7 @@ func compareEQFloatFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -506,7 +506,7 @@ func compareEQFloatFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -533,7 +533,7 @@ func compareEQFloatFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareEQFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -548,10 +548,10 @@ func compareEQFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareEQFloatDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -565,10 +565,10 @@ func compareEQFloatDictDict(lhs, rhs vector.Any) vector.Any {
 func compareEQFloatDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -582,7 +582,7 @@ func compareEQFloatDictView(lhs, rhs vector.Any) vector.Any {
 func compareEQFloatDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -597,7 +597,7 @@ func compareEQFloatDictConst(lhs, rhs vector.Any) vector.Any {
 func compareEQFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -612,10 +612,10 @@ func compareEQFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareEQFloatViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -629,10 +629,10 @@ func compareEQFloatViewDict(lhs, rhs vector.Any) vector.Any {
 func compareEQFloatViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -646,7 +646,7 @@ func compareEQFloatViewView(lhs, rhs vector.Any) vector.Any {
 func compareEQFloatViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -675,7 +675,7 @@ func compareEQFloatConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -690,7 +690,7 @@ func compareEQFloatConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -724,7 +724,7 @@ func compareEQStringFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -739,7 +739,7 @@ func compareEQStringFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -766,7 +766,7 @@ func compareEQStringFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareEQStringDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -781,10 +781,10 @@ func compareEQStringDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareEQStringDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -798,10 +798,10 @@ func compareEQStringDictDict(lhs, rhs vector.Any) vector.Any {
 func compareEQStringDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -815,7 +815,7 @@ func compareEQStringDictView(lhs, rhs vector.Any) vector.Any {
 func compareEQStringDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -830,7 +830,7 @@ func compareEQStringDictConst(lhs, rhs vector.Any) vector.Any {
 func compareEQStringViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -845,10 +845,10 @@ func compareEQStringViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareEQStringViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -862,10 +862,10 @@ func compareEQStringViewDict(lhs, rhs vector.Any) vector.Any {
 func compareEQStringViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -879,7 +879,7 @@ func compareEQStringViewView(lhs, rhs vector.Any) vector.Any {
 func compareEQStringViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -908,7 +908,7 @@ func compareEQStringConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -923,7 +923,7 @@ func compareEQStringConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -957,7 +957,7 @@ func compareEQBytesFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -972,7 +972,7 @@ func compareEQBytesFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -999,7 +999,7 @@ func compareEQBytesFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareEQBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1014,10 +1014,10 @@ func compareEQBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareEQBytesDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1031,10 +1031,10 @@ func compareEQBytesDictDict(lhs, rhs vector.Any) vector.Any {
 func compareEQBytesDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1048,7 +1048,7 @@ func compareEQBytesDictView(lhs, rhs vector.Any) vector.Any {
 func compareEQBytesDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1063,7 +1063,7 @@ func compareEQBytesDictConst(lhs, rhs vector.Any) vector.Any {
 func compareEQBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1078,10 +1078,10 @@ func compareEQBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareEQBytesViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1095,10 +1095,10 @@ func compareEQBytesViewDict(lhs, rhs vector.Any) vector.Any {
 func compareEQBytesViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1112,7 +1112,7 @@ func compareEQBytesViewView(lhs, rhs vector.Any) vector.Any {
 func compareEQBytesViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1141,7 +1141,7 @@ func compareEQBytesConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1156,7 +1156,7 @@ func compareEQBytesConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1190,7 +1190,7 @@ func compareNEIntFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1205,7 +1205,7 @@ func compareNEIntFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1232,7 +1232,7 @@ func compareNEIntFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareNEIntDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1247,10 +1247,10 @@ func compareNEIntDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareNEIntDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1264,10 +1264,10 @@ func compareNEIntDictDict(lhs, rhs vector.Any) vector.Any {
 func compareNEIntDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1281,7 +1281,7 @@ func compareNEIntDictView(lhs, rhs vector.Any) vector.Any {
 func compareNEIntDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1296,7 +1296,7 @@ func compareNEIntDictConst(lhs, rhs vector.Any) vector.Any {
 func compareNEIntViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1311,10 +1311,10 @@ func compareNEIntViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareNEIntViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1328,10 +1328,10 @@ func compareNEIntViewDict(lhs, rhs vector.Any) vector.Any {
 func compareNEIntViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1345,7 +1345,7 @@ func compareNEIntViewView(lhs, rhs vector.Any) vector.Any {
 func compareNEIntViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1374,7 +1374,7 @@ func compareNEIntConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1389,7 +1389,7 @@ func compareNEIntConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1423,7 +1423,7 @@ func compareNEUintFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1438,7 +1438,7 @@ func compareNEUintFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1465,7 +1465,7 @@ func compareNEUintFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareNEUintDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1480,10 +1480,10 @@ func compareNEUintDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareNEUintDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1497,10 +1497,10 @@ func compareNEUintDictDict(lhs, rhs vector.Any) vector.Any {
 func compareNEUintDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1514,7 +1514,7 @@ func compareNEUintDictView(lhs, rhs vector.Any) vector.Any {
 func compareNEUintDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1529,7 +1529,7 @@ func compareNEUintDictConst(lhs, rhs vector.Any) vector.Any {
 func compareNEUintViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1544,10 +1544,10 @@ func compareNEUintViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareNEUintViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1561,10 +1561,10 @@ func compareNEUintViewDict(lhs, rhs vector.Any) vector.Any {
 func compareNEUintViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1578,7 +1578,7 @@ func compareNEUintViewView(lhs, rhs vector.Any) vector.Any {
 func compareNEUintViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1607,7 +1607,7 @@ func compareNEUintConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1622,7 +1622,7 @@ func compareNEUintConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1656,7 +1656,7 @@ func compareNEFloatFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1671,7 +1671,7 @@ func compareNEFloatFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1698,7 +1698,7 @@ func compareNEFloatFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareNEFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1713,10 +1713,10 @@ func compareNEFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareNEFloatDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1730,10 +1730,10 @@ func compareNEFloatDictDict(lhs, rhs vector.Any) vector.Any {
 func compareNEFloatDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1747,7 +1747,7 @@ func compareNEFloatDictView(lhs, rhs vector.Any) vector.Any {
 func compareNEFloatDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1762,7 +1762,7 @@ func compareNEFloatDictConst(lhs, rhs vector.Any) vector.Any {
 func compareNEFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1777,10 +1777,10 @@ func compareNEFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareNEFloatViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1794,10 +1794,10 @@ func compareNEFloatViewDict(lhs, rhs vector.Any) vector.Any {
 func compareNEFloatViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1811,7 +1811,7 @@ func compareNEFloatViewView(lhs, rhs vector.Any) vector.Any {
 func compareNEFloatViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1840,7 +1840,7 @@ func compareNEFloatConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1855,7 +1855,7 @@ func compareNEFloatConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1889,7 +1889,7 @@ func compareNEStringFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1904,7 +1904,7 @@ func compareNEStringFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1931,7 +1931,7 @@ func compareNEStringFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareNEStringDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1946,10 +1946,10 @@ func compareNEStringDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareNEStringDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1963,10 +1963,10 @@ func compareNEStringDictDict(lhs, rhs vector.Any) vector.Any {
 func compareNEStringDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -1980,7 +1980,7 @@ func compareNEStringDictView(lhs, rhs vector.Any) vector.Any {
 func compareNEStringDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -1995,7 +1995,7 @@ func compareNEStringDictConst(lhs, rhs vector.Any) vector.Any {
 func compareNEStringViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2010,10 +2010,10 @@ func compareNEStringViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareNEStringViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2027,10 +2027,10 @@ func compareNEStringViewDict(lhs, rhs vector.Any) vector.Any {
 func compareNEStringViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2044,7 +2044,7 @@ func compareNEStringViewView(lhs, rhs vector.Any) vector.Any {
 func compareNEStringViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2073,7 +2073,7 @@ func compareNEStringConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2088,7 +2088,7 @@ func compareNEStringConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2122,7 +2122,7 @@ func compareNEBytesFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2137,7 +2137,7 @@ func compareNEBytesFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2164,7 +2164,7 @@ func compareNEBytesFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareNEBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2179,10 +2179,10 @@ func compareNEBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareNEBytesDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2196,10 +2196,10 @@ func compareNEBytesDictDict(lhs, rhs vector.Any) vector.Any {
 func compareNEBytesDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2213,7 +2213,7 @@ func compareNEBytesDictView(lhs, rhs vector.Any) vector.Any {
 func compareNEBytesDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2228,7 +2228,7 @@ func compareNEBytesDictConst(lhs, rhs vector.Any) vector.Any {
 func compareNEBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2243,10 +2243,10 @@ func compareNEBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareNEBytesViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2260,10 +2260,10 @@ func compareNEBytesViewDict(lhs, rhs vector.Any) vector.Any {
 func compareNEBytesViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2277,7 +2277,7 @@ func compareNEBytesViewView(lhs, rhs vector.Any) vector.Any {
 func compareNEBytesViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2306,7 +2306,7 @@ func compareNEBytesConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2321,7 +2321,7 @@ func compareNEBytesConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2355,7 +2355,7 @@ func compareLTIntFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2370,7 +2370,7 @@ func compareLTIntFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2397,7 +2397,7 @@ func compareLTIntFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareLTIntDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2412,10 +2412,10 @@ func compareLTIntDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareLTIntDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2429,10 +2429,10 @@ func compareLTIntDictDict(lhs, rhs vector.Any) vector.Any {
 func compareLTIntDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2446,7 +2446,7 @@ func compareLTIntDictView(lhs, rhs vector.Any) vector.Any {
 func compareLTIntDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2461,7 +2461,7 @@ func compareLTIntDictConst(lhs, rhs vector.Any) vector.Any {
 func compareLTIntViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2476,10 +2476,10 @@ func compareLTIntViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareLTIntViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2493,10 +2493,10 @@ func compareLTIntViewDict(lhs, rhs vector.Any) vector.Any {
 func compareLTIntViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2510,7 +2510,7 @@ func compareLTIntViewView(lhs, rhs vector.Any) vector.Any {
 func compareLTIntViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2539,7 +2539,7 @@ func compareLTIntConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2554,7 +2554,7 @@ func compareLTIntConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2588,7 +2588,7 @@ func compareLTUintFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2603,7 +2603,7 @@ func compareLTUintFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2630,7 +2630,7 @@ func compareLTUintFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareLTUintDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2645,10 +2645,10 @@ func compareLTUintDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareLTUintDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2662,10 +2662,10 @@ func compareLTUintDictDict(lhs, rhs vector.Any) vector.Any {
 func compareLTUintDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2679,7 +2679,7 @@ func compareLTUintDictView(lhs, rhs vector.Any) vector.Any {
 func compareLTUintDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2694,7 +2694,7 @@ func compareLTUintDictConst(lhs, rhs vector.Any) vector.Any {
 func compareLTUintViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2709,10 +2709,10 @@ func compareLTUintViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareLTUintViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2726,10 +2726,10 @@ func compareLTUintViewDict(lhs, rhs vector.Any) vector.Any {
 func compareLTUintViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2743,7 +2743,7 @@ func compareLTUintViewView(lhs, rhs vector.Any) vector.Any {
 func compareLTUintViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2772,7 +2772,7 @@ func compareLTUintConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2787,7 +2787,7 @@ func compareLTUintConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2821,7 +2821,7 @@ func compareLTFloatFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2836,7 +2836,7 @@ func compareLTFloatFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2863,7 +2863,7 @@ func compareLTFloatFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareLTFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2878,10 +2878,10 @@ func compareLTFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareLTFloatDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2895,10 +2895,10 @@ func compareLTFloatDictDict(lhs, rhs vector.Any) vector.Any {
 func compareLTFloatDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2912,7 +2912,7 @@ func compareLTFloatDictView(lhs, rhs vector.Any) vector.Any {
 func compareLTFloatDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2927,7 +2927,7 @@ func compareLTFloatDictConst(lhs, rhs vector.Any) vector.Any {
 func compareLTFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -2942,10 +2942,10 @@ func compareLTFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareLTFloatViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2959,10 +2959,10 @@ func compareLTFloatViewDict(lhs, rhs vector.Any) vector.Any {
 func compareLTFloatViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -2976,7 +2976,7 @@ func compareLTFloatViewView(lhs, rhs vector.Any) vector.Any {
 func compareLTFloatViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3005,7 +3005,7 @@ func compareLTFloatConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3020,7 +3020,7 @@ func compareLTFloatConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3054,7 +3054,7 @@ func compareLTStringFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3069,7 +3069,7 @@ func compareLTStringFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3096,7 +3096,7 @@ func compareLTStringFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareLTStringDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3111,10 +3111,10 @@ func compareLTStringDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareLTStringDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3128,10 +3128,10 @@ func compareLTStringDictDict(lhs, rhs vector.Any) vector.Any {
 func compareLTStringDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3145,7 +3145,7 @@ func compareLTStringDictView(lhs, rhs vector.Any) vector.Any {
 func compareLTStringDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3160,7 +3160,7 @@ func compareLTStringDictConst(lhs, rhs vector.Any) vector.Any {
 func compareLTStringViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3175,10 +3175,10 @@ func compareLTStringViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareLTStringViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3192,10 +3192,10 @@ func compareLTStringViewDict(lhs, rhs vector.Any) vector.Any {
 func compareLTStringViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3209,7 +3209,7 @@ func compareLTStringViewView(lhs, rhs vector.Any) vector.Any {
 func compareLTStringViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3238,7 +3238,7 @@ func compareLTStringConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3253,7 +3253,7 @@ func compareLTStringConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3287,7 +3287,7 @@ func compareLTBytesFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3302,7 +3302,7 @@ func compareLTBytesFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3329,7 +3329,7 @@ func compareLTBytesFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareLTBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3344,10 +3344,10 @@ func compareLTBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareLTBytesDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3361,10 +3361,10 @@ func compareLTBytesDictDict(lhs, rhs vector.Any) vector.Any {
 func compareLTBytesDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3378,7 +3378,7 @@ func compareLTBytesDictView(lhs, rhs vector.Any) vector.Any {
 func compareLTBytesDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3393,7 +3393,7 @@ func compareLTBytesDictConst(lhs, rhs vector.Any) vector.Any {
 func compareLTBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3408,10 +3408,10 @@ func compareLTBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareLTBytesViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3425,10 +3425,10 @@ func compareLTBytesViewDict(lhs, rhs vector.Any) vector.Any {
 func compareLTBytesViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3442,7 +3442,7 @@ func compareLTBytesViewView(lhs, rhs vector.Any) vector.Any {
 func compareLTBytesViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3471,7 +3471,7 @@ func compareLTBytesConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3486,7 +3486,7 @@ func compareLTBytesConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3520,7 +3520,7 @@ func compareLEIntFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3535,7 +3535,7 @@ func compareLEIntFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3562,7 +3562,7 @@ func compareLEIntFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareLEIntDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3577,10 +3577,10 @@ func compareLEIntDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareLEIntDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3594,10 +3594,10 @@ func compareLEIntDictDict(lhs, rhs vector.Any) vector.Any {
 func compareLEIntDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3611,7 +3611,7 @@ func compareLEIntDictView(lhs, rhs vector.Any) vector.Any {
 func compareLEIntDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3626,7 +3626,7 @@ func compareLEIntDictConst(lhs, rhs vector.Any) vector.Any {
 func compareLEIntViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3641,10 +3641,10 @@ func compareLEIntViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareLEIntViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3658,10 +3658,10 @@ func compareLEIntViewDict(lhs, rhs vector.Any) vector.Any {
 func compareLEIntViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3675,7 +3675,7 @@ func compareLEIntViewView(lhs, rhs vector.Any) vector.Any {
 func compareLEIntViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3704,7 +3704,7 @@ func compareLEIntConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3719,7 +3719,7 @@ func compareLEIntConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3753,7 +3753,7 @@ func compareLEUintFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3768,7 +3768,7 @@ func compareLEUintFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3795,7 +3795,7 @@ func compareLEUintFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareLEUintDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3810,10 +3810,10 @@ func compareLEUintDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareLEUintDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3827,10 +3827,10 @@ func compareLEUintDictDict(lhs, rhs vector.Any) vector.Any {
 func compareLEUintDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3844,7 +3844,7 @@ func compareLEUintDictView(lhs, rhs vector.Any) vector.Any {
 func compareLEUintDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3859,7 +3859,7 @@ func compareLEUintDictConst(lhs, rhs vector.Any) vector.Any {
 func compareLEUintViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3874,10 +3874,10 @@ func compareLEUintViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareLEUintViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3891,10 +3891,10 @@ func compareLEUintViewDict(lhs, rhs vector.Any) vector.Any {
 func compareLEUintViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3908,7 +3908,7 @@ func compareLEUintViewView(lhs, rhs vector.Any) vector.Any {
 func compareLEUintViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -3937,7 +3937,7 @@ func compareLEUintConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3952,7 +3952,7 @@ func compareLEUintConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -3986,7 +3986,7 @@ func compareLEFloatFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4001,7 +4001,7 @@ func compareLEFloatFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4028,7 +4028,7 @@ func compareLEFloatFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareLEFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4043,10 +4043,10 @@ func compareLEFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareLEFloatDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4060,10 +4060,10 @@ func compareLEFloatDictDict(lhs, rhs vector.Any) vector.Any {
 func compareLEFloatDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4077,7 +4077,7 @@ func compareLEFloatDictView(lhs, rhs vector.Any) vector.Any {
 func compareLEFloatDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4092,7 +4092,7 @@ func compareLEFloatDictConst(lhs, rhs vector.Any) vector.Any {
 func compareLEFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4107,10 +4107,10 @@ func compareLEFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareLEFloatViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4124,10 +4124,10 @@ func compareLEFloatViewDict(lhs, rhs vector.Any) vector.Any {
 func compareLEFloatViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4141,7 +4141,7 @@ func compareLEFloatViewView(lhs, rhs vector.Any) vector.Any {
 func compareLEFloatViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4170,7 +4170,7 @@ func compareLEFloatConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4185,7 +4185,7 @@ func compareLEFloatConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4219,7 +4219,7 @@ func compareLEStringFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4234,7 +4234,7 @@ func compareLEStringFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4261,7 +4261,7 @@ func compareLEStringFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareLEStringDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4276,10 +4276,10 @@ func compareLEStringDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareLEStringDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4293,10 +4293,10 @@ func compareLEStringDictDict(lhs, rhs vector.Any) vector.Any {
 func compareLEStringDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4310,7 +4310,7 @@ func compareLEStringDictView(lhs, rhs vector.Any) vector.Any {
 func compareLEStringDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4325,7 +4325,7 @@ func compareLEStringDictConst(lhs, rhs vector.Any) vector.Any {
 func compareLEStringViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4340,10 +4340,10 @@ func compareLEStringViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareLEStringViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4357,10 +4357,10 @@ func compareLEStringViewDict(lhs, rhs vector.Any) vector.Any {
 func compareLEStringViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4374,7 +4374,7 @@ func compareLEStringViewView(lhs, rhs vector.Any) vector.Any {
 func compareLEStringViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4403,7 +4403,7 @@ func compareLEStringConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4418,7 +4418,7 @@ func compareLEStringConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4452,7 +4452,7 @@ func compareLEBytesFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4467,7 +4467,7 @@ func compareLEBytesFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4494,7 +4494,7 @@ func compareLEBytesFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareLEBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4509,10 +4509,10 @@ func compareLEBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareLEBytesDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4526,10 +4526,10 @@ func compareLEBytesDictDict(lhs, rhs vector.Any) vector.Any {
 func compareLEBytesDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4543,7 +4543,7 @@ func compareLEBytesDictView(lhs, rhs vector.Any) vector.Any {
 func compareLEBytesDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4558,7 +4558,7 @@ func compareLEBytesDictConst(lhs, rhs vector.Any) vector.Any {
 func compareLEBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4573,10 +4573,10 @@ func compareLEBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareLEBytesViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4590,10 +4590,10 @@ func compareLEBytesViewDict(lhs, rhs vector.Any) vector.Any {
 func compareLEBytesViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4607,7 +4607,7 @@ func compareLEBytesViewView(lhs, rhs vector.Any) vector.Any {
 func compareLEBytesViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4636,7 +4636,7 @@ func compareLEBytesConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4651,7 +4651,7 @@ func compareLEBytesConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4685,7 +4685,7 @@ func compareGTIntFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4700,7 +4700,7 @@ func compareGTIntFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4727,7 +4727,7 @@ func compareGTIntFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareGTIntDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4742,10 +4742,10 @@ func compareGTIntDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareGTIntDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4759,10 +4759,10 @@ func compareGTIntDictDict(lhs, rhs vector.Any) vector.Any {
 func compareGTIntDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4776,7 +4776,7 @@ func compareGTIntDictView(lhs, rhs vector.Any) vector.Any {
 func compareGTIntDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4791,7 +4791,7 @@ func compareGTIntDictConst(lhs, rhs vector.Any) vector.Any {
 func compareGTIntViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4806,10 +4806,10 @@ func compareGTIntViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareGTIntViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4823,10 +4823,10 @@ func compareGTIntViewDict(lhs, rhs vector.Any) vector.Any {
 func compareGTIntViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4840,7 +4840,7 @@ func compareGTIntViewView(lhs, rhs vector.Any) vector.Any {
 func compareGTIntViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4869,7 +4869,7 @@ func compareGTIntConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4884,7 +4884,7 @@ func compareGTIntConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4918,7 +4918,7 @@ func compareGTUintFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4933,7 +4933,7 @@ func compareGTUintFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4960,7 +4960,7 @@ func compareGTUintFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareGTUintDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -4975,10 +4975,10 @@ func compareGTUintDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareGTUintDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -4992,10 +4992,10 @@ func compareGTUintDictDict(lhs, rhs vector.Any) vector.Any {
 func compareGTUintDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5009,7 +5009,7 @@ func compareGTUintDictView(lhs, rhs vector.Any) vector.Any {
 func compareGTUintDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5024,7 +5024,7 @@ func compareGTUintDictConst(lhs, rhs vector.Any) vector.Any {
 func compareGTUintViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5039,10 +5039,10 @@ func compareGTUintViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareGTUintViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5056,10 +5056,10 @@ func compareGTUintViewDict(lhs, rhs vector.Any) vector.Any {
 func compareGTUintViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5073,7 +5073,7 @@ func compareGTUintViewView(lhs, rhs vector.Any) vector.Any {
 func compareGTUintViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5102,7 +5102,7 @@ func compareGTUintConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5117,7 +5117,7 @@ func compareGTUintConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5151,7 +5151,7 @@ func compareGTFloatFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5166,7 +5166,7 @@ func compareGTFloatFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5193,7 +5193,7 @@ func compareGTFloatFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareGTFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5208,10 +5208,10 @@ func compareGTFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareGTFloatDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5225,10 +5225,10 @@ func compareGTFloatDictDict(lhs, rhs vector.Any) vector.Any {
 func compareGTFloatDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5242,7 +5242,7 @@ func compareGTFloatDictView(lhs, rhs vector.Any) vector.Any {
 func compareGTFloatDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5257,7 +5257,7 @@ func compareGTFloatDictConst(lhs, rhs vector.Any) vector.Any {
 func compareGTFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5272,10 +5272,10 @@ func compareGTFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareGTFloatViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5289,10 +5289,10 @@ func compareGTFloatViewDict(lhs, rhs vector.Any) vector.Any {
 func compareGTFloatViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5306,7 +5306,7 @@ func compareGTFloatViewView(lhs, rhs vector.Any) vector.Any {
 func compareGTFloatViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5335,7 +5335,7 @@ func compareGTFloatConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5350,7 +5350,7 @@ func compareGTFloatConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5384,7 +5384,7 @@ func compareGTStringFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5399,7 +5399,7 @@ func compareGTStringFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5426,7 +5426,7 @@ func compareGTStringFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareGTStringDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5441,10 +5441,10 @@ func compareGTStringDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareGTStringDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5458,10 +5458,10 @@ func compareGTStringDictDict(lhs, rhs vector.Any) vector.Any {
 func compareGTStringDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5475,7 +5475,7 @@ func compareGTStringDictView(lhs, rhs vector.Any) vector.Any {
 func compareGTStringDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5490,7 +5490,7 @@ func compareGTStringDictConst(lhs, rhs vector.Any) vector.Any {
 func compareGTStringViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5505,10 +5505,10 @@ func compareGTStringViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareGTStringViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5522,10 +5522,10 @@ func compareGTStringViewDict(lhs, rhs vector.Any) vector.Any {
 func compareGTStringViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5539,7 +5539,7 @@ func compareGTStringViewView(lhs, rhs vector.Any) vector.Any {
 func compareGTStringViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5568,7 +5568,7 @@ func compareGTStringConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5583,7 +5583,7 @@ func compareGTStringConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5617,7 +5617,7 @@ func compareGTBytesFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5632,7 +5632,7 @@ func compareGTBytesFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5659,7 +5659,7 @@ func compareGTBytesFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareGTBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5674,10 +5674,10 @@ func compareGTBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareGTBytesDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5691,10 +5691,10 @@ func compareGTBytesDictDict(lhs, rhs vector.Any) vector.Any {
 func compareGTBytesDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5708,7 +5708,7 @@ func compareGTBytesDictView(lhs, rhs vector.Any) vector.Any {
 func compareGTBytesDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5723,7 +5723,7 @@ func compareGTBytesDictConst(lhs, rhs vector.Any) vector.Any {
 func compareGTBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5738,10 +5738,10 @@ func compareGTBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareGTBytesViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5755,10 +5755,10 @@ func compareGTBytesViewDict(lhs, rhs vector.Any) vector.Any {
 func compareGTBytesViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5772,7 +5772,7 @@ func compareGTBytesViewView(lhs, rhs vector.Any) vector.Any {
 func compareGTBytesViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5801,7 +5801,7 @@ func compareGTBytesConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5816,7 +5816,7 @@ func compareGTBytesConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5850,7 +5850,7 @@ func compareGEIntFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5865,7 +5865,7 @@ func compareGEIntFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Int)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5892,7 +5892,7 @@ func compareGEIntFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareGEIntDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5907,10 +5907,10 @@ func compareGEIntDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareGEIntDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5924,10 +5924,10 @@ func compareGEIntDictDict(lhs, rhs vector.Any) vector.Any {
 func compareGEIntDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5941,7 +5941,7 @@ func compareGEIntDictView(lhs, rhs vector.Any) vector.Any {
 func compareGEIntDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5956,7 +5956,7 @@ func compareGEIntDictConst(lhs, rhs vector.Any) vector.Any {
 func compareGEIntViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Int)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -5971,10 +5971,10 @@ func compareGEIntViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareGEIntViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -5988,10 +5988,10 @@ func compareGEIntViewDict(lhs, rhs vector.Any) vector.Any {
 func compareGEIntViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6005,7 +6005,7 @@ func compareGEIntViewView(lhs, rhs vector.Any) vector.Any {
 func compareGEIntViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Int)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsInt()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6034,7 +6034,7 @@ func compareGEIntConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6049,7 +6049,7 @@ func compareGEIntConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsInt()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Int)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6083,7 +6083,7 @@ func compareGEUintFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6098,7 +6098,7 @@ func compareGEUintFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Uint)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6125,7 +6125,7 @@ func compareGEUintFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareGEUintDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6140,10 +6140,10 @@ func compareGEUintDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareGEUintDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6157,10 +6157,10 @@ func compareGEUintDictDict(lhs, rhs vector.Any) vector.Any {
 func compareGEUintDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6174,7 +6174,7 @@ func compareGEUintDictView(lhs, rhs vector.Any) vector.Any {
 func compareGEUintDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6189,7 +6189,7 @@ func compareGEUintDictConst(lhs, rhs vector.Any) vector.Any {
 func compareGEUintViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Uint)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6204,10 +6204,10 @@ func compareGEUintViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareGEUintViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6221,10 +6221,10 @@ func compareGEUintViewDict(lhs, rhs vector.Any) vector.Any {
 func compareGEUintViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6238,7 +6238,7 @@ func compareGEUintViewView(lhs, rhs vector.Any) vector.Any {
 func compareGEUintViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Uint)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsUint()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6267,7 +6267,7 @@ func compareGEUintConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6282,7 +6282,7 @@ func compareGEUintConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsUint()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Uint)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6316,7 +6316,7 @@ func compareGEFloatFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6331,7 +6331,7 @@ func compareGEFloatFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Float)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6358,7 +6358,7 @@ func compareGEFloatFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareGEFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6373,10 +6373,10 @@ func compareGEFloatDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareGEFloatDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6390,10 +6390,10 @@ func compareGEFloatDictDict(lhs, rhs vector.Any) vector.Any {
 func compareGEFloatDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6407,7 +6407,7 @@ func compareGEFloatDictView(lhs, rhs vector.Any) vector.Any {
 func compareGEFloatDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6422,7 +6422,7 @@ func compareGEFloatDictConst(lhs, rhs vector.Any) vector.Any {
 func compareGEFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Float)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6437,10 +6437,10 @@ func compareGEFloatViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareGEFloatViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6454,10 +6454,10 @@ func compareGEFloatViewDict(lhs, rhs vector.Any) vector.Any {
 func compareGEFloatViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6471,7 +6471,7 @@ func compareGEFloatViewView(lhs, rhs vector.Any) vector.Any {
 func compareGEFloatViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Float)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsFloat()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6500,7 +6500,7 @@ func compareGEFloatConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6515,7 +6515,7 @@ func compareGEFloatConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsFloat()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Float)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6549,7 +6549,7 @@ func compareGEStringFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6564,7 +6564,7 @@ func compareGEStringFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.String)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6591,7 +6591,7 @@ func compareGEStringFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareGEStringDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6606,10 +6606,10 @@ func compareGEStringDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareGEStringDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6623,10 +6623,10 @@ func compareGEStringDictDict(lhs, rhs vector.Any) vector.Any {
 func compareGEStringDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6640,7 +6640,7 @@ func compareGEStringDictView(lhs, rhs vector.Any) vector.Any {
 func compareGEStringDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6655,7 +6655,7 @@ func compareGEStringDictConst(lhs, rhs vector.Any) vector.Any {
 func compareGEStringViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.String)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6670,10 +6670,10 @@ func compareGEStringViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareGEStringViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6687,10 +6687,10 @@ func compareGEStringViewDict(lhs, rhs vector.Any) vector.Any {
 func compareGEStringViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6704,7 +6704,7 @@ func compareGEStringViewView(lhs, rhs vector.Any) vector.Any {
 func compareGEStringViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.String)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsString()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6733,7 +6733,7 @@ func compareGEStringConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6748,7 +6748,7 @@ func compareGEStringConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsString()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.String)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6782,7 +6782,7 @@ func compareGEBytesFlatDict(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6797,7 +6797,7 @@ func compareGEBytesFlatView(lhs, rhs vector.Any) vector.Any {
 	l := lhs.(*vector.Bytes)
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6824,7 +6824,7 @@ func compareGEBytesFlatConst(lhs, rhs vector.Any) vector.Any {
 func compareGEBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6839,10 +6839,10 @@ func compareGEBytesDictFlat(lhs, rhs vector.Any) vector.Any {
 func compareGEBytesDictDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6856,10 +6856,10 @@ func compareGEBytesDictDict(lhs, rhs vector.Any) vector.Any {
 func compareGEBytesDictView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6873,7 +6873,7 @@ func compareGEBytesDictView(lhs, rhs vector.Any) vector.Any {
 func compareGEBytesDictConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.Dict)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6888,7 +6888,7 @@ func compareGEBytesDictConst(lhs, rhs vector.Any) vector.Any {
 func compareGEBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	r := rhs.(*vector.Bytes)
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6903,10 +6903,10 @@ func compareGEBytesViewFlat(lhs, rhs vector.Any) vector.Any {
 func compareGEBytesViewDict(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6920,10 +6920,10 @@ func compareGEBytesViewDict(lhs, rhs vector.Any) vector.Any {
 func compareGEBytesViewView(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6937,7 +6937,7 @@ func compareGEBytesViewView(lhs, rhs vector.Any) vector.Any {
 func compareGEBytesViewConst(lhs, rhs vector.Any) vector.Any {
 	ld := lhs.(*vector.View)
 	l := ld.Any.(*vector.Bytes)
-	lx := ld.Index
+	lx := ld.Index()
 	rconst, _ := rhs.(*vector.Const).AsBytes()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
@@ -6966,7 +6966,7 @@ func compareGEBytesConstDict(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.Dict)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {
@@ -6981,7 +6981,7 @@ func compareGEBytesConstView(lhs, rhs vector.Any) vector.Any {
 	lconst, _ := lhs.(*vector.Const).AsBytes()
 	rd := rhs.(*vector.View)
 	r := rd.Any.(*vector.Bytes)
-	rx := rd.Index
+	rx := rd.Index()
 	n := lhs.Len()
 	out := vector.NewBoolEmpty(n, bitvec.Zero)
 	for k := uint32(0); k < n; k++ {

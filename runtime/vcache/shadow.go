@@ -38,6 +38,7 @@ import (
 type shadow interface {
 	length() uint32
 	unmarshal(*csup.Context, field.Projection)
+	lazy(*loader, field.Projection) vector.Any
 	project(*loader, field.Projection) vector.Any
 }
 

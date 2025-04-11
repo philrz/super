@@ -7,13 +7,17 @@ import (
 
 type View struct {
 	Any
-	Index []uint32
+	index []uint32
 }
 
 var _ Any = (*View)(nil)
 
 func NewView(vec Any, index []uint32) *View {
-	return &View{vec, index}
+	return &View{Any: vec, index: index}
+}
+
+func (v *View) Index() []uint32 {
+	return v.index
 }
 
 // Pick takes any vector vec and an index and returns a new vector consisting of the
@@ -21,49 +25,51 @@ func NewView(vec Any, index []uint32) *View {
 func Pick(val Any, index []uint32) Any {
 	switch val := val.(type) {
 	case *Bool:
-		return NewBool(val.Bits.Pick(index), val.Nulls.Pick(index))
+		return NewBool(val.Bits().Pick(index), val.Nulls().Pick(index))
 	case *Const:
-		return NewConst(val.val, uint32(len(index)), val.Nulls.Pick(index))
+		return NewConst(val.val, uint32(len(index)), val.Nulls().Pick(index))
 	case *Dict:
 		index2 := make([]byte, len(index))
 		counts := make([]uint32, val.Any.Len())
 		var nulls bitvec.Bits
-		if !val.Nulls.IsZero() {
+		if !val.Nulls().IsZero() {
 			nulls = bitvec.NewFalse(uint32(len(index)))
 			for k, idx := range index {
-				if val.Nulls.IsSet(idx) {
+				if val.Nulls().IsSet(idx) {
 					nulls.Set(uint32(k))
 				}
-				v := val.Index[idx]
+				v := val.Index()[idx]
 				index2[k] = v
 				counts[v]++
 			}
 		} else {
+			vals := val.Index()
 			for k, idx := range index {
-				v := val.Index[idx]
+				v := vals[idx]
 				index2[k] = v
 				counts[v]++
 			}
 		}
 		return NewDict(val.Any, index2, counts, nulls)
 	case *Error:
-		return NewError(val.Typ, Pick(val.Vals, index), val.Nulls.Pick(index))
+		return NewError(val.Typ, Pick(val.Vals, index), val.Nulls().Pick(index))
 	case *Union:
-		tags, values := viewForUnionOrDynamic(index, val.Tags, val.TagMap.Forward, val.Values)
-		return NewUnion(val.Typ, tags, values, val.Nulls.Pick(index))
+		tags, values := viewForUnionOrDynamic(index, val.Tags(), val.TagMap().Forward, val.Values())
+		return NewUnion(val.Typ, tags, values, val.Nulls().Pick(index))
 	case *Dynamic:
-		return NewDynamic(viewForUnionOrDynamic(index, val.Tags, val.TagMap.Forward, val.Values))
+		return NewDynamic(viewForUnionOrDynamic(index, val.Tags(), val.TagMap().Forward, val.Values))
 	case *View:
 		index2 := make([]uint32, len(index))
+		vals := val.Index()
 		for k, idx := range index {
-			index2[k] = uint32(val.Index[idx])
+			index2[k] = uint32(vals[idx])
 		}
 		return NewView(val.Any, index2)
 	case *Named:
 		// Wrapped View under Named so vector.Under still works.
 		return &Named{val.Typ, Pick(val.Any, index)}
 	}
-	return &View{val, index}
+	return NewView(val, index)
 }
 
 // ReversePick is like Pick but it builds the vector from the elements
@@ -88,9 +94,9 @@ func viewForUnionOrDynamic(index, tags, forward []uint32, values []Any) ([]uint3
 }
 
 func (v *View) Len() uint32 {
-	return uint32(len(v.Index))
+	return uint32(len(v.index))
 }
 
 func (v *View) Serialize(b *zcode.Builder, slot uint32) {
-	v.Any.Serialize(b, v.Index[slot])
+	v.Any.Serialize(b, v.Index()[slot])
 }

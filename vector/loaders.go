@@ -2,14 +2,12 @@ package vector
 
 import (
 	"net/netip"
+	"sync"
 
 	"github.com/brimdata/super/vector/bitvec"
 )
 
 type (
-	ArrayLoader interface {
-		Load() (*Array, bitvec.Bits)
-	}
 	BytesLoader interface {
 		Load() (BytesTable, bitvec.Bits)
 	}
@@ -44,3 +42,30 @@ type (
 		Load() ([]uint32, bitvec.Bits)
 	}
 )
+
+type lock struct {
+	mu   sync.RWMutex
+	done bool
+	any  Any
+}
+
+func newLock(any Any) *lock {
+	return &lock{any: any}
+}
+
+func (l *lock) check() {
+	if l != nil {
+		l.mu.RLock()
+		if !l.done {
+			l.mu.RUnlock()
+			l.mu.Lock()
+			if !l.done {
+				l.any.load()
+				l.done = true
+			}
+			l.mu.Unlock()
+		} else {
+			l.mu.RUnlock()
+		}
+	}
+}

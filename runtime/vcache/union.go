@@ -20,6 +20,8 @@ type union struct {
 	nulls  *nulls
 }
 
+var _ shadow = (*union)(nil)
+
 func newUnion(cctx *csup.Context, meta *csup.Union, nulls *nulls) *union {
 	return &union{
 		meta:   meta,
@@ -65,24 +67,20 @@ func (u *union) project(loader *loader, projection field.Projection) vector.Any 
 	}
 	utyp := loader.sctx.LookupTypeUnion(types)
 	tags, nulls := u.load(loader)
-	// If there are nulls add a null vector and rebuild tags.
-	if !nulls.IsZero() {
-		var newtags []uint32
-		n := uint32(len(vecs))
-		var nullcount uint32
-		for i := range nulls.Len() {
-			if nulls.IsSet(i) {
-				newtags = append(newtags, n)
-				nullcount++
-			} else {
-				newtags = append(newtags, tags[0])
-				tags = tags[1:]
-			}
-		}
-		tags = newtags
-		vecs = append(vecs, vector.NewConst(super.NewValue(utyp, nil), nullcount, bitvec.Zero))
-	}
+	tags, vecs = vector.FlattenUnionNulls(utyp, tags, vecs, nulls)
 	return vector.NewUnion(utyp, tags, vecs, nulls)
+}
+
+func (u *union) lazy(loader *loader, projection field.Projection) vector.Any {
+	vecs := make([]vector.Any, 0, len(u.values))
+	types := make([]super.Type, 0, len(u.values))
+	for _, shadow := range u.values {
+		vec := shadow.lazy(loader, projection)
+		vecs = append(vecs, vec)
+		types = append(types, vec.Type())
+	}
+	typ := loader.sctx.LookupTypeUnion(types)
+	return vector.NewLazyUnion(typ, &unionLoader{loader, u}, vecs, u.length())
 }
 
 type unionLoader struct {

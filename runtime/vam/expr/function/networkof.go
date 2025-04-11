@@ -40,7 +40,7 @@ func (n *NetworkOf) singleIP(vec vector.Any) vector.Any {
 			return errNotIP4(n.sctx, vec)
 		}
 		net := netip.PrefixFrom(ip, bitsFromIP(ip.As4())).Masked()
-		return vector.NewConst(super.NewNet(net), c.Len(), c.Nulls)
+		return vector.NewConst(super.NewNet(net), c.Len(), c.Nulls())
 	}
 	var errs []uint32
 	var nets vector.Any
@@ -48,10 +48,10 @@ func (n *NetworkOf) singleIP(vec vector.Any) vector.Any {
 	case *vector.IP:
 		nets, errs = n.singleIPLoop(vec, nil)
 	case *vector.View:
-		nets, errs = n.singleIPLoop(vec.Any.(*vector.IP), vec.Index)
+		nets, errs = n.singleIPLoop(vec.Any.(*vector.IP), vec.Index())
 	case *vector.Dict:
 		netVals, derrs := n.singleIPLoop(vec.Any.(*vector.IP), nil)
-		index, counts, nulls := vec.Index, vec.Counts, vec.Nulls
+		index, counts, nulls := vec.Index(), vec.Counts(), vec.Nulls()
 		if len(derrs) > 0 {
 			index, counts, nulls, errs = vec.RebuildDropTags(derrs...)
 		}
@@ -66,12 +66,13 @@ func (n *NetworkOf) singleIP(vec vector.Any) vector.Any {
 func (n *NetworkOf) singleIPLoop(vec *vector.IP, index []uint32) (*vector.Net, []uint32) {
 	var nets []netip.Prefix
 	var errs []uint32
+	vals := vec.Values()
 	for i := range vec.Len() {
 		idx := i
 		if index != nil {
 			idx = index[i]
 		}
-		ip := vec.Values[idx]
+		ip := vals[idx]
 		if !ip.Is4() {
 			errs = append(errs, i)
 			continue
@@ -166,10 +167,10 @@ func (n *NetworkOf) intMaskFast(vec vector.Any, bits int) (vector.Any, []uint32)
 	case *vector.IP:
 		return n.intMaskFastLoop(vec, nil, bits)
 	case *vector.View:
-		return n.intMaskFastLoop(vec.Any.(*vector.IP), vec.Index, bits)
+		return n.intMaskFastLoop(vec.Any.(*vector.IP), vec.Index(), bits)
 	case *vector.Dict:
 		nets, derrs := n.intMaskFastLoop(vec.Any.(*vector.IP), nil, bits)
-		index, counts, nulls := vec.Index, vec.Counts, vec.Nulls
+		index, counts, nulls := vec.Index(), vec.Counts(), vec.Nulls()
 		var errs []uint32
 		if len(derrs) > 0 {
 			index, counts, nulls, errs = vec.RebuildDropTags(derrs...)
@@ -183,12 +184,13 @@ func (n *NetworkOf) intMaskFast(vec vector.Any, bits int) (vector.Any, []uint32)
 func (n *NetworkOf) intMaskFastLoop(vec *vector.IP, index []uint32, bits int) (vector.Any, []uint32) {
 	var errs []uint32
 	var nets []netip.Prefix
+	vals := vec.Values()
 	for i := range vec.Len() {
 		idx := i
 		if index != nil {
 			idx = index[i]
 		}
-		ip := vec.Values[idx]
+		ip := vals[idx]
 		net := netip.PrefixFrom(ip, bits)
 		if net.Bits() < 0 {
 			errs = append(errs, i)

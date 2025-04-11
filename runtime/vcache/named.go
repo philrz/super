@@ -11,6 +11,8 @@ type named struct {
 	values shadow
 }
 
+var _ shadow = (*named)(nil)
+
 func (n *named) length() uint32 {
 	return n.values.length()
 }
@@ -28,6 +30,15 @@ func (n *named) unmarshal(cctx *csup.Context, projection field.Projection) {
 
 func (n *named) project(loader *loader, projection field.Projection) vector.Any {
 	vec := n.values.project(loader, projection)
+	typ, err := loader.sctx.LookupTypeNamed(n.meta.Name, vec.Type())
+	if err != nil {
+		panic(err)
+	}
+	return vector.NewNamed(typ, vec)
+}
+
+func (n *named) lazy(loader *loader, projection field.Projection) vector.Any {
+	vec := n.values.lazy(loader, projection)
 	typ, err := loader.sctx.LookupTypeNamed(n.meta.Name, vec.Type())
 	if err != nil {
 		panic(err)

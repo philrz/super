@@ -71,12 +71,12 @@ func (s *search) eval(vecs ...vector.Any) vector.Any {
 	var index []uint32
 	if view, ok := vec.(*vector.View); ok {
 		vec = view.Any
-		index = view.Index
+		index = view.Index()
 	}
 	switch vec := vec.(type) {
 	case *vector.Record:
 		out := vector.NewFalse(n)
-		for _, f := range vec.Fields {
+		for _, f := range vec.Fields() {
 			if index != nil {
 				f = vector.Pick(f, index)
 			}
@@ -84,12 +84,12 @@ func (s *search) eval(vecs ...vector.Any) vector.Any {
 		}
 		return out
 	case *vector.Array:
-		return s.evalForList(vec.Values, vec.Offsets, index, n)
+		return s.evalForList(vec.Values, vec.Offsets(), index, n)
 	case *vector.Set:
-		return s.evalForList(vec.Values, vec.Offsets, index, n)
+		return s.evalForList(vec.Values, vec.Offsets(), index, n)
 	case *vector.Map:
-		return vector.Or(s.evalForList(vec.Keys, vec.Offsets, index, n),
-			s.evalForList(vec.Values, vec.Offsets, index, n))
+		return vector.Or(s.evalForList(vec.Keys, vec.Offsets(), index, n),
+			s.evalForList(vec.Values, vec.Offsets(), index, n))
 	case *vector.Union:
 		return vector.Apply(true, s.eval, vec)
 	case *vector.Error:
@@ -115,7 +115,7 @@ func (s *search) evalForList(vec vector.Any, offsets, index []uint32, length uin
 			index2[k] = k + start
 		}
 		view := vector.Pick(vec, index2)
-		if toBool(s.eval(view)).Bits.TrueCount() > 0 {
+		if toBool(s.eval(view)).Bits().TrueCount() > 0 {
 			out.Set(j)
 		}
 	}
@@ -164,18 +164,20 @@ func (r *regexpMatch) eval(vecs ...vector.Any) vector.Any {
 		return vector.NewConst(super.False, vec.Len(), bitvec.Zero)
 	}
 	out := vector.NewFalse(vec.Len())
+	var nulls bitvec.Bits
 	for i := range vec.Len() {
 		s, isnull := vector.StringValue(vec, i)
 		if isnull {
-			if out.Nulls.IsZero() {
-				out.Nulls = bitvec.NewFalse(vec.Len())
+			if nulls.IsZero() {
+				nulls = bitvec.NewFalse(vec.Len())
 			}
-			out.Nulls.Set(i)
+			nulls.Set(i)
 			continue
 		}
 		if r.re.MatchString(s) {
 			out.Set(i)
 		}
 	}
+	out.SetNulls(nulls)
 	return out
 }

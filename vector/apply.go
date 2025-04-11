@@ -8,7 +8,7 @@ func Apply(ripUnions bool, eval func(...Any) Any, vecs ...Any) Any {
 	if ripUnions {
 		for k, vec := range vecs {
 			if union, ok := Under(vec).(*Union); ok {
-				vecs[k] = union.Dynamic
+				vecs[k] = union.Deunion()
 			}
 		}
 	}
@@ -24,7 +24,7 @@ func Apply(ripUnions bool, eval func(...Any) Any, vecs ...Any) Any {
 		}
 		results = append(results, result)
 	}
-	return stitch(d.Tags, results)
+	return stitch(d.Tags(), results)
 }
 
 func findDynamic(vecs []Any) (*Dynamic, bool) {
@@ -38,7 +38,7 @@ func findDynamic(vecs []Any) (*Dynamic, bool) {
 
 func rip(vecs []Any, d *Dynamic) [][]Any {
 	var ripped [][]Any
-	for j, rev := range d.TagMap.Reverse {
+	for j, rev := range d.TagMap().Reverse {
 		var newVecs []Any
 		if len(rev) > 0 {
 			for _, vec := range vecs {
@@ -67,7 +67,7 @@ func stitch(tags []uint32, vecs []Any) Any {
 	for _, vec := range vecs {
 		shifts = append(shifts, lastShift)
 		if d, ok := vec.(*Dynamic); ok {
-			nestedTags = append(nestedTags, d.Tags)
+			nestedTags = append(nestedTags, d.Tags())
 			newVecs = append(newVecs, d.Values...)
 			lastShift += uint32(len(d.Values)) - 1
 		} else {

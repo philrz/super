@@ -7,9 +7,11 @@ import (
 )
 
 type Error struct {
-	Typ   *super.TypeError
-	Vals  Any
-	Nulls bitvec.Bits
+	l      *lock
+	loader NullsLoader
+	Typ    *super.TypeError
+	Vals   Any
+	nulls  bitvec.Bits
 }
 
 var _ Any = (*Error)(nil)
@@ -17,7 +19,13 @@ var _ Any = (*Error)(nil)
 // XXX we shouldn't create empty fields... this was the old design, now
 // we create the entire vector structure and page in leaves, offsets, etc on demand
 func NewError(typ *super.TypeError, vals Any, nulls bitvec.Bits) *Error {
-	return &Error{Typ: typ, Vals: vals, Nulls: nulls}
+	return &Error{Typ: typ, Vals: vals, nulls: nulls}
+}
+
+func NewLazyError(typ *super.TypeError, loader NullsLoader, vals Any) *Error {
+	e := &Error{Typ: typ, Vals: vals, loader: loader}
+	e.l = newLock(e)
+	return e
 }
 
 func (e *Error) Type() super.Type {
@@ -28,8 +36,21 @@ func (e *Error) Len() uint32 {
 	return e.Vals.Len()
 }
 
+func (e *Error) load() {
+	e.nulls = e.loader.Load()
+}
+
+func (e *Error) Nulls() bitvec.Bits {
+	e.l.check()
+	return e.nulls
+}
+
+func (e *Error) SetNulls(nulls bitvec.Bits) {
+	e.nulls = nulls
+}
+
 func (e *Error) Serialize(b *zcode.Builder, slot uint32) {
-	if e.Nulls.IsSet(slot) {
+	if e.Nulls().IsSet(slot) {
 		b.Append(nil)
 		return
 	}

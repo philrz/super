@@ -17,6 +17,8 @@ type dynamic struct {
 	values []shadow
 }
 
+var _ shadow = (*dynamic)(nil)
+
 func newDynamic(meta *csup.Dynamic) *dynamic {
 	return &dynamic{meta: meta, values: make([]shadow, len(meta.Values))}
 }
@@ -43,6 +45,14 @@ func (d *dynamic) project(loader *loader, projection field.Projection) vector.An
 	}
 	tags, _ := d.load(loader.r)
 	return vector.NewDynamic(tags, vecs)
+}
+
+func (d *dynamic) lazy(loader *loader, projection field.Projection) vector.Any {
+	vecs := make([]vector.Any, 0, len(d.values))
+	for _, shadow := range d.values {
+		vecs = append(vecs, shadow.lazy(loader, projection))
+	}
+	return vector.NewLazyDynamic(&dynamicLoader{loader, d}, vecs, d.length())
 }
 
 func (d *dynamic) load(r io.ReaderAt) ([]uint32, bitvec.Bits) {

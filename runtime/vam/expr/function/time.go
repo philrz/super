@@ -63,11 +63,11 @@ func (b *Bucket) constBin(tsVec vector.Any, bin nano.Duration) vector.Any {
 	case *vector.Const:
 		ts, _ := tsVec.AsInt()
 		val := super.NewInt(b.resultType(tsVec), int64(nano.Ts(ts).Trunc(bin)))
-		return vector.NewConst(val, tsVec.Len(), tsVec.Nulls)
+		return vector.NewConst(val, tsVec.Len(), tsVec.Nulls())
 	case *vector.View:
-		return vector.NewView(b.constBinFlat(tsVec.Any, bin), tsVec.Index)
+		return vector.NewView(b.constBinFlat(tsVec.Any, bin), tsVec.Index())
 	case *vector.Dict:
-		return vector.NewDict(b.constBinFlat(tsVec.Any, bin), tsVec.Index, tsVec.Counts, tsVec.Nulls)
+		return vector.NewDict(b.constBinFlat(tsVec.Any, bin), tsVec.Index(), tsVec.Counts(), tsVec.Nulls())
 	default:
 		return b.constBinFlat(tsVec, bin)
 	}
@@ -76,14 +76,15 @@ func (b *Bucket) constBin(tsVec vector.Any, bin nano.Duration) vector.Any {
 func (b *Bucket) constBinFlat(tsVecFlat vector.Any, bin nano.Duration) *vector.Int {
 	tsVec := tsVecFlat.(*vector.Int)
 	ints := make([]int64, tsVec.Len())
+	vals := tsVec.Values()
 	for i := range tsVec.Len() {
 		if bin == 0 {
-			ints[i] = tsVec.Values[i]
+			ints[i] = vals[i]
 		} else {
-			ints[i] = int64(nano.Ts(tsVec.Values[i]).Trunc(bin))
+			ints[i] = int64(nano.Ts(vals[i]).Trunc(bin))
 		}
 	}
-	return vector.NewInt(b.resultType(tsVec), ints, tsVec.Nulls)
+	return vector.NewInt(b.resultType(tsVec), ints, tsVec.Nulls())
 }
 
 func (b *Bucket) resultType(tsVec vector.Any) super.Type {
@@ -130,31 +131,32 @@ func (s *Strftime) fastPath(fvec *vector.Const, tvec vector.Any) vector.Any {
 	case *vector.Int:
 		return s.fastPathLoop(f, tvec, nil)
 	case *vector.View:
-		return s.fastPathLoop(f, tvec.Any.(*vector.Int), tvec.Index)
+		return s.fastPathLoop(f, tvec.Any.(*vector.Int), tvec.Index())
 	case *vector.Dict:
 		vec := s.fastPathLoop(f, tvec.Any.(*vector.Int), nil)
-		return vector.NewDict(vec, tvec.Index, tvec.Counts, tvec.Nulls)
+		return vector.NewDict(vec, tvec.Index(), tvec.Counts(), tvec.Nulls())
 	case *vector.Const:
 		t, _ := tvec.AsInt()
 		s := f.FormatString(nano.Ts(t).Time())
-		return vector.NewConst(super.NewString(s), tvec.Len(), tvec.Nulls)
+		return vector.NewConst(super.NewString(s), tvec.Len(), tvec.Nulls())
 	default:
 		panic(tvec)
 	}
 }
 
 func (s *Strftime) fastPathLoop(f *strftime.Strftime, vec *vector.Int, index []uint32) *vector.String {
+	vals := vec.Values()
 	if index != nil {
-		out := vector.NewStringEmpty(uint32(len(index)), vec.Nulls.Pick(index))
+		out := vector.NewStringEmpty(uint32(len(index)), vec.Nulls().Pick(index))
 		for _, i := range index {
-			s := f.FormatString(nano.Ts(vec.Values[i]).Time())
+			s := f.FormatString(nano.Ts(vals[i]).Time())
 			out.Append(s)
 		}
 		return out
 	}
-	out := vector.NewStringEmpty(vec.Len(), vec.Nulls)
+	out := vector.NewStringEmpty(vec.Len(), vec.Nulls())
 	for i := range vec.Len() {
-		s := f.FormatString(nano.Ts(vec.Values[i]).Time())
+		s := f.FormatString(nano.Ts(vals[i]).Time())
 		out.Append(s)
 	}
 	return out
@@ -178,7 +180,7 @@ func (s *Strftime) slowPath(fvec vector.Any, tvec vector.Any) vector.Any {
 		}
 		t, isnull := vector.IntValue(tvec, i)
 		if isnull {
-			out.Nulls.Set(out.Len())
+			out.Nulls().Set(out.Len())
 			out.Append("")
 			continue
 		}

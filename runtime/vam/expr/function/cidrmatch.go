@@ -19,7 +19,7 @@ func NewCIDRMatch(sctx *super.Context) *CIDRMatch {
 func (c *CIDRMatch) Call(args ...vector.Any) vector.Any {
 	if id := args[0].Type().ID(); id != super.IDNet && id != super.IDNull {
 		out := vector.NewWrappedError(c.sctx, "cidr_match: not a net", args[0])
-		out.Nulls = bitvec.Or(vector.NullsOf(args[0]), vector.NullsOf(args[1]))
+		out.SetNulls(bitvec.Or(vector.NullsOf(args[0]), vector.NullsOf(args[1])))
 		return out
 	}
 	return c.pw.Eval(args...)

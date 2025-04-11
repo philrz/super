@@ -61,5 +61,5 @@ func (o *Object) Fetch(sctx *super.Context, projection field.Projection) (vector
 	loader := &loader{cctx, sctx, o.object.DataReader()}
 	o.root = newShadow(cctx, o.object.Root(), nil)
 	o.root.unmarshal(cctx, projection)
-	return loader.load(projection, o.root)
+	return o.root.lazy(loader, projection), nil
 }

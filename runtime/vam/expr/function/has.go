@@ -43,7 +43,7 @@ func (m *Missing) Call(args ...vector.Any) vector.Any {
 			errIndex := roaring.Flip(b, 0, uint64(n)).ToArray()
 			trueVec := vector.NewConst(super.True, uint32(len(index)), bitvec.Zero)
 			if !nbm.IsEmpty() {
-				trueVec.Nulls = bitmapToBitvec(&nbm, n).Pick(index)
+				trueVec.SetNulls(bitmapToBitvec(&nbm, n).Pick(index))
 			}
 			return vector.Combine(trueVec, errIndex, vector.Pick(err, errIndex))
 		}
@@ -73,7 +73,7 @@ func missingOrQuiet(verr *vector.Error) *roaring.Bitmap {
 	case *vector.View:
 		vec := inner.Any.(*vector.String)
 		for i := range inner.Len() {
-			s := vec.Value(inner.Index[i])
+			s := vec.Value(inner.Index()[i])
 			if s == "missing" || s == "quiet" {
 				b.Add(i)
 			}
@@ -81,7 +81,7 @@ func missingOrQuiet(verr *vector.Error) *roaring.Bitmap {
 	case *vector.Dict:
 		vec := inner.Any.(*vector.String)
 		for i := range inner.Len() {
-			s := vec.Value(uint32(inner.Index[i]))
+			s := vec.Value(uint32(inner.Index()[i]))
 			if s == "missing" || s == "quiet" {
 				b.Add(i)
 			}

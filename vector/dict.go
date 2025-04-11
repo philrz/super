@@ -6,27 +6,59 @@ import (
 )
 
 type Dict struct {
+	l      *lock
+	loader DictLoader
 	Any
-	Index  []byte
-	Counts []uint32
-	Nulls  bitvec.Bits
+	index  []byte
+	counts []uint32
+	nulls  bitvec.Bits
+	length uint32
 }
 
 var _ Any = (*Dict)(nil)
 
 func NewDict(vals Any, index []byte, counts []uint32, nulls bitvec.Bits) *Dict {
-	return &Dict{vals, index, counts, nulls}
+	return &Dict{Any: vals, index: index, counts: counts, nulls: nulls, length: uint32(len(index))}
+}
+
+func NewLazyDict(vals Any, loader DictLoader, length uint32) *Dict {
+	d := &Dict{Any: vals, loader: loader, length: length}
+	d.l = newLock(d)
+	return d
 }
 
 func (d *Dict) Len() uint32 {
-	return uint32(len(d.Index))
+	return d.length
+}
+
+func (d *Dict) load() {
+	d.index, d.counts, d.nulls = d.loader.Load()
+}
+
+func (d *Dict) Index() []byte {
+	d.l.check()
+	return d.index
+}
+
+func (d *Dict) Counts() []uint32 {
+	d.l.check()
+	return d.counts
+}
+
+func (d *Dict) Nulls() bitvec.Bits {
+	d.l.check()
+	return d.nulls
+}
+
+func (d *Dict) SetNulls(nulls bitvec.Bits) {
+	d.nulls = nulls
 }
 
 func (d *Dict) Serialize(builder *zcode.Builder, slot uint32) {
-	if d.Nulls.IsSet(slot) {
+	if d.Nulls().IsSet(slot) {
 		builder.Append(nil)
 	} else {
-		d.Any.Serialize(builder, uint32(d.Index[slot]))
+		d.Any.Serialize(builder, uint32(d.Index()[slot]))
 	}
 }
 
@@ -45,14 +77,15 @@ func (d *Dict) RebuildDropTags(tags ...uint32) ([]byte, []uint32, bitvec.Bits, [
 		}
 	}
 	var nulls bitvec.Bits
-	if !d.Nulls.IsZero() {
+	inNulls := d.Nulls()
+	if !inNulls.IsZero() {
 		nulls = bitvec.NewFalse(d.Len())
 	}
 	counts := make([]uint32, int(d.Any.Len())-len(tags))
 	var index []byte
 	var dropped []uint32
-	for i, tag := range d.Index {
-		if d.Nulls.IsSet(uint32(i)) {
+	for i, tag := range d.Index() {
+		if inNulls.IsSet(uint32(i)) {
 			nulls.Set(uint32(len(index)))
 			index = append(index, 0)
 			continue

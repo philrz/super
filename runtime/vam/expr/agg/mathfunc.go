@@ -47,11 +47,11 @@ func sum[T numeric](state T, vec vector.Any) T {
 	switch vec := vec.(type) {
 	case *vector.Const:
 		v := constToNumeric[T](vec)
-		return state + v*T(vec.Len()-vec.Nulls.TrueCount())
+		return state + v*T(vec.Len()-vec.Nulls().TrueCount())
 	case *vector.Dict:
-		return sumFlat(state, vec.Any, nil, vec.Counts)
+		return sumFlat(state, vec.Any, nil, vec.Counts())
 	case *vector.View:
-		return sumFlat(state, vec.Any, vec.Index, nil)
+		return sumFlat(state, vec.Any, vec.Index(), nil)
 	default:
 		return sumFlat(state, vec, nil, nil)
 	}
@@ -60,11 +60,11 @@ func sum[T numeric](state T, vec vector.Any) T {
 func sumFlat[T numeric](state T, vec vector.Any, index []uint32, counts []uint32) T {
 	switch vec := vec.(type) {
 	case *vector.Uint:
-		return sumOf(state, vec.Values, index, counts)
+		return sumOf(state, vec.Values(), index, counts)
 	case *vector.Int:
-		return sumOf(state, vec.Values, index, counts)
+		return sumOf(state, vec.Values(), index, counts)
 	case *vector.Float:
-		return sumOf(state, vec.Values, index, counts)
+		return sumOf(state, vec.Values(), index, counts)
 	default:
 		panic(vec)
 	}
@@ -99,7 +99,7 @@ func min[T numeric](state T, vec vector.Any) T {
 	case *vector.Dict:
 		return minFlat(state, vec.Any, nil)
 	case *vector.View:
-		return minFlat(state, vec.Any, vec.Index)
+		return minFlat(state, vec.Any, vec.Index())
 	default:
 		return minFlat(state, vec, nil)
 	}
@@ -108,11 +108,11 @@ func min[T numeric](state T, vec vector.Any) T {
 func minFlat[T numeric](state T, vec vector.Any, index []uint32) T {
 	switch vec := vec.(type) {
 	case *vector.Uint:
-		return minOf(state, vec.Values, index)
+		return minOf(state, vec.Values(), index)
 	case *vector.Int:
-		return minOf(state, vec.Values, index)
+		return minOf(state, vec.Values(), index)
 	case *vector.Float:
-		return minOf(state, vec.Values, index)
+		return minOf(state, vec.Values(), index)
 	default:
 		panic(vec)
 	}
@@ -145,7 +145,7 @@ func max[T numeric](state T, vec vector.Any) T {
 	case *vector.Dict:
 		return maxFlat(state, vec.Any, nil)
 	case *vector.View:
-		return maxFlat(state, vec.Any, vec.Index)
+		return maxFlat(state, vec.Any, vec.Index())
 	default:
 		return maxFlat(state, vec, nil)
 	}
@@ -154,11 +154,11 @@ func max[T numeric](state T, vec vector.Any) T {
 func maxFlat[T numeric](state T, vec vector.Any, index []uint32) T {
 	switch vec := vec.(type) {
 	case *vector.Uint:
-		return maxOf(state, vec.Values, index)
+		return maxOf(state, vec.Values(), index)
 	case *vector.Int:
-		return maxOf(state, vec.Values, index)
+		return maxOf(state, vec.Values(), index)
 	case *vector.Float:
-		return maxOf(state, vec.Values, index)
+		return maxOf(state, vec.Values(), index)
 	default:
 		panic(vec)
 	}

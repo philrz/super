@@ -20,11 +20,11 @@ func castToType(sctx *super.Context, vec vector.Any, index []uint32) (vector.Any
 			if index != nil {
 				idx = index[i]
 			}
-			if vec.Nulls.IsSet(idx) {
-				if out.Nulls.IsZero() {
-					out.Nulls = bitvec.NewFalse(n)
+			if vec.Nulls().IsSet(idx) {
+				if out.Nulls().IsZero() {
+					out.SetNulls(bitvec.NewFalse(n))
 				}
-				out.Nulls.Set(i)
+				out.Nulls().Set(i)
 				out.Append(nil)
 				continue
 			}

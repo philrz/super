@@ -18,6 +18,8 @@ type set struct {
 	nulls  *nulls
 }
 
+var _ shadow = (*set)(nil)
+
 func newSet(cctx *csup.Context, meta *csup.Set, nulls *nulls) *set {
 	return &set{
 		meta:  meta,
@@ -40,6 +42,12 @@ func (s *set) project(loader *loader, projection field.Projection) vector.Any {
 	typ := loader.sctx.LookupTypeSet(vec.Type())
 	offs, nulls := s.load(loader)
 	return vector.NewSet(typ, offs, vec, nulls)
+}
+
+func (s *set) lazy(loader *loader, projection field.Projection) vector.Any {
+	vec := s.values.lazy(loader, nil)
+	typ := loader.sctx.LookupTypeSet(vec.Type())
+	return vector.NewLazySet(typ, &setLoader{loader, s}, vec, s.length())
 }
 
 func (s *set) load(loader *loader) ([]uint32, bitvec.Bits) {

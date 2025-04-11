@@ -38,7 +38,7 @@ func (c *Combiner) Result() Any {
 	var baseTags []uint32
 	if dynamic, ok := c.base.(*Dynamic); ok {
 		baseVecs = dynamic.Values
-		baseTags = dynamic.Tags
+		baseTags = dynamic.Tags()
 	} else {
 		baseVecs = []Any{c.base}
 		baseTags = make([]uint32, c.base.Len())

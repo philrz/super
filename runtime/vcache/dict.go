@@ -19,6 +19,8 @@ type dict struct {
 	index  []byte   // dict offset of each value in vector
 }
 
+var _ shadow = (*dict)(nil)
+
 func newDict(cctx *csup.Context, meta *csup.Dict, nulls *nulls) *dict {
 	return &dict{
 		meta:  meta,
@@ -42,6 +44,10 @@ func (d *dict) project(loader *loader, projection field.Projection) vector.Any {
 	}
 	index, counts, nulls := d.load(loader)
 	return vector.NewDict(d.values.project(loader, projection), index, counts, nulls)
+}
+
+func (d *dict) lazy(loader *loader, projection field.Projection) vector.Any {
+	return vector.NewLazyDict(d.values.lazy(loader, projection), &dictLoader{loader, d}, d.length())
 }
 
 func (d *dict) load(loader *loader) ([]byte, []uint32, bitvec.Bits) {

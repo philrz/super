@@ -8,22 +8,32 @@ import (
 )
 
 type Bytes struct {
-	table BytesTable
-	Nulls bitvec.Bits
+	l      *lock
+	loader BytesLoader
+	table  BytesTable
+	nulls  bitvec.Bits
+	length uint32
 }
 
 var _ Any = (*Bytes)(nil)
 
 func NewBytes(table BytesTable, nulls bitvec.Bits) *Bytes {
-	return &Bytes{table: table, Nulls: nulls}
+	return &Bytes{table: table, nulls: nulls, length: table.Len()}
 }
 
 func NewBytesEmpty(cap uint32, nulls bitvec.Bits) *Bytes {
 	return NewBytes(NewBytesTableEmpty(cap), nulls)
 }
 
+func NewLazyBytes(loader BytesLoader, length uint32) *Bytes {
+	b := &Bytes{loader: loader, length: length}
+	b.l = newLock(b)
+	return b
+}
+
 func (b *Bytes) Append(v []byte) {
 	b.table.Append(v)
+	b.length = b.table.Len()
 }
 
 func (b *Bytes) Type() super.Type {
@@ -31,7 +41,25 @@ func (b *Bytes) Type() super.Type {
 }
 
 func (b *Bytes) Len() uint32 {
-	return b.table.Len()
+	return b.length
+}
+
+func (b *Bytes) load() {
+	b.table, b.nulls = b.loader.Load()
+}
+
+func (b *Bytes) Table() BytesTable {
+	b.l.check()
+	return b.table
+}
+
+func (b *Bytes) Nulls() bitvec.Bits {
+	b.l.check()
+	return b.nulls
+}
+
+func (b *Bytes) SetNulls(nulls bitvec.Bits) {
+	b.nulls = nulls
 }
 
 func (b *Bytes) Serialize(builder *zcode.Builder, slot uint32) {
@@ -39,34 +67,30 @@ func (b *Bytes) Serialize(builder *zcode.Builder, slot uint32) {
 }
 
 func (b *Bytes) Value(slot uint32) []byte {
-	if b.Nulls.IsSet(slot) {
+	if b.Nulls().IsSet(slot) {
 		return nil
 	}
 	return b.table.Bytes(slot)
 }
 
-func (b *Bytes) Table() BytesTable {
-	return b.table
-}
-
 func BytesValue(val Any, slot uint32) ([]byte, bool) {
 	switch val := val.(type) {
 	case *Bytes:
-		return val.Value(slot), val.Nulls.IsSet(slot)
+		return val.Value(slot), val.Nulls().IsSet(slot)
 	case *Const:
-		if val.Nulls.IsSet(slot) {
+		if val.Nulls().IsSet(slot) {
 			return nil, true
 		}
 		s, _ := val.AsBytes()
 		return s, false
 	case *Dict:
-		if val.Nulls.IsSet(slot) {
+		if val.Nulls().IsSet(slot) {
 			return nil, true
 		}
-		slot = uint32(val.Index[slot])
+		slot = uint32(val.Index()[slot])
 		return val.Any.(*Bytes).Value(slot), false
 	case *View:
-		slot = val.Index[slot]
+		slot = val.Index()[slot]
 		return BytesValue(val.Any, slot)
 	}
 	panic(val)
@@ -83,6 +107,10 @@ func NewBytesTable(offsets []uint32, bytes []byte) BytesTable {
 
 func NewBytesTableEmpty(cap uint32) BytesTable {
 	return BytesTable{make([]uint32, 1, cap+1), nil}
+}
+
+func (b BytesTable) IsZero() bool {
+	return b.offsets == nil
 }
 
 func (b BytesTable) Bytes(slot uint32) []byte {

@@ -10,11 +10,11 @@ func castToBool(vec vector.Any, index []uint32) (vector.Any, []uint32, bool) {
 	var out *vector.Bool
 	switch vec := vec.(type) {
 	case *vector.Int:
-		out = numberToBool(vec.Values, index)
+		out = numberToBool(vec.Values(), index)
 	case *vector.Uint:
-		out = numberToBool(vec.Values, index)
+		out = numberToBool(vec.Values(), index)
 	case *vector.Float:
-		out = numberToBool(vec.Values, index)
+		out = numberToBool(vec.Values(), index)
 	case *vector.String:
 		vvec, errs := stringToBool(vec, index)
 		return vvec, errs, true
@@ -23,9 +23,9 @@ func castToBool(vec vector.Any, index []uint32) (vector.Any, []uint32, bool) {
 	}
 	nulls := vector.NullsOf(vec)
 	if index == nil {
-		out.Nulls = nulls
+		out.SetNulls(nulls)
 	} else {
-		out.Nulls = nulls.Pick(index)
+		out.SetNulls(nulls.Pick(index))
 	}
 	return out, nil, true
 }
@@ -50,19 +50,21 @@ func numberToBool[E numeric](s []E, index []uint32) *vector.Bool {
 
 func stringToBool(vec *vector.String, index []uint32) (vector.Any, []uint32) {
 	n := lengthOf(vec, index)
-	bools := vector.NewFalse(n)
-	if !vec.Nulls.IsZero() {
-		bools.Nulls = bitvec.NewFalse(n)
+	bits := bitvec.NewFalse(n)
+	var nulls bitvec.Bits
+	if !vec.Nulls().IsZero() {
+		nulls = bitvec.NewFalse(n)
 	}
 	var errs []uint32
 	var boollen uint32
+	nullsIn := vec.Nulls()
 	for i := range n {
 		idx := i
 		if index != nil {
 			idx = index[i]
 		}
-		if vec.Nulls.IsSet(idx) {
-			bools.Nulls.Set(boollen)
+		if nullsIn.IsSet(idx) {
+			nulls.Set(boollen)
 			boollen++
 			continue
 		}
@@ -72,13 +74,13 @@ func stringToBool(vec *vector.String, index []uint32) (vector.Any, []uint32) {
 			continue
 		}
 		if b {
-			bools.Set(boollen)
+			bits.Set(boollen)
 		}
 		boollen++
 	}
-	bools.Bits.Shorten(boollen)
-	if !bools.Nulls.IsZero() {
-		bools.Nulls.Shorten(boollen)
+	bits.Shorten(boollen)
+	if !nulls.IsZero() {
+		nulls.Shorten(boollen)
 	}
-	return bools, errs
+	return vector.NewBool(bits, nulls), errs
 }

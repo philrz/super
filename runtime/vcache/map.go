@@ -19,6 +19,8 @@ type map_ struct {
 	nulls  *nulls
 }
 
+var _ shadow = (*map_)(nil)
+
 func newMap(cctx *csup.Context, meta *csup.Map, nulls *nulls) *map_ {
 	return &map_{
 		meta:  meta,
@@ -44,6 +46,13 @@ func (m *map_) project(loader *loader, projection field.Projection) vector.Any {
 	typ := loader.sctx.LookupTypeMap(keys.Type(), vals.Type())
 	offs, nulls := m.load(loader)
 	return vector.NewMap(typ, offs, keys, vals, nulls)
+}
+
+func (m *map_) lazy(loader *loader, projection field.Projection) vector.Any {
+	keys := m.keys.lazy(loader, nil)
+	vals := m.values.lazy(loader, nil)
+	typ := loader.sctx.LookupTypeMap(keys.Type(), vals.Type())
+	return vector.NewLazyMap(typ, &mapLoader{loader, m}, keys, vals, m.length())
 }
 
 func (m *map_) load(loader *loader) ([]uint32, bitvec.Bits) {

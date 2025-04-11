@@ -18,6 +18,8 @@ type array struct {
 	nulls  *nulls
 }
 
+var _ shadow = (*array)(nil)
+
 func newArray(cctx *csup.Context, meta *csup.Array, nulls *nulls) *array {
 	return &array{
 		meta:  meta,
@@ -40,6 +42,12 @@ func (a *array) project(loader *loader, projection field.Projection) vector.Any 
 	typ := loader.sctx.LookupTypeArray(vec.Type())
 	offs, nulls := a.load(loader)
 	return vector.NewArray(typ, offs, vec, nulls)
+}
+
+func (a *array) lazy(loader *loader, projection field.Projection) vector.Any {
+	vec := a.values.lazy(loader, nil)
+	typ := loader.sctx.LookupTypeArray(vec.Type())
+	return vector.NewLazyArray(typ, &arrayLoader{loader, a}, a.length(), vec)
 }
 
 func (a *array) load(loader *loader) ([]uint32, bitvec.Bits) {

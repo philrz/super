@@ -38,26 +38,26 @@ func (a *Abs) abs(vec vector.Any) vector.Any {
 			}
 			val = super.NewInt(vec.Type(), v)
 		}
-		return vector.NewConst(val, vec.Len(), vec.Nulls)
+		return vector.NewConst(val, vec.Len(), vec.Nulls())
 	case *vector.View:
-		return vector.Pick(a.abs(vec.Any), vec.Index)
+		return vector.Pick(a.abs(vec.Any), vec.Index())
 	case *vector.Dict:
-		return vector.NewDict(a.abs(vec.Any), vec.Index, vec.Counts, vec.Nulls)
+		return vector.NewDict(a.abs(vec.Any), vec.Index(), vec.Counts(), vec.Nulls())
 	case *vector.Int:
 		var ints []int64
-		for _, v := range vec.Values {
+		for _, v := range vec.Values() {
 			if v < 0 {
 				v = -v
 			}
 			ints = append(ints, v)
 		}
-		return vector.NewInt(vec.Type(), ints, vec.Nulls)
+		return vector.NewInt(vec.Type(), ints, vec.Nulls())
 	case *vector.Float:
 		var floats []float64
-		for _, v := range vec.Values {
+		for _, v := range vec.Values() {
 			floats = append(floats, math.Abs(v))
 		}
-		return vector.NewFloat(vec.Type(), floats, vec.Nulls)
+		return vector.NewFloat(vec.Type(), floats, vec.Nulls())
 	default:
 		panic(vec)
 	}
@@ -83,17 +83,17 @@ func (c *Ceil) ceil(vec vector.Any) vector.Any {
 	switch vec := vec.(type) {
 	case *vector.Const:
 		val := super.NewFloat(vec.Type(), math.Ceil(vec.Value().Float()))
-		return vector.NewConst(val, vec.Len(), vec.Nulls)
+		return vector.NewConst(val, vec.Len(), vec.Nulls())
 	case *vector.View:
-		return vector.Pick(c.ceil(vec.Any), vec.Index)
+		return vector.Pick(c.ceil(vec.Any), vec.Index())
 	case *vector.Dict:
-		return vector.NewDict(c.ceil(vec.Any), vec.Index, vec.Counts, vec.Nulls)
+		return vector.NewDict(c.ceil(vec.Any), vec.Index(), vec.Counts(), vec.Nulls())
 	case *vector.Float:
 		var floats []float64
-		for _, v := range vec.Values {
+		for _, v := range vec.Values() {
 			floats = append(floats, math.Ceil(v))
 		}
-		return vector.NewFloat(vec.Type(), floats, vec.Nulls)
+		return vector.NewFloat(vec.Type(), floats, vec.Nulls())
 	default:
 		panic(vec)
 	}
@@ -119,17 +119,17 @@ func (f *Floor) floor(vec vector.Any) vector.Any {
 	switch vec := vec.(type) {
 	case *vector.Const:
 		val := super.NewFloat(vec.Type(), math.Floor(vec.Value().Float()))
-		return vector.NewConst(val, vec.Len(), vec.Nulls)
+		return vector.NewConst(val, vec.Len(), vec.Nulls())
 	case *vector.View:
-		return vector.Pick(f.floor(vec.Any), vec.Index)
+		return vector.Pick(f.floor(vec.Any), vec.Index())
 	case *vector.Dict:
-		return vector.NewDict(f.floor(vec.Any), vec.Index, vec.Counts, vec.Nulls)
+		return vector.NewDict(f.floor(vec.Any), vec.Index(), vec.Counts(), vec.Nulls())
 	case *vector.Float:
 		var floats []float64
-		for _, v := range vec.Values {
+		for _, v := range vec.Values() {
 			floats = append(floats, math.Floor(v))
 		}
-		return vector.NewFloat(vec.Type(), floats, vec.Nulls)
+		return vector.NewFloat(vec.Type(), floats, vec.Nulls())
 	default:
 		panic(vec)
 	}

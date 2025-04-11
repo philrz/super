@@ -36,7 +36,7 @@ func (c *collect) ConsumeAsPartial(partial vector.Any) {
 	n := partial.Len()
 	var index []uint32
 	if view, ok := partial.(*vector.View); ok {
-		partial, index = view.Any, view.Index
+		partial, index = view.Any, view.Index()
 	}
 	array, ok := partial.(*vector.Array)
 	if !ok {
@@ -44,12 +44,13 @@ func (c *collect) ConsumeAsPartial(partial vector.Any) {
 	}
 	var b zcode.Builder
 	typ := array.Values.Type()
+	offs := array.Offsets()
 	for i := range n {
 		idx := i
 		if index != nil {
 			idx = index[i]
 		}
-		for k := array.Offsets[idx]; k < array.Offsets[idx+1]; k++ {
+		for k := offs[idx]; k < offs[idx+1]; k++ {
 			b.Truncate()
 			array.Values.Serialize(&b, k)
 			c.samcollect.Consume(super.NewValue(typ, b.Bytes().Body()))

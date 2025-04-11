@@ -22,6 +22,8 @@ type primitive struct {
 	any   any
 }
 
+var _ shadow = (*primitive)(nil)
+
 func newPrimitive(cctx *csup.Context, meta *csup.Primitive, nulls *nulls) *primitive {
 	return &primitive{
 		meta:  meta,
@@ -39,14 +41,21 @@ func (p *primitive) project(loader *loader, projection field.Projection) vector.
 	return p.newVector(loader)
 }
 
-func (p *primitive) load(loader *loader) any {
+func (p *primitive) lazy(loader *loader, projection field.Projection) vector.Any {
+	if len(projection) > 0 {
+		return vector.NewMissing(loader.sctx, p.length())
+	}
+	return p.newLazyVector(loader)
+}
+
+func (p *primitive) load(loader *loader) (any, bitvec.Bits) {
 	nulls := p.nulls.get(loader)
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.any == nil {
 		p.any = p.loadAnyWithLock(loader, nulls)
 	}
-	return p.any
+	return p.any, nulls
 }
 
 func (p *primitive) loadAnyWithLock(loader *loader, nulls bitvec.Bits) any {
@@ -65,21 +74,9 @@ func (p *primitive) loadAnyWithLock(loader *loader, nulls bitvec.Bits) any {
 	it := zcode.Iter(bytes)
 	switch p.meta.Typ.(type) {
 	case *super.TypeOfUint8, *super.TypeOfUint16, *super.TypeOfUint32, *super.TypeOfUint64:
-		values := make([]uint64, length)
-		for slot := uint32(0); slot < length; slot++ {
-			if !nulls.IsSet(slot) {
-				values[slot] = super.DecodeUint(it.Next())
-			}
-		}
-		return values
+		panic("uint primitive should be shadow uint_")
 	case *super.TypeOfInt8, *super.TypeOfInt16, *super.TypeOfInt32, *super.TypeOfInt64, *super.TypeOfDuration, *super.TypeOfTime:
-		values := make([]int64, length)
-		for slot := uint32(0); slot < length; slot++ {
-			if !nulls.IsSet(slot) {
-				values[slot] = super.DecodeInt(it.Next())
-			}
-		}
-		return values
+		panic("int primitive should be shadow int_")
 	case *super.TypeOfFloat16, *super.TypeOfFloat32, *super.TypeOfFloat64:
 		values := make([]float64, length)
 		for slot := uint32(0); slot < length; slot++ {
@@ -171,43 +168,75 @@ func (p *primitive) loadAnyWithLock(loader *loader, nulls bitvec.Bits) any {
 }
 
 func (p *primitive) newVector(loader *loader) vector.Any {
-	nulls := p.nulls.get(loader)
 	switch typ := p.meta.Typ.(type) {
 	case *super.TypeOfUint8, *super.TypeOfUint16, *super.TypeOfUint32, *super.TypeOfUint64:
-		return vector.NewUint(typ, p.load(loader).([]uint64), nulls)
+		panic("uint primitive should be shadow uint_")
 	case *super.TypeOfInt8, *super.TypeOfInt16, *super.TypeOfInt32, *super.TypeOfInt64, *super.TypeOfDuration, *super.TypeOfTime:
-		return vector.NewInt(typ, p.load(loader).([]int64), nulls)
+		panic("uint primitive should be shadow int_")
 	case *super.TypeOfFloat16, *super.TypeOfFloat32, *super.TypeOfFloat64:
-		return vector.NewFloat(typ, p.load(loader).([]float64), nulls)
+		vals, nulls := p.load(loader)
+		return vector.NewFloat(typ, vals.([]float64), nulls)
 	case *super.TypeOfBool:
-		return vector.NewBool(p.load(loader).(bitvec.Bits), nulls)
+		vals, nulls := p.load(loader)
+		return vector.NewBool(vals.(bitvec.Bits), nulls)
 	case *super.TypeOfBytes:
-		return vector.NewBytes(p.load(loader).(vector.BytesTable), nulls)
+		vals, nulls := p.load(loader)
+		return vector.NewBytes(vals.(vector.BytesTable), nulls)
 	case *super.TypeOfString:
-		return vector.NewString(p.load(loader).(vector.BytesTable), nulls)
+		vals, nulls := p.load(loader)
+		return vector.NewString(vals.(vector.BytesTable), nulls)
 	case *super.TypeOfIP:
-		return vector.NewIP(p.load(loader).([]netip.Addr), nulls)
+		vals, nulls := p.load(loader)
+		return vector.NewIP(vals.([]netip.Addr), nulls)
 	case *super.TypeOfNet:
-		return vector.NewNet(p.load(loader).([]netip.Prefix), nulls)
+		vals, nulls := p.load(loader)
+		return vector.NewNet(vals.([]netip.Prefix), nulls)
 	case *super.TypeOfType:
-		return vector.NewTypeValue(p.load(loader).(vector.BytesTable), nulls)
+		vals, nulls := p.load(loader)
+		return vector.NewTypeValue(vals.(vector.BytesTable), nulls)
 	case *super.TypeEnum:
-		return vector.NewEnum(typ, p.load(loader).([]uint64), nulls)
+		vals, nulls := p.load(loader)
+		eType, err := loader.sctx.TranslateType(typ)
+		if err != nil {
+			panic(err)
+		}
+		return vector.NewEnum(eType.(*super.TypeEnum), vals.([]uint64), nulls)
 	case *super.TypeOfNull:
 		return vector.NewConst(super.Null, p.length(), bitvec.Zero)
 	}
 	panic(fmt.Errorf("internal error: vcache.loadPrimitive got unknown type %#v", p.meta.Typ))
 }
 
-type primitiveLoader struct {
-	loader *loader
-	shadow *int_
-}
-
-var _ vector.PrimitiveLoader = (*primitiveLoader)(nil)
-
-func (i *primitiveLoader) Load() (any, bitvec.Bits) {
-	return i.shadow.load(i.loader)
+func (p *primitive) newLazyVector(loader *loader) vector.Any {
+	switch typ := p.meta.Typ.(type) {
+	case *super.TypeOfUint8, *super.TypeOfUint16, *super.TypeOfUint32, *super.TypeOfUint64:
+		panic("uint primitive should be shadow uint_")
+	case *super.TypeOfInt8, *super.TypeOfInt16, *super.TypeOfInt32, *super.TypeOfInt64, *super.TypeOfDuration, *super.TypeOfTime:
+		panic("int primitive should be shadow int_")
+	case *super.TypeOfFloat16, *super.TypeOfFloat32, *super.TypeOfFloat64:
+		panic("float primitive should be shadow float")
+	case *super.TypeOfBool:
+		return vector.NewLazyBool(p.length(), &bitsLoader{loader, p})
+	case *super.TypeOfBytes:
+		return vector.NewLazyBytes(&bytesLoader{loader, p}, p.length())
+	case *super.TypeOfString:
+		return vector.NewLazyString(&bytesLoader{loader, p}, p.length())
+	case *super.TypeOfIP:
+		return vector.NewLazyIP(&ipLoader{loader, p}, p.length())
+	case *super.TypeOfNet:
+		return vector.NewLazyNet(&netLoader{loader, p}, p.length())
+	case *super.TypeOfType:
+		return vector.NewLazyTypeValue(&bytesLoader{loader, p}, p.length())
+	case *super.TypeEnum:
+		eType, err := loader.sctx.TranslateType(typ)
+		if err != nil {
+			panic(err)
+		}
+		return vector.NewLazyEnum(eType.(*super.TypeEnum), p.length(), &enumLoader{loader, p})
+	case *super.TypeOfNull:
+		return vector.NewConst(super.Null, p.length(), bitvec.Zero)
+	}
+	panic(fmt.Errorf("internal error: vcache.loadPrimitive got unknown type %#v", p.meta.Typ))
 }
 
 func empty(typ super.Type, length uint32) any {
@@ -250,4 +279,64 @@ func extendForNulls[T any](in []T, nulls bitvec.Bits, count count) []T {
 		}
 	}
 	return out
+}
+
+type bitsLoader struct {
+	loader *loader
+	shadow *primitive
+}
+
+var _ vector.BitsLoader = (*bitsLoader)(nil)
+
+func (b *bitsLoader) Load() (bitvec.Bits, bitvec.Bits) {
+	vals, nulls := b.shadow.load(b.loader)
+	return vals.(bitvec.Bits), nulls
+}
+
+type bytesLoader struct {
+	loader *loader
+	shadow *primitive
+}
+
+var _ vector.BytesLoader = (*bytesLoader)(nil)
+
+func (b *bytesLoader) Load() (vector.BytesTable, bitvec.Bits) {
+	vals, nulls := b.shadow.load(b.loader)
+	return vals.(vector.BytesTable), nulls
+}
+
+type enumLoader struct {
+	loader *loader
+	shadow *primitive
+}
+
+var _ vector.UintLoader = (*enumLoader)(nil)
+
+func (e *enumLoader) Load() ([]uint64, bitvec.Bits) {
+	vals, nulls := e.shadow.load(e.loader)
+	return vals.([]uint64), nulls
+}
+
+type ipLoader struct {
+	loader *loader
+	shadow *primitive
+}
+
+var _ vector.IPLoader = (*ipLoader)(nil)
+
+func (i *ipLoader) Load() ([]netip.Addr, bitvec.Bits) {
+	vals, nulls := i.shadow.load(i.loader)
+	return vals.([]netip.Addr), nulls
+}
+
+type netLoader struct {
+	loader *loader
+	shadow *primitive
+}
+
+var _ vector.NetLoader = (*netLoader)(nil)
+
+func (n *netLoader) Load() ([]netip.Prefix, bitvec.Bits) {
+	vals, nulls := n.shadow.load(n.loader)
+	return vals.([]netip.Prefix), nulls
 }

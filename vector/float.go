@@ -7,15 +7,24 @@ import (
 )
 
 type Float struct {
+	l      *lock
+	loader FloatLoader
 	Typ    super.Type
-	Values []float64
-	Nulls  bitvec.Bits
+	values []float64
+	nulls  bitvec.Bits
+	length uint32
 }
 
 var _ Any = (*Float)(nil)
 
 func NewFloat(typ super.Type, values []float64, nulls bitvec.Bits) *Float {
-	return &Float{Typ: typ, Values: values, Nulls: nulls}
+	return &Float{Typ: typ, values: values, nulls: nulls, length: uint32(len(values))}
+}
+
+func NewLazyFloat(typ super.Type, length uint32, loader FloatLoader) *Float {
+	f := &Float{Typ: typ, loader: loader, length: length}
+	f.l = newLock(f)
+	return f
 }
 
 func NewFloatEmpty(typ super.Type, length uint32, nulls bitvec.Bits) *Float {
@@ -23,7 +32,8 @@ func NewFloatEmpty(typ super.Type, length uint32, nulls bitvec.Bits) *Float {
 }
 
 func (f *Float) Append(v float64) {
-	f.Values = append(f.Values, v)
+	f.values = append(f.values, v)
+	f.length = uint32(len(f.values))
 }
 
 func (f *Float) Type() super.Type {
@@ -31,25 +41,43 @@ func (f *Float) Type() super.Type {
 }
 
 func (f *Float) Len() uint32 {
-	return uint32(len(f.Values))
+	return f.length
+}
+
+func (f *Float) load() {
+	f.values, f.nulls = f.loader.Load()
+}
+
+func (f *Float) Values() []float64 {
+	f.l.check()
+	return f.values
+}
+
+func (f *Float) Nulls() bitvec.Bits {
+	f.l.check()
+	return f.nulls
+}
+
+func (f *Float) SetNulls(nulls bitvec.Bits) {
+	f.nulls = nulls
 }
 
 func (f *Float) Value(slot uint32) float64 {
-	return f.Values[slot]
+	return f.Values()[slot]
 }
 
 func (f *Float) Serialize(b *zcode.Builder, slot uint32) {
-	if f.Nulls.IsSet(slot) {
+	if f.Nulls().IsSet(slot) {
 		b.Append(nil)
 		return
 	}
 	switch f.Typ.ID() {
 	case super.IDFloat16:
-		b.Append(super.EncodeFloat16(float32(f.Values[slot])))
+		b.Append(super.EncodeFloat16(float32(f.Values()[slot])))
 	case super.IDFloat32:
-		b.Append(super.EncodeFloat32(float32(f.Values[slot])))
+		b.Append(super.EncodeFloat32(float32(f.Values()[slot])))
 	case super.IDFloat64:
-		b.Append(super.EncodeFloat64(f.Values[slot]))
+		b.Append(super.EncodeFloat64(f.Values()[slot]))
 	default:
 		panic(f.Typ)
 	}
@@ -58,19 +86,19 @@ func (f *Float) Serialize(b *zcode.Builder, slot uint32) {
 func FloatValue(vec Any, slot uint32) (float64, bool) {
 	switch vec := Under(vec).(type) {
 	case *Float:
-		return vec.Value(slot), vec.Nulls.IsSet(slot)
+		return vec.Value(slot), vec.Nulls().IsSet(slot)
 	case *Const:
-		return vec.Value().Ptr().Float(), vec.Nulls.IsSet(slot)
+		return vec.Value().Ptr().Float(), vec.Nulls().IsSet(slot)
 	case *Dict:
-		if vec.Nulls.IsSet(slot) {
+		if vec.Nulls().IsSet(slot) {
 			return 0, true
 		}
-		return FloatValue(vec.Any, uint32(vec.Index[slot]))
+		return FloatValue(vec.Any, uint32(vec.Index()[slot]))
 	case *Dynamic:
-		tag := vec.Tags[slot]
-		return FloatValue(vec.Values[tag], vec.TagMap.Forward[slot])
+		tag := vec.Tags()[slot]
+		return FloatValue(vec.Values[tag], vec.TagMap().Forward[slot])
 	case *View:
-		return FloatValue(vec.Any, vec.Index[slot])
+		return FloatValue(vec.Any, vec.Index()[slot])
 	}
 	panic(vec)
 }

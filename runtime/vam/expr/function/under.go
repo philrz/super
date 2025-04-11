@@ -14,7 +14,7 @@ func (u *Under) Call(args ...vector.Any) vector.Any {
 	vec := args[0]
 	var index []uint32
 	if view, ok := vec.(*vector.View); ok {
-		vec, index = view.Any, view.Index
+		vec, index = view.Any, view.Index()
 	}
 	var out vector.Any
 	switch vec := vec.(type) {
@@ -23,11 +23,12 @@ func (u *Under) Call(args ...vector.Any) vector.Any {
 	case *vector.Error:
 		out = vec.Vals
 	case *vector.Union:
-		return vec.Dynamic
+		return vec.Deunion()
 	case *vector.TypeValue:
-		typs := vector.NewTypeValueEmpty(0, vec.Nulls)
+		typs := vector.NewTypeValueEmpty(0, vec.Nulls())
+		nulls := vec.Nulls()
 		for i := range vec.Len() {
-			if vec.Nulls.IsSet(i) {
+			if nulls.IsSet(i) {
 				typs.Append(nil)
 			}
 			t, err := u.sctx.LookupByValue(vec.Value(i))

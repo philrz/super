@@ -71,7 +71,7 @@ func (n *NameOf) Call(args ...vector.Any) vector.Any {
 		}
 	}
 	if len(errs) > 0 {
-		out.Nulls = out.Nulls.ReversePick(errs)
+		out.SetNulls(out.Nulls().ReversePick(errs))
 		return vector.Combine(out, errs, vector.NewMissing(n.sctx, uint32(len(errs))))
 	}
 	return out
@@ -99,13 +99,14 @@ func (t *TypeName) Call(args ...vector.Any) vector.Any {
 	}
 	var errs []uint32
 	out := vector.NewTypeValueEmpty(0, bitvec.Zero)
+	var nulls bitvec.Bits
 	for i := range vec.Len() {
 		s, isnull := vector.StringValue(vec, i)
 		if isnull {
-			if out.Nulls.IsZero() {
-				out.Nulls = bitvec.NewFalse(vec.Len())
+			if nulls.IsZero() {
+				nulls = bitvec.NewFalse(vec.Len())
 			}
-			out.Nulls.Set(out.Len())
+			nulls.Set(out.Len())
 			out.Append(nil)
 			continue
 		}
@@ -116,8 +117,9 @@ func (t *TypeName) Call(args ...vector.Any) vector.Any {
 			out.Append(t.sctx.LookupTypeValue(typ).Bytes())
 		}
 	}
-	if !out.Nulls.IsZero() {
-		out.Nulls.Shorten(out.Len())
+	if !nulls.IsZero() {
+		nulls.Shorten(out.Len())
+		out.SetNulls(nulls)
 	}
 	if len(errs) > 0 {
 		return vector.Combine(out, errs, vector.NewMissing(t.sctx, uint32(len(errs))))

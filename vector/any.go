@@ -9,6 +9,7 @@ type Any interface {
 	Type() super.Type
 	Len() uint32
 	Serialize(*zcode.Builder, uint32)
+	load()
 }
 
 type Promotable interface {

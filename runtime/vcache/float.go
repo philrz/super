@@ -18,6 +18,8 @@ type float struct {
 	nulls *nulls
 }
 
+var _ shadow = (*float)(nil)
+
 func newFloat(cctx *csup.Context, meta *csup.Float, nulls *nulls) *float {
 	return &float{
 		meta:  meta,
@@ -34,6 +36,13 @@ func (i *float) project(loader *loader, projection field.Projection) vector.Any 
 	}
 	vals, nulls := i.load(loader)
 	return vector.NewFloat(i.meta.Typ, vals, nulls)
+}
+
+func (f *float) lazy(loader *loader, projection field.Projection) vector.Any {
+	if len(projection) > 0 {
+		return vector.NewMissing(loader.sctx, f.length())
+	}
+	return vector.NewLazyFloat(f.meta.Typ, f.length(), &floatLoader{loader, f})
 }
 
 func (i *float) load(loader *loader) ([]float64, bitvec.Bits) {

@@ -19,6 +19,8 @@ type uint_ struct {
 	nulls *nulls
 }
 
+var _ shadow = (*uint_)(nil)
+
 func newUint(cctx *csup.Context, meta *csup.Uint, nulls *nulls) *uint_ {
 	return &uint_{
 		meta:  meta,
@@ -35,6 +37,13 @@ func (u *uint_) project(loader *loader, projection field.Projection) vector.Any 
 	}
 	vals, nulls := u.load(loader)
 	return vector.NewUint(u.meta.Typ, vals, nulls)
+}
+
+func (u *uint_) lazy(loader *loader, projection field.Projection) vector.Any {
+	if len(projection) > 0 {
+		return vector.NewMissing(loader.sctx, u.length())
+	}
+	return vector.NewLazyUint(u.meta.Typ, u.length(), &uintLoader{loader, u})
 }
 
 func (u *uint_) load(loader *loader) ([]uint64, bitvec.Bits) {

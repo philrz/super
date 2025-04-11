@@ -69,17 +69,18 @@ func (o *Over) Pull(done bool) (vector.Any, error) {
 func (o *Over) flatten(vec vector.Any, slot uint32) vector.Any {
 	switch vec := vector.Under(vec).(type) {
 	case *vector.Dynamic:
-		return o.flatten(vec.Values[vec.Tags[slot]], vec.TagMap.Forward[slot])
+		return o.flatten(vec.Values[vec.Tags()[slot]], vec.TagMap().Forward[slot])
 	case *vector.View:
-		return o.flatten(vec.Any, vec.Index[slot])
+		return o.flatten(vec.Any, vec.Index()[slot])
 	case *vector.Array:
-		return flattenArrayOrSet(vec.Values, vec.Offsets, slot)
+		return flattenArrayOrSet(vec.Values, vec.Offsets(), slot)
 	case *vector.Set:
-		return flattenArrayOrSet(vec.Values, vec.Offsets, slot)
+		return flattenArrayOrSet(vec.Values, vec.Offsets(), slot)
 	case *vector.Map:
 		panic("unimplemented")
 	case *vector.Record:
-		if len(vec.Fields) == 0 || vec.Nulls.IsSet(slot) {
+		fields := vec.Fields()
+		if len(fields) == 0 || vec.Nulls().IsSet(slot) {
 			return nil
 		}
 		keyType := o.sctx.LookupTypeArray(super.TypeString)
@@ -93,7 +94,7 @@ func (o *Over) flatten(vec vector.Any, slot uint32) vector.Any {
 				{Name: "value", Type: f.Type},
 			})
 			keyVec := vector.NewArray(keyType, keyOffsets, vector.NewConst(super.NewString(f.Name), 1, bitvec.Zero), bitvec.Zero)
-			valVec := vector.Pick(vec.Fields[i], []uint32{slot})
+			valVec := vector.Pick(fields[i], []uint32{slot})
 			vecs = append(vecs, vector.NewRecord(typ, []vector.Any{keyVec, valVec}, keyVec.Len(), bitvec.Zero))
 		}
 		return vector.NewDynamic(tags, vecs)

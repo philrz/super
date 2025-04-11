@@ -19,6 +19,8 @@ type int_ struct {
 	nulls *nulls
 }
 
+var _ shadow = (*int_)(nil)
+
 func newInt(cctx *csup.Context, meta *csup.Int, nulls *nulls) *int_ {
 	return &int_{
 		meta:  meta,
@@ -35,6 +37,13 @@ func (i *int_) project(loader *loader, projection field.Projection) vector.Any {
 	}
 	vals, nulls := i.load(loader)
 	return vector.NewInt(i.meta.Typ, vals, nulls)
+}
+
+func (i *int_) lazy(loader *loader, projection field.Projection) vector.Any {
+	if len(projection) > 0 {
+		return vector.NewMissing(loader.sctx, i.length())
+	}
+	return vector.NewLazyInt(i.meta.Typ, i.length(), &intLoader{loader, i})
 }
 
 func (i *int_) load(loader *loader) ([]int64, bitvec.Bits) {

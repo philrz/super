@@ -148,7 +148,7 @@ func (c *countByString) update(keys, vals []vector.Any) {
 	case *vector.String:
 		c.count(val)
 	case *vector.Dict:
-		c.countDict(val.Any.(*vector.String), val.Counts, val.Nulls)
+		c.countDict(val.Any.(*vector.String), val.Counts(), val.Nulls())
 	case *vector.Const:
 		c.countFixed(val)
 	case *vector.View:
@@ -164,30 +164,33 @@ func (c *countByString) updatePartial(keyvec, valvec vector.Any) {
 	if !ok1 || !ok2 {
 		panic("count by string: invalid partials in")
 	}
-	if !key.Nulls.IsZero() {
+	vals := val.Values()
+	keyNulls := key.Nulls()
+	if !keyNulls.IsZero() {
 		for i := range key.Len() {
-			if key.Nulls.IsSet(i) {
-				c.nulls += val.Values[i]
+			if keyNulls.IsSet(i) {
+				c.nulls += vals[i]
 			} else {
-				c.table[key.Value(i)] += val.Values[i]
+				c.table[key.Value(i)] += vals[i]
 			}
 		}
 	} else {
 		for i := range key.Len() {
-			c.table[key.Value(i)] += val.Values[i]
+			c.table[key.Value(i)] += vals[i]
 		}
 	}
 }
 
 func (c *countByString) count(vec *vector.String) {
 	offs, bytes := vec.Table().Slices()
-	if vec.Nulls.IsZero() {
+	nulls := vec.Nulls()
+	if nulls.IsZero() {
 		for k := range vec.Len() {
 			c.table[string(bytes[offs[k]:offs[k+1]])]++
 		}
 	} else {
 		for k := range vec.Len() {
-			if vec.Nulls.IsSet(k) {
+			if nulls.IsSet(k) {
 				c.nulls++
 			} else {
 				c.table[string(bytes[offs[k]:offs[k+1]])]++
@@ -210,7 +213,7 @@ func (c *countByString) countFixed(vec *vector.Const) {
 	val := vec.Value()
 	switch val.Type().ID() {
 	case super.IDString:
-		nullCnt := uint64(vec.Nulls.TrueCount())
+		nullCnt := uint64(vec.Nulls().TrueCount())
 		c.nulls += nullCnt
 		c.table[super.DecodeString(val.Bytes())] += uint64(vec.Len()) - nullCnt
 	case super.IDNull:
@@ -220,13 +223,14 @@ func (c *countByString) countFixed(vec *vector.Const) {
 
 func (c *countByString) countView(vec *vector.View) {
 	strVec := vec.Any.(*vector.String)
-	if strVec.Nulls.IsZero() {
-		for _, slot := range vec.Index {
+	nulls := strVec.Nulls()
+	if nulls.IsZero() {
+		for _, slot := range vec.Index() {
 			c.table[strVec.Value(slot)]++
 		}
 	} else {
-		for _, slot := range vec.Index {
-			if strVec.Nulls.IsSet(slot) {
+		for _, slot := range vec.Index() {
+			if nulls.IsSet(slot) {
 				c.nulls++
 			} else {
 				c.table[strVec.Value(slot)]++

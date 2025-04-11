@@ -20,6 +20,8 @@ type record struct {
 	nulls  *nulls
 }
 
+var _ shadow = (*record)(nil)
+
 func newRecord(cctx *csup.Context, meta *csup.Record, nulls *nulls) *record {
 	return &record{
 		meta:   meta,
@@ -112,6 +114,55 @@ func (r *record) project(loader *loader, projection field.Projection) vector.Any
 			fields = append(fields, super.Field{Type: vec.Type(), Name: name})
 		}
 		return vector.NewRecord(loader.sctx.MustLookupTypeRecord(fields), vecs, r.length(), nulls)
+	default:
+		panic(fmt.Sprintf("bad path in vcache createRecord: %T", elem))
+	}
+}
+
+func (r *record) lazy(loader *loader, projection field.Projection) vector.Any {
+	if len(projection) == 0 {
+		// Build the whole record.  We're either loading all on demand (nil paths)
+		// or loading this record because it's referenced at the end of a projected path.
+		vecs := make([]vector.Any, 0, len(r.fields))
+		types := make([]super.Field, 0, len(r.fields))
+		for k, f := range r.fields {
+			if f != nil {
+				vec := f.lazy(loader, nil)
+				vecs = append(vecs, vec)
+				types = append(types, super.Field{Name: r.meta.Fields[k].Name, Type: vec.Type()})
+			}
+		}
+		return vector.NewLazyRecord(loader.sctx.MustLookupTypeRecord(types), &recordLoader{loader, r}, vecs, r.length())
+	}
+	switch elem := projection[0].(type) {
+	case string:
+		// A single path into this vector is projected.
+		var vec vector.Any
+		if k := indexOfField(elem, r.meta); k >= 0 && r.fields[k] != nil {
+			vec = r.fields[k].lazy(loader, projection[1:])
+		} else {
+			// Field not here.
+			vec = vector.NewMissing(loader.sctx, r.meta.Len(loader.cctx))
+		}
+		fields := []super.Field{{Type: vec.Type(), Name: elem}}
+		return vector.NewLazyRecord(loader.sctx.MustLookupTypeRecord(fields), &recordLoader{loader, r}, []vector.Any{vec}, r.length())
+	case field.Fork:
+		// Multiple paths into this record is projected.  Try to construct
+		// each one and slice together the children indicated in the projection.
+		vecs := make([]vector.Any, 0, len(r.fields))
+		fields := make([]super.Field, 0, len(r.fields))
+		for _, path := range elem {
+			name := path[0].(string)
+			var vec vector.Any
+			if k := indexOfField(name, r.meta); k >= 0 && r.fields[k] != nil {
+				vec = r.fields[k].lazy(loader, path[1:])
+			} else {
+				vec = vector.NewMissing(loader.sctx, r.meta.Len(loader.cctx))
+			}
+			vecs = append(vecs, vec)
+			fields = append(fields, super.Field{Type: vec.Type(), Name: name})
+		}
+		return vector.NewLazyRecord(loader.sctx.MustLookupTypeRecord(fields), &recordLoader{loader, r}, vecs, r.length())
 	default:
 		panic(fmt.Sprintf("bad path in vcache createRecord: %T", elem))
 	}

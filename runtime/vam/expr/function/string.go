@@ -38,7 +38,7 @@ func (j *Join) Call(args ...vector.Any) vector.Any {
 		}
 		off, end, null := vector.ContainerOffset(splitsVal, i)
 		if null {
-			out.Nulls.Set(i)
+			out.Nulls().Set(i)
 		}
 		j.builder.Reset()
 		var sep string
@@ -123,7 +123,7 @@ func (r *Replace) Call(args ...vector.Any) vector.Any {
 			continue
 		}
 		if snull {
-			out.Nulls.Set(out.Len())
+			out.Nulls().Set(out.Len())
 		}
 		out.Append(strings.ReplaceAll(s, old, new))
 	}
@@ -141,11 +141,12 @@ func (r *RuneLen) Call(args ...vector.Any) vector.Any {
 	if val.Type() != super.TypeString {
 		return vector.NewWrappedError(r.sctx, "rune_len: string arg required", val)
 	}
-	out := vector.NewIntEmpty(super.TypeInt64, val.Len(), bitvec.NewFalse(val.Len()))
+	nulls := bitvec.NewFalse(val.Len())
+	out := vector.NewIntEmpty(super.TypeInt64, val.Len(), nulls)
 	for i := uint32(0); i < val.Len(); i++ {
 		s, null := vector.StringValue(val, i)
 		if null {
-			out.Nulls.Set(i)
+			nulls.Set(i)
 		}
 		out.Append(int64(utf8.RuneCountInString(s)))
 	}
@@ -202,7 +203,7 @@ func (t *ToLower) Call(args ...vector.Any) vector.Any {
 	for i := uint32(0); i < v.Len(); i++ {
 		s, null := vector.StringValue(v, i)
 		if null {
-			out.Nulls.Set(i)
+			out.Nulls().Set(i)
 		}
 		out.Append(strings.ToLower(s))
 	}
@@ -223,7 +224,7 @@ func (t *ToUpper) Call(args ...vector.Any) vector.Any {
 	for i := uint32(0); i < v.Len(); i++ {
 		s, null := vector.StringValue(v, i)
 		if null {
-			out.Nulls.Set(i)
+			out.Nulls().Set(i)
 		}
 		out.Append(strings.ToUpper(s))
 	}
@@ -244,7 +245,7 @@ func (t *Trim) Call(args ...vector.Any) vector.Any {
 	for i := uint32(0); i < val.Len(); i++ {
 		s, null := vector.StringValue(val, i)
 		if null {
-			out.Nulls.Set(i)
+			out.Nulls().Set(i)
 		}
 		out.Append(strings.TrimSpace(s))
 	}

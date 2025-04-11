@@ -8,15 +8,24 @@ import (
 )
 
 type Const struct {
-	val   super.Value
-	len   uint32
-	Nulls bitvec.Bits
+	l      *lock
+	loader NullsLoader
+	val    super.Value
+	length uint32
+	nulls  bitvec.Bits
+	loaded bool
 }
 
 var _ Any = (*Const)(nil)
 
-func NewConst(val super.Value, len uint32, nulls bitvec.Bits) *Const {
-	return &Const{val: val, len: len, Nulls: nulls}
+func NewConst(val super.Value, length uint32, nulls bitvec.Bits) *Const {
+	return &Const{val: val, length: length, nulls: nulls, loaded: true}
+}
+
+func NewLazyConst(val super.Value, loader NullsLoader, length uint32) *Const {
+	c := &Const{val: val, loader: loader, length: length}
+	c.l = newLock(c)
+	return c
 }
 
 func (c *Const) Type() super.Type {
@@ -24,22 +33,31 @@ func (c *Const) Type() super.Type {
 }
 
 func (c *Const) Len() uint32 {
-	return c.len
+	return c.length
 }
 
 func (*Const) Ref()   {}
 func (*Const) Unref() {}
 
-func (c *Const) Length() int {
-	return int(c.len)
-}
-
 func (c *Const) Value() super.Value {
 	return c.val
 }
 
+func (c *Const) load() {
+	c.nulls = c.loader.Load()
+}
+
+func (c *Const) Nulls() bitvec.Bits {
+	c.l.check()
+	return c.nulls
+}
+
+func (c *Const) SetNulls(nulls bitvec.Bits) {
+	c.nulls = nulls
+}
+
 func (c *Const) Serialize(b *zcode.Builder, slot uint32) {
-	if c.Nulls.IsSet(slot) {
+	if c.Nulls().IsSet(slot) {
 		b.Append(nil)
 	} else {
 		b.Append(c.val.Bytes())

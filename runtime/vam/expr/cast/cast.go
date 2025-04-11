@@ -49,7 +49,7 @@ func assemble(sctx *super.Context, vec vector.Any, typ super.Type, fn caster) ve
 	case *vector.Const:
 		return castConst(sctx, vec, typ)
 	case *vector.View:
-		out, errs, ok = fn(vec.Any, vec.Index)
+		out, errs, ok = fn(vec.Any, vec.Index())
 	case *vector.Dict:
 		out, errs, ok = fn(vec.Any, nil)
 		if ok {
@@ -58,7 +58,7 @@ func assemble(sctx *super.Context, vec vector.Any, typ super.Type, fn caster) ve
 				errs = nerrs
 				out = vector.NewDict(out, index, counts, nulls)
 			} else {
-				out = vector.NewDict(out, vec.Index, vec.Counts, vec.Nulls)
+				out = vector.NewDict(out, vec.Index(), vec.Counts(), vec.Nulls())
 			}
 		}
 	default:
@@ -78,12 +78,13 @@ func castConst(sctx *super.Context, vec *vector.Const, typ super.Type) vector.An
 		return vector.NewConst(super.NewValue(typ, nil), vec.Len(), bitvec.Zero)
 	}
 	val := samexpr.LookupPrimitiveCaster(sctx, typ).Eval(samexpr.NewContext(), vec.Value())
+	nulls := vec.Nulls()
 	if val.IsError() {
-		if !vec.Nulls.IsZero() {
+		if !nulls.IsZero() {
 			var trueCount uint32
-			index := make([]uint32, vec.Nulls.Len())
+			index := make([]uint32, nulls.Len())
 			for i := range vec.Len() {
-				if vec.Nulls.IsSet(i) {
+				if vec.Nulls().IsSet(i) {
 					index[i] = 1
 					trueCount++
 				}
@@ -94,7 +95,7 @@ func castConst(sctx *super.Context, vec *vector.Const, typ super.Type) vector.An
 		}
 		return errCastFailed(sctx, vec, typ)
 	}
-	return vector.NewConst(val, vec.Len(), vec.Nulls)
+	return vector.NewConst(val, vec.Len(), nulls)
 }
 
 func errCastFailed(sctx *super.Context, vec vector.Any, typ super.Type) vector.Any {

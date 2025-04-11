@@ -36,7 +36,7 @@ func TestArithOpsAndForms(t *testing.T) {
 		f := func(expected []int64, lhs, rhs vector.Any) {
 			t.Helper()
 			cmp := NewArith(super.NewContext(), &testEval{lhs}, &testEval{rhs}, c.op)
-			assert.Equal(t, expected, cmp.Eval(nil).(*vector.Int).Values, "op: %s", c.op)
+			assert.Equal(t, expected, cmp.Eval(nil).(*vector.Int).Values(), "op: %s", c.op)
 		}
 
 		f(c.expected, lhsFlat, rhsFlat)

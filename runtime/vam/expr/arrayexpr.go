@@ -60,8 +60,8 @@ func buildList(sctx *super.Context, elems []ListElem, in []vector.Any) ([]uint32
 		}
 		vecTags = append(vecTags, uint32(len(vecs)))
 		if union, ok := vec.(*vector.Union); ok {
-			vecs = append(vecs, union.Values...)
-			unionTags[i] = union.Tags
+			vecs = append(vecs, union.Values()...)
+			unionTags[i] = union.Tags()
 		} else {
 			vecs = append(vecs, vec)
 		}
@@ -115,12 +115,12 @@ func buildList(sctx *super.Context, elems []ListElem, in []vector.Any) ([]uint32
 func unwrapSpread(vec vector.Any) (vector.Any, []uint32, []uint32) {
 	switch vec := vec.(type) {
 	case *vector.Array:
-		return vec.Values, vec.Offsets, nil
+		return vec.Values, vec.Offsets(), nil
 	case *vector.Set:
-		return vec.Values, vec.Offsets, nil
+		return vec.Values, vec.Offsets(), nil
 	case *vector.View:
 		vals, offsets, _ := unwrapSpread(vec.Any)
-		return vals, offsets, vec.Index
+		return vals, offsets, vec.Index()
 	}
 	return nil, nil, nil
 }

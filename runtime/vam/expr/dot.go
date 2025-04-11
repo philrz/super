@@ -46,13 +46,13 @@ func (d *DotExpr) eval(vecs ...vector.Any) vector.Any {
 		if !ok {
 			return vector.NewMissing(d.sctx, val.Len())
 		}
-		return val.Fields[i]
+		return val.Fields()[i]
 	case *vector.TypeValue:
 		var errs []uint32
 		typvals := vector.NewTypeValueEmpty(0, bitvec.Zero)
 		var nulls *vector.Bool
 		for i := range val.Len() {
-			if val.Nulls.IsSet(i) {
+			if val.Nulls().IsSet(i) {
 				if nulls == nil {
 					nulls = vector.NewBoolEmpty(val.Len(), bitvec.Zero)
 				}
@@ -70,8 +70,8 @@ func (d *DotExpr) eval(vecs ...vector.Any) vector.Any {
 			errs = append(errs, i)
 		}
 		if nulls != nil {
-			nulls.Bits.Shorten(typvals.Len())
-			typvals = vector.CopyAndSetNulls(typvals, nulls.Bits).(*vector.TypeValue)
+			nulls.Shorten(typvals.Len())
+			typvals = vector.CopyAndSetNulls(typvals, nulls.Bits()).(*vector.TypeValue)
 		}
 		if len(errs) > 0 {
 			return vector.Combine(typvals, errs, vector.NewMissing(d.sctx, uint32(len(errs))))
@@ -80,7 +80,7 @@ func (d *DotExpr) eval(vecs ...vector.Any) vector.Any {
 	case *vector.Map:
 		panic("vam.DotExpr Map TBD")
 	case *vector.View:
-		return vector.Pick(d.eval(val.Any), val.Index)
+		return vector.Pick(d.eval(val.Any), val.Index())
 	default:
 		return vector.NewMissing(d.sctx, val.Len())
 	}

@@ -17,7 +17,13 @@ func Equal(a, b super.Value) bool {
 	}
 	switch aid, bid := a.Type().ID(), b.Type().ID(); {
 	case !super.IsNumber(aid) || !super.IsNumber(bid):
-		return aid == bid && bytes.Equal(a.Bytes(), b.Bytes())
+		if aid != bid {
+			return false
+		}
+		if aid == super.IDNet {
+			return super.DecodeNet(a.Bytes()) == super.DecodeNet(b.Bytes())
+		}
+		return bytes.Equal(a.Bytes(), b.Bytes())
 	case super.IsFloat(aid):
 		return a.Float() == ToNumeric[float64](b)
 	case super.IsFloat(bid):

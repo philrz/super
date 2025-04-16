@@ -12,7 +12,7 @@ import (
 
 type Builder interface {
 	Write(zcode.Bytes)
-	Build() Any
+	Build(nulls bitvec.Bits) Any
 }
 
 type DynamicBuilder struct {
@@ -42,7 +42,7 @@ func (d *DynamicBuilder) Write(val super.Value) {
 func (d *DynamicBuilder) Build() Any {
 	var vecs []Any
 	for _, b := range d.values {
-		vecs = append(vecs, b.Build())
+		vecs = append(vecs, b.Build(bitvec.Zero))
 	}
 	if len(vecs) == 1 {
 		return vecs[0]
@@ -126,18 +126,22 @@ type namedBuilder struct {
 	typ *super.TypeNamed
 }
 
-func (n *namedBuilder) Build() Any {
-	return NewNamed(n.typ, n.Builder.Build())
+func (n *namedBuilder) Build(nulls bitvec.Bits) Any {
+	return NewNamed(n.typ, n.Builder.Build(nulls))
 }
 
-func (n *nullsBuilder) Build() Any {
-	vec := n.values.Build()
+func (n *nullsBuilder) Build(_ bitvec.Bits) Any {
+	// All nulls are propagated down the hierarchy at
+	// the builder's write time so there is no need to mix the local
+	// nulls here with the parent nulls.  We just send down
+	// the local nulls if it exists.
+	var nulls bitvec.Bits
 	if !n.nulls.IsEmpty() {
 		bits := make([]uint64, (n.n+63)/64)
 		n.nulls.WriteDenseTo(bits)
-		vec = CopyAndSetNulls(vec, bitvec.New(bits, n.n))
+		nulls = bitvec.New(bits, n.n)
 	}
-	return vec
+	return n.values.Build(nulls)
 }
 
 type recordBuilder struct {
@@ -168,12 +172,12 @@ func (r *recordBuilder) Write(bytes zcode.Bytes) {
 	}
 }
 
-func (r *recordBuilder) Build() Any {
+func (r *recordBuilder) Build(nulls bitvec.Bits) Any {
 	var vecs []Any
 	for _, v := range r.values {
-		vecs = append(vecs, v.Build())
+		vecs = append(vecs, v.Build(bitvec.Zero))
 	}
-	return NewRecord(r.typ, vecs, r.len, bitvec.Zero)
+	return NewRecord(r.typ, vecs, r.len, nulls)
 }
 
 type errorBuilder struct {
@@ -181,8 +185,8 @@ type errorBuilder struct {
 	Builder
 }
 
-func (e *errorBuilder) Build() Any {
-	return NewError(e.typ, e.Builder.Build(), bitvec.Zero)
+func (e *errorBuilder) Build(nulls bitvec.Bits) Any {
+	return NewError(e.typ, e.Builder.Build(bitvec.Zero), nulls)
 }
 
 type arraySetBuilder struct {
@@ -204,11 +208,11 @@ func (a *arraySetBuilder) Write(bytes zcode.Bytes) {
 	a.offsets = append(a.offsets, off)
 }
 
-func (a *arraySetBuilder) Build() Any {
+func (a *arraySetBuilder) Build(nulls bitvec.Bits) Any {
 	if typ, ok := a.typ.(*super.TypeArray); ok {
-		return NewArray(typ, a.offsets, a.values.Build(), bitvec.Zero)
+		return NewArray(typ, a.offsets, a.values.Build(bitvec.Zero), nulls)
 	}
-	return NewSet(a.typ.(*super.TypeSet), a.offsets, a.values.Build(), bitvec.Zero)
+	return NewSet(a.typ.(*super.TypeSet), a.offsets, a.values.Build(bitvec.Zero), nulls)
 }
 
 type mapBuilder struct {
@@ -237,8 +241,8 @@ func (m *mapBuilder) Write(bytes zcode.Bytes) {
 	m.offsets = append(m.offsets, off)
 }
 
-func (m *mapBuilder) Build() Any {
-	return NewMap(m.typ, m.offsets, m.keys.Build(), m.values.Build(), bitvec.Zero)
+func (m *mapBuilder) Build(nulls bitvec.Bits) Any {
+	return NewMap(m.typ, m.offsets, m.keys.Build(bitvec.Zero), m.values.Build(bitvec.Zero), nulls)
 }
 
 type unionBuilder struct {
@@ -268,12 +272,12 @@ func (u *unionBuilder) Write(bytes zcode.Bytes) {
 	u.tags = append(u.tags, uint32(tag))
 }
 
-func (u *unionBuilder) Build() Any {
+func (u *unionBuilder) Build(nulls bitvec.Bits) Any {
 	var vecs []Any
 	for _, v := range u.values {
-		vecs = append(vecs, v.Build())
+		vecs = append(vecs, v.Build(bitvec.Zero))
 	}
-	return NewUnion(u.typ, u.tags, vecs, bitvec.Zero)
+	return NewUnion(u.typ, u.tags, vecs, nulls)
 }
 
 type enumBuilder struct {
@@ -285,8 +289,8 @@ func (e *enumBuilder) Write(bytes zcode.Bytes) {
 	e.values = append(e.values, super.DecodeUint(bytes))
 }
 
-func (e *enumBuilder) Build() Any {
-	return NewEnum(e.typ, e.values, bitvec.Zero)
+func (e *enumBuilder) Build(nulls bitvec.Bits) Any {
+	return NewEnum(e.typ, e.values, nulls)
 }
 
 type intBuilder struct {
@@ -298,8 +302,8 @@ func (i *intBuilder) Write(bytes zcode.Bytes) {
 	i.values = append(i.values, super.DecodeInt(bytes))
 }
 
-func (i *intBuilder) Build() Any {
-	return NewInt(i.typ, i.values, bitvec.Zero)
+func (i *intBuilder) Build(nulls bitvec.Bits) Any {
+	return NewInt(i.typ, i.values, nulls)
 }
 
 type uintBuilder struct {
@@ -311,8 +315,8 @@ func (u *uintBuilder) Write(bytes zcode.Bytes) {
 	u.values = append(u.values, super.DecodeUint(bytes))
 }
 
-func (u *uintBuilder) Build() Any {
-	return NewUint(u.typ, u.values, bitvec.Zero)
+func (u *uintBuilder) Build(nulls bitvec.Bits) Any {
+	return NewUint(u.typ, u.values, nulls)
 }
 
 type floatBuilder struct {
@@ -324,8 +328,8 @@ func (f *floatBuilder) Write(bytes zcode.Bytes) {
 	f.values = append(f.values, super.DecodeFloat(bytes))
 }
 
-func (f *floatBuilder) Build() Any {
-	return NewFloat(f.typ, f.values, bitvec.Zero)
+func (f *floatBuilder) Build(nulls bitvec.Bits) Any {
+	return NewFloat(f.typ, f.values, nulls)
 }
 
 type boolBuilder struct {
@@ -344,10 +348,10 @@ func (b *boolBuilder) Write(bytes zcode.Bytes) {
 	b.n++
 }
 
-func (b *boolBuilder) Build() Any {
+func (b *boolBuilder) Build(nulls bitvec.Bits) Any {
 	bits := make([]uint64, (b.n+63)/64)
 	b.values.WriteDenseTo(bits)
-	return NewBool(bitvec.New(bits, b.n), bitvec.Zero)
+	return NewBool(bitvec.New(bits, b.n), nulls)
 }
 
 type bytesStringTypeBuilder struct {
@@ -365,14 +369,14 @@ func (b *bytesStringTypeBuilder) Write(bytes zcode.Bytes) {
 	b.offs = append(b.offs, uint32(len(b.bytes)))
 }
 
-func (b *bytesStringTypeBuilder) Build() Any {
+func (b *bytesStringTypeBuilder) Build(nulls bitvec.Bits) Any {
 	switch b.typ.ID() {
 	case super.IDString:
-		return NewString(NewBytesTable(b.offs, b.bytes), bitvec.Zero)
+		return NewString(NewBytesTable(b.offs, b.bytes), nulls)
 	case super.IDBytes:
-		return NewBytes(NewBytesTable(b.offs, b.bytes), bitvec.Zero)
+		return NewBytes(NewBytesTable(b.offs, b.bytes), nulls)
 	default:
-		return NewTypeValue(NewBytesTable(b.offs, b.bytes), bitvec.Zero)
+		return NewTypeValue(NewBytesTable(b.offs, b.bytes), nulls)
 	}
 }
 
@@ -384,8 +388,8 @@ func (i *ipBuilder) Write(bytes zcode.Bytes) {
 	i.values = append(i.values, super.DecodeIP(bytes))
 }
 
-func (i *ipBuilder) Build() Any {
-	return NewIP(i.values, bitvec.Zero)
+func (i *ipBuilder) Build(nulls bitvec.Bits) Any {
+	return NewIP(i.values, nulls)
 }
 
 type netBuilder struct {
@@ -396,8 +400,8 @@ func (n *netBuilder) Write(bytes zcode.Bytes) {
 	n.values = append(n.values, super.DecodeNet(bytes))
 }
 
-func (n *netBuilder) Build() Any {
-	return NewNet(n.values, bitvec.Zero)
+func (n *netBuilder) Build(nulls bitvec.Bits) Any {
+	return NewNet(n.values, nulls)
 }
 
 type constNullBuilder struct {
@@ -408,6 +412,6 @@ func (c *constNullBuilder) Write(bytes zcode.Bytes) {
 	c.n++
 }
 
-func (c *constNullBuilder) Build() Any {
-	return NewConst(super.Null, c.n, bitvec.Zero)
+func (c *constNullBuilder) Build(nulls bitvec.Bits) Any {
+	return NewConst(super.Null, c.n, nulls)
 }

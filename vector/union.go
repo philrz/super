@@ -1,9 +1,11 @@
 package vector
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/brimdata/super"
+	"github.com/brimdata/super/sup"
 	"github.com/brimdata/super/vector/bitvec"
 	"github.com/brimdata/super/zcode"
 )
@@ -25,7 +27,46 @@ var _ Any = (*Union)(nil)
 // and the corresponding union type consists of the remaining types in the values array
 // (in natural type order) without this last type  (not in natural type order).
 func NewUnion(typ *super.TypeUnion, tags []uint32, vals []Any, nulls bitvec.Bits) *Union {
-	return &Union{NewDynamic(tags, vals), typ, nulls}
+	u := &Union{NewDynamic(tags, vals), typ, nulls}
+	u.checkInvariant()
+	return u
+}
+
+func (u *Union) checkInvariant() {
+	vals := u.Values
+	if len(u.Typ.Types) == len(vals) {
+		// Check this type isn't in Values and that every tag is in range.
+		for _, v := range u.Values {
+			if v.Type() == u.Typ {
+				panic(fmt.Sprintf("union invariant violated: type can't be in itself: %s", sup.String(u.Typ)))
+			}
+		}
+		for _, tag := range u.Tags {
+			if tag >= uint32(len(vals)) {
+				panic("union invariant violated: bad tag")
+			}
+		}
+		return
+	}
+	if len(u.Typ.Types) != len(vals)+1 {
+		panic(fmt.Sprintf("union invariant violated: bad sizes (union types %d, number vals %d)", len(u.Typ.Types), len(vals)))
+	}
+	if u.Typ != vals[len(vals)-1].Type() {
+		panic(fmt.Sprintf("union invariant violated: union type not last %s (vs last type %s)", sup.String(u.Typ), sup.String(vals[len(vals)-1].Type())))
+	}
+	nullTag := uint32(len(vals) - 1)
+	var nullcnt int
+	for _, tag := range u.Tags {
+		if tag == nullTag {
+			nullcnt++
+		}
+	}
+	if nullcnt == 0 {
+		panic(fmt.Sprintf("union invariant violated: no nulltags when nulls present"))
+	}
+	if u.Nulls.TrueCount() != uint32(nullcnt) {
+		panic(fmt.Sprintf("union invariant violated: %d nulls mask vs %d null tags", u.Nulls.TrueCount(), nullcnt))
+	}
 }
 
 func (u *Union) Type() super.Type {

@@ -48,11 +48,15 @@ func (u *Union) checkInvariant() {
 		}
 		return
 	}
-	if len(u.Typ.Types) != len(vals)+1 {
+	if len(u.Typ.Types) != len(vals)-1 {
 		panic(fmt.Sprintf("union invariant violated: bad sizes (union types %d, number vals %d)", len(u.Typ.Types), len(vals)))
 	}
 	if u.Typ != vals[len(vals)-1].Type() {
-		panic(fmt.Sprintf("union invariant violated: union type not last %s (vs last type %s)", sup.String(u.Typ), sup.String(vals[len(vals)-1].Type())))
+		s := fmt.Sprintf("union invariant violated: union type not last %s (vs last type %s)\n", sup.String(u.Typ), sup.String(vals[len(vals)-1].Type()))
+		for _, v := range vals {
+			s += fmt.Sprintf("\t%s\n", sup.String(v.Type()))
+		}
+		panic(s)
 	}
 	nullTag := uint32(len(vals) - 1)
 	var nullcnt int
@@ -62,7 +66,11 @@ func (u *Union) checkInvariant() {
 		}
 	}
 	if nullcnt == 0 {
-		panic(fmt.Sprintf("union invariant violated: no nulltags when nulls present"))
+		s := "union invariant violated: no nulltags when nulls present\n"
+		for _, v := range vals {
+			s += fmt.Sprintf("\t%s\n", sup.String(v.Type()))
+		}
+		panic(s)
 	}
 	if u.Nulls.TrueCount() != uint32(nullcnt) {
 		panic(fmt.Sprintf("union invariant violated: %d nulls mask vs %d null tags", u.Nulls.TrueCount(), nullcnt))
@@ -87,8 +95,8 @@ func (u *Union) Serialize(b *zcode.Builder, slot uint32) {
 
 func Deunion(vec Any) Any {
 	if u, ok := vec.(*Union); ok {
-		//return addUnionNullsToDynamic(u.Typ, NewDynamic(u.Tags, u.Values), u.Nulls)
-		return u.Dynamic
+		return addUnionNullsToDynamic(u.Typ, NewDynamic(u.Tags, u.Values), u.Nulls)
+		//return u.Dynamic
 	}
 	return vec
 }

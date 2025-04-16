@@ -109,6 +109,11 @@ func buildList(sctx *super.Context, elems []ListElem, in []vector.Any) ([]uint32
 	if len(types) == 1 {
 		return offsets, mergeSameTypeVecs(types[0], tags, vecs)
 	}
+	//XXX this one might not be maintaining our invariant... ugly because it's creating
+	// the union with no nulls but there may be embedded nulls in vecs even though they
+	// aren't in types
+	// XXX this is going to be gnarly to maintain if we could handling union vectors
+	// this way throughout the runtime
 	return offsets, vector.NewUnion(sctx.LookupTypeUnion(types), tags, vecs, bitvec.Zero)
 }
 

@@ -16,6 +16,14 @@ type Union struct {
 
 var _ Any = (*Union)(nil)
 
+// NewUnion creates a new Union vector that preserves the invariant that all null
+// values are stored in the underlying Dynamic as a const null of this union's type.
+// This allows to reference the union values sparsely with the intervening appearing
+// explicitly in the slot of the Dynamic.  It also means we can trivially deunion
+// any union by returning its Dynamic.  The other invariant is that if there are nulls
+// in the Union then constant vector is stored as the last element of the values array
+// and the corresponding union type consists of the remaining types in the values array
+// (in natural type order) without this last type  (not in natural type order).
 func NewUnion(typ *super.TypeUnion, tags []uint32, vals []Any, nulls bitvec.Bits) *Union {
 	return &Union{NewDynamic(tags, vals), typ, nulls}
 }
@@ -38,7 +46,8 @@ func (u *Union) Serialize(b *zcode.Builder, slot uint32) {
 
 func Deunion(vec Any) Any {
 	if u, ok := vec.(*Union); ok {
-		return addUnionNullsToDynamic(u.Typ, NewDynamic(u.Tags, u.Values), u.Nulls)
+		//return addUnionNullsToDynamic(u.Typ, NewDynamic(u.Tags, u.Values), u.Nulls)
+		return u.Dynamic
 	}
 	return vec
 }

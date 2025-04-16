@@ -49,10 +49,11 @@ func Pick(val Any, index []uint32) Any {
 	case *Error:
 		return NewError(val.Typ, Pick(val.Vals, index), val.Nulls.Pick(index))
 	case *Union:
-		tags, values := viewForUnionOrDynamic(index, val.Tags, val.TagMap.Forward, val.Values)
+		//XXX this needs to be smart enough to remove the null tags, blah
+		tags, values := pickTags(index, val.Tags, val.TagMap.Forward, val.Values)
 		return NewUnion(val.Typ, tags, values, val.Nulls.Pick(index))
 	case *Dynamic:
-		return NewDynamic(viewForUnionOrDynamic(index, val.Tags, val.TagMap.Forward, val.Values))
+		return NewDynamic(pickTags(index, val.Tags, val.TagMap.Forward, val.Values))
 	case *View:
 		index2 := make([]uint32, len(index))
 		for k, idx := range index {
@@ -72,7 +73,7 @@ func ReversePick(vec Any, index []uint32) Any {
 	return Pick(vec, bitvec.ReverseIndex(index, vec.Len()))
 }
 
-func viewForUnionOrDynamic(index, tags, forward []uint32, values []Any) ([]uint32, []Any) {
+func pickTags(index, tags, forward []uint32, values []Any) ([]uint32, []Any) {
 	indexes := make([][]uint32, len(values))
 	resultTags := make([]uint32, len(index))
 	for k, index := range index {

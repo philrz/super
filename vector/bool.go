@@ -206,6 +206,9 @@ func CopyAndSetNulls(v Any, nulls bitvec.Bits) Any {
 		copy.Nulls = nulls
 		return &copy
 	case *Union:
+		//XXX this doesn't work because Tags has the old nulls embedded
+		// call a different method and rely on fact that you can only add
+		// nulls and you can't remove nulls (where would the new value come from?)
 		return NewUnion(v.Typ, v.Tags, v.Values, nulls)
 	default:
 		panic(v)

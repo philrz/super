@@ -103,6 +103,8 @@ func (c *canon) expr(e ast.Expr, parent string) {
 		c.literal(*e)
 	case *ast.ID:
 		c.write(e.Name)
+	case *ast.DoubleQuote:
+		c.write("%q", e.Text)
 	case *ast.UnaryExpr:
 		c.write(e.Op)
 		c.expr(e.Operand, "not")

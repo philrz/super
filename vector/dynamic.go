@@ -1,6 +1,8 @@
 package vector
 
 import (
+	"sync/atomic"
+
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/zcode"
 )
@@ -10,13 +12,13 @@ import (
 type Dynamic struct {
 	Tags   []uint32
 	Values []Any
-	TagMap *TagMap
+	tagMap atomic.Pointer[TagMap]
 }
 
 var _ Any = (*Dynamic)(nil)
 
 func NewDynamic(tags []uint32, values []Any) *Dynamic {
-	return &Dynamic{Tags: tags, Values: values, TagMap: NewTagMap(tags, values)}
+	return &Dynamic{Tags: tags, Values: values}
 }
 
 func (*Dynamic) Type() super.Type {
@@ -26,7 +28,7 @@ func (*Dynamic) Type() super.Type {
 func (d *Dynamic) TypeOf(slot uint32) super.Type {
 	vals := d.Values[d.Tags[slot]]
 	if v2, ok := vals.(*Dynamic); ok {
-		return v2.TypeOf(d.TagMap.Forward[slot])
+		return v2.TypeOf(d.TagMap().Forward[slot])
 	}
 	return vals.Type()
 }
@@ -43,5 +45,15 @@ func (d *Dynamic) Len() uint32 {
 }
 
 func (d *Dynamic) Serialize(b *zcode.Builder, slot uint32) {
-	d.Values[d.Tags[slot]].Serialize(b, d.TagMap.Forward[slot])
+	d.Values[d.Tags[slot]].Serialize(b, d.TagMap().Forward[slot])
+}
+
+func (d *Dynamic) TagMap() *TagMap {
+	if t := d.tagMap.Load(); t != nil {
+		return t
+	}
+	if t := NewTagMap(d.Tags, d.Values); d.tagMap.CompareAndSwap(nil, t) {
+		return t
+	}
+	return d.tagMap.Load()
 }

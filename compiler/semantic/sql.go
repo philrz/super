@@ -619,10 +619,7 @@ func (a *analyzer) semJoinCond(cond ast.JoinExpr) (dag.Expr, dag.Expr, error) {
 		if len(cond.Fields) > 1 {
 			return nil, nil, errors.New("join using currently limited to a single field")
 		}
-		key, ok := a.semField(cond.Fields[0]).(*dag.This)
-		if !ok {
-			return nil, nil, errors.New("join using key must be a field reference")
-		}
+		key := a.semField(cond.Fields[0])
 		return key, key, nil
 	default:
 		panic(fmt.Sprintf("semJoinCond: unknown type: %T", cond))

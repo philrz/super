@@ -16,6 +16,17 @@ func (p *Parser) parseType() (ast.Type, error) {
 }
 
 func (p *Parser) matchType() (ast.Type, error) {
+	typ, err := p.matchTypeComponent()
+	if err != nil {
+		return nil, err
+	}
+	if ok, _ := p.lexer.match('|'); ok {
+		return p.matchTypeUnion(typ)
+	}
+	return typ, nil
+}
+
+func (p *Parser) matchTypeComponent() (ast.Type, error) {
 	if typ, err := p.matchTypeName(); typ != nil || err != nil {
 		return typ, err
 	}
@@ -28,7 +39,7 @@ func (p *Parser) matchType() (ast.Type, error) {
 	if typ, err := p.matchTypeSetOrMap(); typ != nil || err != nil {
 		return typ, err
 	}
-	if typ, err := p.matchTypeUnion(); typ != nil || err != nil {
+	if typ, err := p.matchTypeParens(); typ != nil || err != nil {
 		return typ, err
 	}
 	// no match
@@ -255,14 +266,33 @@ func (p *Parser) parseTypeMap() (*ast.TypeMap, error) {
 	}, nil
 }
 
-func (p *Parser) matchTypeUnion() (*ast.TypeUnion, error) {
+func (p *Parser) matchTypeParens() (ast.Type, error) {
 	l := p.lexer
 	if ok, err := l.match('('); !ok || err != nil {
 		return nil, err
 	}
+	typ, err := p.matchType()
+	if err != nil {
+		return nil, err
+	}
+	ok, err := l.match(')')
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, p.error("mismatched parentheses while parsing union type")
+	}
+	return typ, nil
+}
+
+func (p *Parser) matchTypeUnion(first ast.Type) (*ast.TypeUnion, error) {
+	l := p.lexer
 	var types []ast.Type
+	if first != nil {
+		types = append(types, first)
+	}
 	for {
-		typ, err := p.matchType()
+		typ, err := p.matchTypeComponent()
 		if err != nil {
 			return nil, err
 		}
@@ -270,7 +300,7 @@ func (p *Parser) matchTypeUnion() (*ast.TypeUnion, error) {
 			break
 		}
 		types = append(types, typ)
-		ok, err := l.match(',')
+		ok, err := l.match('|')
 		if err != nil {
 			return nil, err
 		}
@@ -279,14 +309,10 @@ func (p *Parser) matchTypeUnion() (*ast.TypeUnion, error) {
 		}
 	}
 	if len(types) < 2 {
-		return nil, p.error("type list not found parsing union type at '('")
-	}
-	ok, err := l.match(')')
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, p.error("mismatched parentheses while parsing union type")
+		if ok, _ := l.match(','); ok {
+			return nil, errors.New("union components are separated by pipe symbol (|) not comma")
+		}
+		return nil, errors.New("union type must include two or more types")
 	}
 	return &ast.TypeUnion{
 		Kind:  "TypeUnion",

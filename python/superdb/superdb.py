@@ -14,7 +14,7 @@ import requests
 
 class Client():
     def __init__(self,
-                 base_url=os.environ.get('SUPER_DB_LAKE', 'http://localhost:9867'),
+                 base_url=os.environ.get('SUPER_DB', 'http://localhost:9867'),
                  config_dir=os.path.expanduser('~/.zed')):
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     import pprint
 
     parser = argparse.ArgumentParser(
-        description='Query default SuperDB lake service and print results.',
+        description='Query default SuperDB service and print results.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('query')
     args = parser.parse_args()

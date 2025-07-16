@@ -90,7 +90,7 @@ func String(p any) string {
 	case super.Value:
 		return FormatValue(val)
 	default:
-		panic("sup.String takes a super.Type or *super.Value")
+		panic(fmt.Sprintf("sup.String takes a super.Type or *super.Value: %T", val))
 	}
 }
 
@@ -178,8 +178,9 @@ func (f *Formatter) formatValue(indent int, typ super.Type, bytes zcode.Bytes, p
 	case *super.TypeMap:
 		null = f.formatMap(indent, t, bytes, known, parentImplied)
 	case *super.TypeEnum:
-		f.build("%")
+		f.build("\"")
 		f.build(t.Symbols[super.DecodeUint(bytes)])
+		f.build("\"")
 	case *super.TypeError:
 		f.startColor(color.Red)
 		f.build("error")

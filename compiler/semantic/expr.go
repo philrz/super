@@ -17,6 +17,7 @@ import (
 	"github.com/brimdata/super/runtime/sam/expr/agg"
 	"github.com/brimdata/super/runtime/sam/expr/function"
 	"github.com/brimdata/super/sup"
+	"github.com/brimdata/super/zfmt"
 	"github.com/shellyln/go-sql-like-expr/likeexpr"
 )
 
@@ -790,12 +791,7 @@ func (a *analyzer) semAssignment(assign ast.Assignment) dag.Assignment {
 	rhs := a.semExpr(assign.RHS)
 	var lhs dag.Expr
 	if assign.LHS == nil {
-		if path, err := deriveLHSPath(rhs); err != nil {
-			a.error(&assign, err)
-			lhs = badExpr()
-		} else {
-			lhs = &dag.This{Kind: "This", Path: path}
-		}
+		lhs = &dag.This{Kind: "This", Path: deriveNameFromExpr(rhs, assign.RHS)}
 	} else {
 		lhs = a.semExpr(assign.LHS)
 	}
@@ -822,28 +818,29 @@ func isLval(e dag.Expr) bool {
 	return false
 }
 
-func deriveLHSPath(rhs dag.Expr) ([]string, error) {
-	switch rhs := rhs.(type) {
+func deriveNameFromExpr(e dag.Expr, a ast.Expr) []string {
+	switch e := e.(type) {
 	case *dag.Agg:
-		return []string{rhs.Name}, nil
+		return []string{e.Name}
 	case *dag.Call:
-		switch strings.ToLower(rhs.Name) {
+		switch strings.ToLower(e.Name) {
 		case "every":
 			// If LHS is nil and the call is every() make the LHS field ts since
 			// field ts assumed with every.
-			return []string{"ts"}, nil
+			return []string{"ts"}
 		case "quiet":
-			if len(rhs.Args) > 0 {
-				if this, ok := rhs.Args[0].(*dag.This); ok {
-					return this.Path, nil
+			if len(e.Args) > 0 {
+				if this, ok := e.Args[0].(*dag.This); ok {
+					return this.Path
 				}
 			}
 		}
-		return []string{rhs.Name}, nil
+		return []string{e.Name}
 	case *dag.This:
-		return rhs.Path, nil
+		return e.Path
+	default:
+		return []string{zfmt.ASTExpr(a)}
 	}
-	return nil, errors.New("cannot infer field from expression")
 }
 
 func (a *analyzer) semFields(exprs []ast.Expr) []dag.Expr {

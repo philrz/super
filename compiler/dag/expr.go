@@ -83,11 +83,6 @@ type (
 		Kind    string  `json:"kind" unpack:""`
 		Entries []Entry `json:"entries"`
 	}
-	QueryExpr struct {
-		Kind       string `json:"kind" unpack:""`
-		Correlated bool   `json:"correlated"`
-		Body       Seq    `json:"body"`
-	}
 	RecordExpr struct {
 		Kind  string       `json:"kind" unpack:""`
 		Elems []RecordElem `json:"elems"`
@@ -123,6 +118,11 @@ type (
 		Order order.Which `json:"order"`
 		Nulls order.Nulls `json:"nulls"`
 	}
+	Subquery struct {
+		Kind       string `json:"kind" unpack:""`
+		Correlated bool   `json:"correlated"`
+		Body       Seq    `json:"body"`
+	}
 	This struct {
 		Kind string   `json:"kind" unpack:""`
 		Path []string `json:"path"`
@@ -147,13 +147,13 @@ func (*IsNullExpr) exprNode()   {}
 func (*Literal) exprNode()      {}
 func (*MapCall) exprNode()      {}
 func (*MapExpr) exprNode()      {}
-func (*QueryExpr) exprNode()    {}
 func (*RecordExpr) exprNode()   {}
 func (*RegexpMatch) exprNode()  {}
 func (*RegexpSearch) exprNode() {}
 func (*Search) exprNode()       {}
 func (*SetExpr) exprNode()      {}
 func (*SliceExpr) exprNode()    {}
+func (*Subquery) exprNode()     {}
 func (*This) exprNode()         {}
 func (*UnaryExpr) exprNode()    {}
 

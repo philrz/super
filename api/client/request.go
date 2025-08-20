@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/brimdata/super/api"
+	"github.com/brimdata/super/sio"
+	"github.com/brimdata/super/sio/bsupio"
 	"github.com/brimdata/super/sup"
-	"github.com/brimdata/super/zio"
-	"github.com/brimdata/super/zio/bsupio"
 )
 
 type Request struct {
@@ -100,7 +100,7 @@ func (r *Request) reader() (io.Reader, error) {
 		return nil, err
 	}
 	var buf bytes.Buffer
-	zw := bsupio.NewWriter(zio.NopCloser(&buf))
+	zw := bsupio.NewWriter(sio.NopCloser(&buf))
 	if err := zw.Write(val); err != nil {
 		return nil, err
 	}

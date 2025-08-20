@@ -8,8 +8,8 @@ import (
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/runtime/sam/expr"
 	"github.com/brimdata/super/runtime/sam/op"
+	"github.com/brimdata/super/sio"
 	"github.com/brimdata/super/zbuf"
-	"github.com/brimdata/super/zio"
 )
 
 // Proc merges multiple upstream Pullers into one downstream Puller.
@@ -34,7 +34,7 @@ type Op struct {
 }
 
 var _ zbuf.Puller = (*Op)(nil)
-var _ zio.Reader = (*Op)(nil)
+var _ sio.Reader = (*Op)(nil)
 
 func New(ctx context.Context, parents []zbuf.Puller, cmp expr.CompareFn, resetter expr.Resetter) *Op {
 	pullers := make([]*puller, 0, len(parents))

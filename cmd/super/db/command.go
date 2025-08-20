@@ -12,9 +12,9 @@ import (
 	"github.com/brimdata/super/cmd/super/root"
 	"github.com/brimdata/super/pkg/charm"
 	"github.com/brimdata/super/pkg/storage"
+	"github.com/brimdata/super/sio"
+	"github.com/brimdata/super/sio/supio"
 	"github.com/brimdata/super/zbuf"
-	"github.com/brimdata/super/zio"
-	"github.com/brimdata/super/zio/supio"
 )
 
 var Spec = &charm.Spec{
@@ -80,9 +80,9 @@ func (c *Command) Run(args []string) error {
 		return err
 	}
 	defer query.Pull(true)
-	out := map[string]zio.WriteCloser{
+	out := map[string]sio.WriteCloser{
 		"main":  w,
-		"debug": supio.NewWriter(zio.NopCloser(os.Stderr), supio.WriterOpts{}),
+		"debug": supio.NewWriter(sio.NopCloser(os.Stderr), supio.WriterOpts{}),
 	}
 	err = zbuf.CopyMux(out, query)
 	if closeErr := w.Close(); err == nil {

@@ -3,9 +3,9 @@ package bsupbytes
 import (
 	"bytes"
 
+	"github.com/brimdata/super/sio"
+	"github.com/brimdata/super/sio/bsupio"
 	"github.com/brimdata/super/sup"
-	"github.com/brimdata/super/zio"
-	"github.com/brimdata/super/zio/bsupio"
 )
 
 type Serializer struct {
@@ -20,7 +20,7 @@ func NewSerializer() *Serializer {
 	s := &Serializer{
 		marshaler: m,
 	}
-	s.writer = bsupio.NewWriter(zio.NopCloser(&s.buffer))
+	s.writer = bsupio.NewWriter(sio.NopCloser(&s.buffer))
 	return s
 }
 

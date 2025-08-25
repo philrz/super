@@ -28,7 +28,7 @@ for each input value based on arbitrary [expressions](../expressions.md),
 providing a convenient means to derive arbitrary output values as a function
 of each input value.
 
-The [`fork` operator](fork.md) copies its input to parallel
+The [`fork`](fork.md) operator copies its input to parallel
 branches of a pipeline, while the [`switch` operator](switch.md)
 routes each input value to only one corresponding branch
 (or drops the value) based on the switch clauses.

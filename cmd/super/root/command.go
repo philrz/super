@@ -1,6 +1,7 @@
 package root
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -124,6 +125,9 @@ func (c *Command) SetLeafFlags(f *flag.FlagSet) {
 }
 
 func (c *Command) Run(args []string) error {
+	if c.canon && c.query == "" && len(c.queryFlags.Includes) == 0 {
+		return errors.New("query text must be specified (-c or -I) when using -C")
+	}
 	ctx, cleanup, err := c.Init(&c.inputFlags, &c.outputFlags, &c.runtimeFlags)
 	if err != nil {
 		return err

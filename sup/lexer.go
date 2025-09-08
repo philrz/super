@@ -445,26 +445,6 @@ func unhexRune(b []byte) (rune, error) {
 	return r0<<12 | r1<<8 | r2<<4 | r3, nil
 }
 
-var newline = []byte{'\n'}
-
-func (l *Lexer) scanBacktickString(keepIndentation bool) (string, error) {
-	b, err := l.scanTo('`')
-	if err != nil {
-		if err == ErrBufferOverflow || err == io.EOF || err == io.ErrUnexpectedEOF {
-			err = errors.New("unterminated backtick string")
-		}
-		return "", err
-	}
-	if !keepIndentation {
-		b = l.indentation.ReplaceAll(b, newline)
-		if b[0] == '\n' {
-			b = b[1:]
-		}
-	}
-	//XXX validate UTF-8
-	return string(b), nil
-}
-
 func (l *Lexer) scanTypeName() (string, error) {
 	ok, err := l.match('"')
 	if err != nil {

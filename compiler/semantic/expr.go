@@ -86,7 +86,7 @@ func (a *analyzer) semExpr(e ast.Expr) dag.Expr {
 		typ := a.semExpr(e.Type)
 		return &dag.Call{
 			Kind: "Call",
-			Name: "cast",
+			Func: &dag.FuncName{Kind: "FuncName", Name: "cast"},
 			Args: []dag.Expr{expr, typ},
 		}
 	case *ast.DoubleQuote:
@@ -133,6 +133,8 @@ func (a *analyzer) semExpr(e ast.Expr) dag.Expr {
 			out = dag.NewUnaryExpr("!", out)
 		}
 		return out
+	case *ast.MapCall:
+		return a.semMapCall(e)
 	case *ast.MapExpr:
 		var entries []dag.Entry
 		for _, entry := range e.Entries {
@@ -227,37 +229,30 @@ func (a *analyzer) semExpr(e ast.Expr) dag.Expr {
 		if _, ok := e.Type.(*ast.DateTypeHack); ok {
 			// cast to time then bucket by 1d as a workaround for not currently
 			// supporting a "date" type.
-			cast := &dag.Call{
-				Kind: "Call",
-				Name: "cast",
-				Args: []dag.Expr{expr, &dag.Literal{Kind: "Literal", Value: "<time>"}},
-			}
-			return &dag.Call{
-				Kind: "Call",
-				Name: "bucket",
-				Args: []dag.Expr{cast, &dag.Literal{Kind: "Literal", Value: "1d"}},
-			}
+			cast := dag.NewCallByName(
+				"cast",
+				[]dag.Expr{expr, &dag.Literal{Kind: "Literal", Value: "<time>"}},
+			)
+			return dag.NewCallByName(
+				"bucket",
+				[]dag.Expr{cast, &dag.Literal{Kind: "Literal", Value: "1d"}},
+			)
 		}
 		typ := a.semExpr(&ast.TypeValue{
 			Kind:  "TypeValue",
 			Value: e.Type,
 		})
-		return &dag.Call{
-			Kind: "Call",
-			Name: "cast",
-			Args: []dag.Expr{expr, typ},
-		}
+		return dag.NewCallByName("cast", []dag.Expr{expr, typ})
 	case *ast.SQLSubstring:
 		expr := a.semExpr(e.Expr)
 		if e.From == nil && e.For == nil {
 			a.error(e, errors.New("FROM or FOR must be set"))
 			return badExpr()
 		}
-		is := &dag.Call{
-			Kind: "Call",
-			Name: "is",
-			Args: []dag.Expr{expr, &dag.Literal{Kind: "Literal", Value: "<string>"}},
-		}
+		is := dag.NewCallByName(
+			"is",
+			[]dag.Expr{expr, &dag.Literal{Kind: "Literal", Value: "<string>"}},
+		)
 		slice := &dag.SliceExpr{Kind: "SliceExpr", Expr: expr, From: a.semExprNullable(e.From)}
 		if e.For != nil {
 			to := a.semExpr(e.For)
@@ -267,19 +262,18 @@ func (a *analyzer) semExpr(e ast.Expr) dag.Expr {
 				slice.To = dag.NewBinaryExpr("+", to, &dag.Literal{Kind: "Literal", Value: "1"})
 			}
 		}
+		errRec := &dag.RecordExpr{
+			Kind: "RecordExpr",
+			Elems: []dag.RecordElem{
+				&dag.Field{Kind: "Field", Name: "message", Value: &dag.Literal{Kind: "Literal", Value: `"SUBSTRING: string value required"`}},
+				&dag.Field{Kind: "Field", Name: "value", Value: expr},
+			},
+		}
 		return &dag.Conditional{
 			Kind: "Conditional",
 			Cond: is,
 			Then: slice,
-			Else: &dag.Call{Kind: "Call", Name: "error", Args: []dag.Expr{
-				&dag.RecordExpr{
-					Kind: "RecordExpr",
-					Elems: []dag.RecordElem{
-						&dag.Field{Kind: "Field", Name: "message", Value: &dag.Literal{Kind: "Literal", Value: `"SUBSTRING: string value required"`}},
-						&dag.Field{Kind: "Field", Name: "value", Value: expr},
-					},
-				},
-			}},
+			Else: dag.NewCallByName("error", []dag.Expr{errRec}),
 		}
 	case *ast.SQLTimeValue:
 		if e.Value.Type != "string" {
@@ -414,7 +408,7 @@ func (a *analyzer) semExists(e *ast.Exists) dag.Expr {
 	// Append collect(this) to ensure array of results is returned.
 	q.Body = appendCollect(append(q.Body, &dag.Head{Kind: "Head", Count: 1}))
 	return dag.NewBinaryExpr(">",
-		&dag.Call{Kind: "Call", Name: "len", Args: []dag.Expr{q}},
+		dag.NewCallByName("len", []dag.Expr{q}),
 		&dag.Literal{Kind: "Literal", Value: "0"})
 }
 
@@ -440,17 +434,16 @@ func semDynamicType(tv ast.Type) *dag.Call {
 }
 
 func dynamicTypeName(name string) *dag.Call {
-	return &dag.Call{
-		Kind: "Call",
-		Name: "typename",
-		Args: []dag.Expr{
+	return dag.NewCallByName(
+		"typename",
+		[]dag.Expr{
 			// SUP string literal of type name
 			&dag.Literal{
 				Kind:  "Literal",
 				Value: `"` + name + `"`,
 			},
 		},
-	}
+	)
 }
 
 func (a *analyzer) semRegexp(b *ast.BinaryExpr) dag.Expr {
@@ -543,11 +536,7 @@ func (a *analyzer) semBinary(e *ast.BinaryExpr) dag.Expr {
 	case "not in":
 		return dag.NewUnaryExpr("!", dag.NewBinaryExpr("in", lhs, rhs))
 	case "::":
-		return &dag.Call{
-			Kind: "Call",
-			Name: "cast",
-			Args: []dag.Expr{lhs, rhs},
-		}
+		return dag.NewCallByName("cast", []dag.Expr{lhs, rhs})
 	}
 	return dag.NewBinaryExpr(op, lhs, rhs)
 }
@@ -628,33 +617,66 @@ func (a *analyzer) semCall(call *ast.Call) dag.Expr {
 		a.error(call, errors.New("'where' clause on non-aggregation function"))
 		return badExpr()
 	}
-	exprs := a.semExprs(call.Args)
-	name, nargs := call.Name.Name, len(call.Args)
-	nameLower := strings.ToLower(name)
+	args := a.semExprs(call.Args)
+	switch f := call.Func.(type) {
+	case *ast.FuncName:
+		return a.semCallByName(call, f.Name, args)
+	case *ast.Lambda:
+		return a.semCallLambda(f, args)
+	default:
+		panic(f)
+	}
+}
+
+func (a *analyzer) semCallLambda(lambda *ast.Lambda, args []dag.Expr) dag.Expr {
+	params := make([]string, 0, len(lambda.Params))
+	for _, id := range lambda.Params {
+		params = append(params, id.Name)
+	}
+	return &dag.Call{
+		Kind: "Call",
+		Func: &dag.Lambda{
+			Kind:   "Lambda",
+			Params: params,
+			Expr:   a.semExpr(lambda.Expr),
+		},
+		Args: args,
+	}
+}
+
+func (a *analyzer) semCallByName(call *ast.Call, name string, args []dag.Expr) dag.Expr {
 	// Call could be to a user defined func. Check if we have a matching func in
-	// scope.
-	udf, err := a.scope.LookupExpr(name)
+	// scope.  The name can be a formal argument of a user op so we look it up and
+	// see if it points to something else.
+	f, lambda, err := a.scope.LookupFunc(name)
 	if err != nil {
 		a.error(call, err)
 		return badExpr()
 	}
-	switch {
-	// udf should be checked first since a udf can override builtin functions.
-	case udf != nil:
-		f, ok := udf.(*dag.Func)
-		if !ok {
-			a.error(call.Name, errors.New("not a function"))
-			return badExpr()
-		}
-		if len(f.Params) != nargs {
-			a.error(call, fmt.Errorf("call expects %d argument(s)", len(f.Params)))
-			return badExpr()
-		}
+	if lambda != nil {
+		// This can happen when a lambda is passed in and the arg
+		// is referred to with a name, e.g,
+		// op foo f : (values f(foo)) call foo lambda x:x+1
 		return &dag.Call{
 			Kind: "Call",
-			Name: f.Name,
-			Args: exprs,
+			Func: &dag.Lambda{
+				Kind:   "Lambda",
+				Params: lambda.Params,
+				Expr:   lambda.Expr,
+			},
+			Args: args,
 		}
+	}
+	nargs := len(args)
+	nameLower := strings.ToLower(name)
+	switch {
+	// udf should be checked first since a udf can override builtin functions.
+	case f != nil:
+		if len(f.Lambda.Params) != nargs {
+			a.error(call, fmt.Errorf("call expects %d argument(s)", len(f.Lambda.Params)))
+			return badExpr()
+		}
+		return dag.NewCallByName(f.Name, args)
 	case expr.NewShaperTransform(nameLower) != 0:
 		if err := function.CheckArgCount(nargs, 2, 2); err != nil {
 			a.error(call, err)
@@ -665,13 +687,9 @@ func (a *analyzer) semCall(call *ast.Call) dag.Expr {
 			a.error(call, err)
 			return badExpr()
 		}
-		pattern, ok := isStringConst(a.sctx, exprs[0])
+		pattern, ok := isStringConst(a.sctx, args[0])
 		if !ok {
-			return &dag.Call{
-				Kind: "Call",
-				Name: "grep",
-				Args: exprs,
-			}
+			return dag.NewCallByName("grep", args)
 		}
 		re, err := expr.CompileRegexp(pattern)
 		if err != nil {
@@ -683,39 +701,19 @@ func (a *analyzer) semCall(call *ast.Call) dag.Expr {
 				Kind:  "Search",
 				Text:  s,
 				Value: sup.QuotedString(s),
-				Expr:  exprs[1],
+				Expr:  args[1],
 			}
 		}
 		return &dag.RegexpSearch{
 			Kind:    "RegexpSearch",
 			Pattern: pattern,
-			Expr:    exprs[1],
-		}
-	case nameLower == "map":
-		if err := function.CheckArgCount(nargs, 2, 2); err != nil {
-			a.error(call, err)
-			return badExpr()
-		}
-		id, ok := call.Args[1].(*ast.ID)
-		if !ok {
-			a.error(call.Args[1], errors.New("second argument must be the identifier of a function"))
-			return badExpr()
-		}
-		inner := a.semCall(&ast.Call{
-			Kind: "Call",
-			Name: id,
-			Args: []ast.Expr{&ast.ID{Kind: "ID", Name: "this"}},
-		})
-		return &dag.MapCall{
-			Kind:  "MapCall",
-			Expr:  exprs[0],
-			Inner: inner,
+			Expr:    args[1],
 		}
 	case nameLower == "position" && nargs == 1:
-		b, ok := exprs[0].(*dag.BinaryExpr)
+		b, ok := args[0].(*dag.BinaryExpr)
 		if ok && strings.ToLower(b.Op) == "in" {
 			// Support for SQL style position function call.
-			exprs = []dag.Expr{b.RHS, b.LHS}
+			args = []dag.Expr{b.RHS, b.LHS}
 			nargs = 2
 		}
 		fallthrough
@@ -725,10 +723,36 @@ func (a *analyzer) semCall(call *ast.Call) dag.Expr {
 			return badExpr()
 		}
 	}
-	return &dag.Call{
-		Kind: "Call",
-		Name: nameLower,
-		Args: exprs,
+	return dag.NewCallByName(nameLower, args)
+}
+
+func (a *analyzer) semMapCall(call *ast.MapCall) dag.Expr {
+	var lambda *dag.Call
+	this := []dag.Expr{dag.NewThis(nil)}
+	switch f := call.Func.(type) {
+	case *ast.FuncName:
+		if _, _, err := a.scope.LookupFunc(f.Name); err != nil {
+			a.error(f, err)
+			return badExpr()
+		}
+		lambda = dag.NewCallByName(f.Name, this)
+	case *ast.Lambda:
+		lambda = &dag.Call{
+			Kind: "Call",
+			Func: &dag.Lambda{
+				Kind:   "Lambda",
+				Params: idsAsStrings(f.Params),
+				Expr:   a.semExpr(f.Expr),
+			},
+			Args: this,
+		}
+	default:
+		panic("semMapCall")
+	}
+	return &dag.MapCall{
+		Kind:   "MapCall",
+		Expr:   a.semExpr(call.Expr),
+		Lambda: lambda,
 	}
 }
 
@@ -748,14 +772,13 @@ func (a *analyzer) semCallExtract(partExpr, argExpr ast.Expr) dag.Expr {
 		a.error(partExpr, fmt.Errorf("part must be an identifier or string"))
 		return badExpr()
 	}
-	return &dag.Call{
-		Kind: "Call",
-		Name: "date_part",
-		Args: []dag.Expr{
+	return dag.NewCallByName(
+		"date_part",
+		[]dag.Expr{
 			&dag.Literal{Kind: "Literal", Value: sup.QuotedString(strings.ToLower(partstr))},
 			a.semExpr(argExpr),
 		},
-	}
+	)
 }
 
 func (a *analyzer) semExprs(in []ast.Expr) []dag.Expr {
@@ -810,7 +833,8 @@ func deriveNameFromExpr(e dag.Expr, a ast.Expr) []string {
 	case *dag.Agg:
 		return []string{e.Name}
 	case *dag.Call:
-		switch strings.ToLower(e.Name) {
+		name := e.Name()
+		switch strings.ToLower(name) {
 		case "quiet":
 			if len(e.Args) > 0 {
 				if this, ok := e.Args[0].(*dag.This); ok {
@@ -818,7 +842,7 @@ func deriveNameFromExpr(e dag.Expr, a ast.Expr) []string {
 				}
 			}
 		}
-		return []string{e.Name}
+		return []string{name}
 	case *dag.This:
 		return e.Path
 	default:
@@ -853,8 +877,11 @@ func (a *analyzer) semField(f ast.Expr) dag.Expr {
 }
 
 func (a *analyzer) maybeConvertAgg(call *ast.Call) dag.Expr {
-	name := call.Name.Name
-	nameLower := strings.ToLower(name)
+	name, ok := call.Func.(*ast.FuncName)
+	if !ok {
+		return nil
+	}
+	nameLower := strings.ToLower(name.Name)
 	if _, err := agg.NewPattern(nameLower, false, true); err != nil {
 		return nil
 	}
@@ -955,11 +982,10 @@ func (a *analyzer) semFString(f *ast.FString) dag.Expr {
 		switch elem := elem.(type) {
 		case *ast.FStringExpr:
 			e = a.semExpr(elem.Expr)
-			e = &dag.Call{
-				Kind: "Call",
-				Name: "cast",
-				Args: []dag.Expr{e, &dag.Literal{Kind: "Literal", Value: "<string>"}},
-			}
+			e = dag.NewCallByName(
+				"cast",
+				[]dag.Expr{e, &dag.Literal{Kind: "Literal", Value: "<string>"}},
+			)
 		case *ast.FStringText:
 			e = &dag.Literal{Kind: "Literal", Value: sup.QuotedString(elem.Text)}
 		default:

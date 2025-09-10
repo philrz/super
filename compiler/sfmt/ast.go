@@ -112,7 +112,8 @@ func (c *canon) expr(e ast.Expr, parent string) {
 		c.write(" : ")
 		c.expr(e.Else, "")
 	case *ast.Call:
-		c.write("%s(", e.Name.Name)
+		c.funcRefAsCall(e.Func)
+		c.write("(")
 		c.exprs(e.Args)
 		c.write(")")
 	case *ast.CallExtract:
@@ -160,6 +161,12 @@ func (c *canon) expr(e ast.Expr, parent string) {
 			c.write("NOT ")
 		}
 		c.write("NULL")
+	case *ast.MapCall:
+		c.write("map(")
+		c.expr(e.Expr, "")
+		c.write(", ")
+		c.funcRefAsArg(e.Func)
+		c.write(")")
 	case *ast.SliceExpr:
 		c.expr(e.Expr, "")
 		c.write("[")
@@ -284,6 +291,46 @@ func (c *canon) expr(e ast.Expr, parent string) {
 	}
 }
 
+func (c *canon) funcRefAsCall(f ast.FuncRef) {
+	if e, ok := f.(ast.Expr); ok {
+		c.expr(e, "")
+		return
+	}
+	switch f := f.(type) {
+	case *ast.FuncName:
+		c.write("%s", f.Name)
+	case *ast.Lambda:
+		c.write("(")
+		c.lambda(f)
+		c.write(")")
+	default:
+		panic(f)
+	}
+}
+
+func (c *canon) funcRefAsArg(f ast.FuncRef) {
+	if e, ok := f.(ast.Expr); ok {
+		c.expr(e, "")
+		return
+	}
+	switch f := f.(type) {
+	case *ast.FuncName:
+		c.write("&%s", f.Name)
+	case *ast.Lambda:
+		c.lambda(f)
+	default:
+		panic(f)
+	}
+}
+
+func (c *canon) lambda(lambda *ast.Lambda) {
+	c.write("(lambda ")
+	c.ids(lambda.Params)
+	c.write(":")
+	c.expr(lambda.Expr, "")
+	c.write(")")
+}
+
 func (c *canon) vectorElems(elems []ast.VectorElem) {
 	for k, elem := range elems {
 		if k > 0 {
@@ -385,28 +432,28 @@ func (c *canon) decl(d ast.Decl) {
 		c.expr(d.Expr, "")
 	case *ast.FuncDecl:
 		c.write("fn %s(", d.Name.Name)
-		for i := range d.Params {
+		for i := range d.Lambda.Params {
 			if i != 0 {
 				c.write(", ")
 			}
-			c.write(d.Params[i].Name)
+			c.write(d.Lambda.Params[i].Name)
 		}
 		c.open("): (")
 		c.ret()
-		c.expr(d.Expr, d.Name.Name)
+		c.expr(d.Lambda.Expr, d.Name.Name)
 		c.close()
 		c.ret()
 		c.flush()
 		c.write(")")
 	case *ast.OpDecl:
-		c.write("op %s(", d.Name.Name)
-		for k, p := range d.Params {
+		c.write("op %s ", d.Name.Name)
+		for k, f := range d.Params {
 			if k > 0 {
 				c.write(", ")
 			}
-			c.write(p.Name)
+			c.write(f.Name)
 		}
-		c.open("): (")
+		c.open(": (")
 		c.ret()
 		c.flush()
 		c.head = true
@@ -498,7 +545,7 @@ func (c *canon) op(p ast.Op) {
 	case *ast.CallOp:
 		c.next()
 		c.write("call %s ", sup.QuotedName(p.Name.Name))
-		c.exprs(p.Args)
+		c.funcOrExprs(p.Args)
 	case *ast.Cut:
 		c.next()
 		c.write("cut ")
@@ -752,6 +799,35 @@ func (c *canon) op(p ast.Op) {
 	}
 }
 
+func (c *canon) funcOrExprs(args []ast.FuncOrExpr) {
+	for k, a := range args {
+		if k > 0 {
+			c.write(", ")
+		}
+		if e, ok := a.(ast.Expr); ok {
+			c.expr(e, "")
+			continue
+		}
+		switch a := a.(type) {
+		case *ast.Lambda:
+			c.lambda(a)
+		case *ast.FuncName:
+			c.write("&%s", a.Name)
+		default:
+			panic(fmt.Sprintf("unknown type for op call actuals: %T", a))
+		}
+	}
+}
+
+func (c *canon) ids(ids []*ast.ID) {
+	for k, id := range ids {
+		if k > 0 {
+			c.write(", ")
+		}
+		c.expr(id, "")
+	}
+}
+
 func (c *canon) fromElems(elems []*ast.FromElem) {
 	c.fromElem(elems[0])
 	for _, elem := range elems[1:] {
@@ -911,7 +987,11 @@ func isAggFunc(e ast.Expr) *ast.Aggregate {
 	if !ok {
 		return nil
 	}
-	if _, err := agg.NewPattern(call.Name.Name, false, true); err != nil {
+	name, ok := call.Func.(*ast.FuncName)
+	if !ok {
+		return nil
+	}
+	if _, err := agg.NewPattern(name.Name, false, true); err != nil {
 		return nil
 	}
 	return &ast.Aggregate{
@@ -939,7 +1019,8 @@ func IsBool(e ast.Expr) bool {
 	case *ast.Conditional:
 		return IsBool(e.Then) && IsBool(e.Else)
 	case *ast.Call:
-		return function.HasBoolResult(e.Name.Name)
+		name, ok := e.Func.(*ast.FuncName)
+		return ok && function.HasBoolResult(name.Name)
 	case *ast.Cast:
 		if typval, ok := e.Type.(*ast.TypeValue); ok {
 			if typ, ok := typval.Value.(*ast.TypePrimitive); ok {

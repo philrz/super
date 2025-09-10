@@ -44,9 +44,9 @@ type (
 		RHS  Expr   `json:"rhs"`
 	}
 	Call struct {
-		Kind string `json:"kind" unpack:""`
-		Name string `json:"name"`
-		Args []Expr `json:"args"`
+		Kind string  `json:"kind" unpack:""`
+		Func FuncRef `json:"func"`
+		Args []Expr  `json:"args"`
 	}
 	Conditional struct {
 		Kind string `json:"kind" unpack:""`
@@ -59,12 +59,6 @@ type (
 		LHS  Expr   `json:"lhs"`
 		RHS  string `json:"rhs"`
 	}
-	Func struct {
-		Kind   string   `json:"func" unpack:""`
-		Name   string   `json:"name"`
-		Params []string `json:"params"`
-		Expr   Expr     `json:"expr"`
-	}
 	IndexExpr struct {
 		Kind  string `json:"kind" unpack:""`
 		Expr  Expr   `json:"expr"`
@@ -74,14 +68,19 @@ type (
 		Kind string `json:"kind" unpack:""`
 		Expr Expr   `json:"expr"`
 	}
+	Lambda struct {
+		Kind   string   `json:"kind" unpack:""`
+		Params []string `json:"params"`
+		Expr   Expr     `json:"expr"`
+	}
 	Literal struct {
 		Kind  string `json:"kind" unpack:""`
 		Value string `json:"value"`
 	}
 	MapCall struct {
-		Kind  string `json:"kind" unpack:""`
-		Expr  Expr   `json:"expr"`
-		Inner Expr   `json:"inner"`
+		Kind   string `json:"kind" unpack:""`
+		Expr   Expr   `json:"expr"`
+		Lambda *Call  `json:"lambda"`
 	}
 	MapExpr struct {
 		Kind    string  `json:"kind" unpack:""`
@@ -138,6 +137,13 @@ type (
 	}
 )
 
+func (c *Call) Name() string {
+	if f, ok := c.Func.(*FuncName); ok {
+		return f.Name
+	}
+	return "lambda"
+}
+
 func (*Agg) exprNode()          {}
 func (*ArrayExpr) exprNode()    {}
 func (*BadExpr) exprNode()      {}
@@ -145,7 +151,6 @@ func (*BinaryExpr) exprNode()   {}
 func (*Call) exprNode()         {}
 func (*Conditional) exprNode()  {}
 func (*Dot) exprNode()          {}
-func (*Func) exprNode()         {}
 func (*IndexExpr) exprNode()    {}
 func (*IsNullExpr) exprNode()   {}
 func (*Literal) exprNode()      {}
@@ -194,6 +199,14 @@ func NewBinaryExpr(op string, lhs, rhs Expr) *BinaryExpr {
 		Op:   op,
 		LHS:  lhs,
 		RHS:  rhs,
+	}
+}
+
+func NewCallByName(name string, args []Expr) *Call {
+	return &Call{
+		Kind: "Call",
+		Func: &FuncName{Kind: "FuncName", Name: name},
+		Args: args,
 	}
 }
 

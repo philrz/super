@@ -60,7 +60,7 @@ type Builder struct {
 	progress        *sbuf.Progress
 	channels        map[string][]sbuf.Puller
 	deletes         *sync.Map
-	udfs            map[string]*dag.Func
+	udfs            map[string]*dag.Lambda
 	compiledUDFs    map[string]*expr.UDF
 	compiledVamUDFs map[string]*vamexpr.UDF
 	resetters       expr.Resetters
@@ -78,7 +78,7 @@ func NewBuilder(rctx *runtime.Context, env *exec.Environment) *Builder {
 			RecordsMatched: 0,
 		},
 		channels:        make(map[string][]sbuf.Puller),
-		udfs:            make(map[string]*dag.Func),
+		udfs:            make(map[string]*dag.Lambda),
 		compiledUDFs:    make(map[string]*expr.UDF),
 		compiledVamUDFs: make(map[string]*vamexpr.UDF),
 	}
@@ -456,7 +456,7 @@ func (b *Builder) compileScope(scope *dag.Scope, parents []sbuf.Puller) ([]sbuf.
 	b.udfs = maps.Clone(parentUDFs)
 	defer func() { b.udfs = parentUDFs }()
 	for _, f := range scope.Funcs {
-		b.udfs[f.Name] = f
+		b.udfs[f.Name] = &f.Lambda
 	}
 	return b.compileSeq(scope.Body, parents)
 }

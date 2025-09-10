@@ -47,11 +47,33 @@ FuncDecl
       return &ast.FuncDecl{
         Kind: "FuncDecl",
         Name: name.(*ast.ID),
+        Lambda: &ast.Lambda{
+          Kind: "Lambda",
+          Params: sliceOf[*ast.ID](params),
+          Expr: expr.(ast.Expr),
+          Loc: loc(c),
+        },
+        Loc: loc(c),
+      }, nil
+    }
+
+LambdaExpr
+  = LAMBDA params:(_ ids:Identifiers { return ids, nil })? __ ":" __ expr:Expr {
+      return &ast.Lambda{
+        Kind: "Lambda",
         Params: sliceOf[*ast.ID](params),
         Expr: expr.(ast.Expr),
         Loc: loc(c),
       }, nil
     }
+    / "(" __ lambda:LambdaExpr __ ")" { return lambda, nil }
+
+FuncOrExprs
+  = first:FuncOrExpr rest:(__ "," __ f:FuncOrExpr { return f, nil })* {
+      return prepend(first, rest), nil
+    }
+
+FuncOrExpr = FuncValue / Expr
 
 OpDecl
   = OP _ name:Identifier params:(_ ids:Identifiers { return ids, nil })? __ ":" __ body:ScopeBody {
@@ -87,8 +109,8 @@ PipeOp
   / "(" __ scope:Scope __ ")" { return scope, nil }
   / a:OpAssignment &EndOfOp { return a, nil }
   / !(Function EndOfOp) a:Aggregation &EndOfOp { return a, nil }
-  / !CallIDGuard name:Identifier _ !CallExprGuard args:Exprs {
-      return &ast.CallOp{Kind:"CallOp", Name: name.(*ast.ID), Args:sliceOf[ast.Expr](args), Loc:loc(c)}, nil
+  / !CallIDGuard name:Identifier _ !CallExprGuard args:FuncOrExprs {
+      return &ast.CallOp{Kind:"CallOp", Name: name.(*ast.ID), Args:sliceOf[ast.FuncOrExpr](args), Loc:loc(c)}, nil
     }
   / !CallIDGuard name:Identifier &EndOfOp {
       return &ast.CallOp{Kind:"CallOp", Name: name.(*ast.ID), Loc:loc(c)}, nil
@@ -279,9 +301,14 @@ AggAssignments
     }
 
 CountStar = COUNT __ "(" __ "*" __ ")" {
+    name := &ast.FuncName{
+        Kind: "FuncName",
+        Name: "count",
+        Loc: loc(c),
+    }
     return &ast.Call{
 		Kind: "Call",
-		Name: &ast.ID{Kind:"ID", Name:"count", Loc: ast.NewLoc(c.pos.offset, c.pos.offset+5)},
+		Func:   name,
         Loc:  loc(c),
     }, nil
   }
@@ -420,11 +447,11 @@ TopOp
     }
 
 CallOp
-  = CALL _ name:Identifier args:((_ args:Exprs) { return args, nil })? {
+  = CALL _ name:Identifier args:((_ args:FuncOrExprs) { return args, nil })? {
       return &ast.CallOp{
         Kind: "CallOp",
         Name: name.(*ast.ID),
-        Args: sliceOf[ast.Expr](args),
+        Args: sliceOf[ast.FuncOrExpr](args),
         Loc: loc(c),
       }, nil
     }
@@ -1036,6 +1063,14 @@ Function
         Loc: loc(c),
       }, nil
     }
+  / MAP __ "(" __ e:Expr __ "," __ f:FuncValue ")" {
+      return &ast.MapCall{
+        Kind: "MapCall",
+        Expr: e.(ast.Expr),
+        Func: f.(ast.FuncRef),
+        Loc: loc(c),
+      }, nil
+    }
   / SUBSTRING __ "(" __ expr:Expr from:(_ FROM _ e:Expr { return e, nil })? for_:(_ FOR _ e:Expr { return e, nil })? ")" {
       s := &ast.SQLSubstring{
         Kind: "SQLSubstring",
@@ -1050,10 +1085,29 @@ Function
       }
       return s, nil
     }
-  / fn:Identifier __ "(" __ args:FunctionArgs __ ")" where:WhereClause? {
-      return newCall(c, fn, args, where), nil
+  / f:Callable __ "(" __ args:FunctionArgs __ ")" where:WhereClause? {
+      return newCall(c, f, args, where), nil
     }
   / CountStar
+
+Callable
+  = LambdaExpr
+  / id:IdentifierName {
+      return &ast.FuncName{
+        Name: id.(string),
+        Loc: loc(c),
+      }, nil
+    }
+
+FuncValue
+  = "&" id:IdentifierName {
+      return &ast.FuncName{
+        Kind: "FuncName",
+        Name: id.(string),
+        Loc: loc(c),
+      }, nil
+    }
+  / LambdaExpr
 
 DateTypeHack
   = "date"i {
@@ -2336,12 +2390,14 @@ IN         = "IN"i              !IdentifierRest
 INNER      = "INNER"i           !IdentifierRest
 IS         = "IS"i              !IdentifierRest
 JOIN       = "JOIN"i            !IdentifierRest
+LAMBDA     = "LAMBDA"i          !IdentifierRest
 LAST       = "LAST"i            !IdentifierRest
 LEFT       = "LEFT"i            !IdentifierRest
 LIKE       = "LIKE"i            !IdentifierRest
 LIMIT      = "LIMIT"i           !IdentifierRest
 LOAD       = "LOAD"i            !IdentifierRest
 MATERIALIZED = "MATERIALIZED"i  !IdentifierRest
+MAP        = "MAP"i             !IdentifierRest
 MERGE      = "MERGE"i           !IdentifierRest
 NOT        = "NOT"i             !IdentifierRest
 NULL       = "NULL"i            !IdentifierRest

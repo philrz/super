@@ -83,7 +83,7 @@ func makeArgMap(args any) (any, error) {
 func newCall(c *current, name, args, where any) ast.Expr {
 	call := &ast.Call{
 		Kind: "Call",
-		Name: name.(*ast.ID),
+		Func: name.(ast.FuncRef),
 		Args: sliceOf[ast.Expr](args),
 		Loc:  loc(c),
 	}

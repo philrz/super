@@ -1226,7 +1226,7 @@ func (a *analyzer) semCallOp(call *ast.CallOp, seq dag.Seq) dag.Seq {
 	return append(seq, a.semUserOp(call.Loc, decl, call.Args)...)
 }
 
-func (a *analyzer) semUserOp(loc ast.Loc, decl *opDecl, args []ast.FuncOrExpr) dag.Seq {
+func (a *analyzer) semUserOp(loc ast.Loc, decl *opDecl, args []ast.Expr) dag.Seq {
 	// We've found a user op bound to the name being invoked, so we pull out the
 	// AST elements that were stashed from the definition of the user op and subsitute
 	// them into the call site here.  This is essentially a thunk... each use of the
@@ -1237,15 +1237,14 @@ func (a *analyzer) semUserOp(loc ast.Loc, decl *opDecl, args []ast.FuncOrExpr) d
 		a.error(loc, fmt.Errorf("%d arg%s provided when operator expects %d arg%s", len(params), plural.Slice(params, "s"), len(args), plural.Slice(args, "s")))
 		return dag.Seq{badOp()}
 	}
+	//XXX
 	exprs := make([]dag.Expr, len(args))
 	fns := make([]dag.FuncRef, len(args))
 	for i, e := range args {
-		if expr, ok := e.(ast.Expr); ok {
-			exprs[i] = a.semExpr(expr)
-		} else if fn, ok := e.(ast.FuncRef); ok {
-			fns[i] = a.semFuncRef(fn)
+		if isFuncRef(e) {
+			fns[i] = a.semFuncRef(e)
 		} else {
-			panic(e)
+			exprs[i] = a.semExpr(e)
 		}
 	}
 	if slices.Contains(a.opStack, decl.ast) {
@@ -1275,7 +1274,17 @@ func (a *analyzer) semUserOp(loc ast.Loc, decl *opDecl, args []ast.FuncOrExpr) d
 	return a.semSeq(decl.ast.Body)
 }
 
-func (a *analyzer) semFuncRef(f ast.FuncRef) dag.FuncRef {
+func isFuncRef(e ast.Expr) bool {
+	switch e.(type) {
+	case *ast.FuncName, *ast.Lambda:
+		return true
+	default:
+		return false
+	}
+}
+
+// XXX put this in semExpr
+func (a *analyzer) semFuncRef(f ast.Expr) dag.FuncRef {
 	switch f := f.(type) {
 	case *ast.Lambda:
 		return &dag.Lambda{

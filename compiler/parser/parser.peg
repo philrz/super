@@ -68,6 +68,8 @@ LambdaExpr
     }
     / "(" __ lambda:LambdaExpr __ ")" { return lambda, nil }
 
+//XXX leave this here so we can make things syntax errors where functions 
+// go but aren't general exprs
 FuncOrExprs
   = first:FuncOrExpr rest:(__ "," __ f:FuncOrExpr { return f, nil })* {
       return prepend(first, rest), nil
@@ -110,7 +112,7 @@ PipeOp
   / a:OpAssignment &EndOfOp { return a, nil }
   / !(Function EndOfOp) a:Aggregation &EndOfOp { return a, nil }
   / !CallIDGuard name:Identifier _ !CallExprGuard args:FuncOrExprs {
-      return &ast.CallOp{Kind:"CallOp", Name: name.(*ast.ID), Args:sliceOf[ast.FuncOrExpr](args), Loc:loc(c)}, nil
+      return &ast.CallOp{Kind:"CallOp", Name: name.(*ast.ID), Args:sliceOf[ast.Expr](args), Loc:loc(c)}, nil
     }
   / !CallIDGuard name:Identifier &EndOfOp {
       return &ast.CallOp{Kind:"CallOp", Name: name.(*ast.ID), Loc:loc(c)}, nil
@@ -450,7 +452,7 @@ CallOp
       return &ast.CallOp{
         Kind: "CallOp",
         Name: name.(*ast.ID),
-        Args: sliceOf[ast.FuncOrExpr](args),
+        Args: sliceOf[ast.Expr](args),
         Loc: loc(c),
       }, nil
     }
@@ -1059,7 +1061,7 @@ Function
       return &ast.MapCall{
         Kind: "MapCall",
         Expr: e.(ast.Expr),
-        Func: f.(ast.FuncRef),
+        Func: f.(ast.Expr),
         Loc: loc(c),
       }, nil
     }

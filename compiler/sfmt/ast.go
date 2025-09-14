@@ -291,11 +291,8 @@ func (c *canon) expr(e ast.Expr, parent string) {
 	}
 }
 
-func (c *canon) funcRefAsCall(f ast.FuncRef) {
-	if e, ok := f.(ast.Expr); ok {
-		c.expr(e, "")
-		return
-	}
+// XXX
+func (c *canon) funcRefAsCall(f ast.Expr) {
 	switch f := f.(type) {
 	case *ast.FuncName:
 		c.write("%s", f.Name)
@@ -304,22 +301,19 @@ func (c *canon) funcRefAsCall(f ast.FuncRef) {
 		c.lambda(f)
 		c.write(")")
 	default:
-		panic(f)
+		c.expr(f, "")
 	}
 }
 
-func (c *canon) funcRefAsArg(f ast.FuncRef) {
-	if e, ok := f.(ast.Expr); ok {
-		c.expr(e, "")
-		return
-	}
+// XXX
+func (c *canon) funcRefAsArg(f ast.Expr) {
 	switch f := f.(type) {
 	case *ast.FuncName:
 		c.write("&%s", f.Name)
 	case *ast.Lambda:
 		c.lambda(f)
 	default:
-		panic(f)
+		c.expr(f, "")
 	}
 }
 
@@ -799,22 +793,18 @@ func (c *canon) op(p ast.Op) {
 	}
 }
 
-func (c *canon) funcOrExprs(args []ast.FuncOrExpr) {
-	for k, a := range args {
+func (c *canon) funcOrExprs(args []ast.Expr) {
+	for k, arg := range args {
 		if k > 0 {
 			c.write(", ")
 		}
-		if e, ok := a.(ast.Expr); ok {
-			c.expr(e, "")
-			continue
-		}
-		switch a := a.(type) {
+		switch e := arg.(type) {
 		case *ast.Lambda:
-			c.lambda(a)
+			c.lambda(e)
 		case *ast.FuncName:
-			c.write("&%s", a.Name)
+			c.write("&%s", e.Name)
 		default:
-			panic(fmt.Sprintf("unknown type for op call actuals: %T", a))
+			c.expr(e, "")
 		}
 	}
 }

@@ -173,6 +173,7 @@ type (
 	}
 )
 
+// XXX get rid of this and have FuncTable/FuncIDs
 type FuncRef interface {
 	funcRefNode()
 }

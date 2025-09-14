@@ -123,10 +123,10 @@ type When struct {
 // a function call has the standard semantics where it takes one or more arguments
 // and returns a result.
 type Call struct {
-	Kind  string  `json:"kind" unpack:""`
-	Func  FuncRef `json:"func"`
-	Args  []Expr  `json:"args"`
-	Where Expr    `json:"where"`
+	Kind  string `json:"kind" unpack:""`
+	Func  Expr   `json:"func"`
+	Args  []Expr `json:"args"`
+	Where Expr   `json:"where"`
 	Loc   `json:"loc"`
 }
 
@@ -340,9 +340,9 @@ type SQLTimeValue struct {
 }
 
 type MapCall struct {
-	Kind string  `json:"kind" unpack:""`
-	Expr Expr    `json:"expr"`
-	Func FuncRef `json:"func"`
+	Kind string `json:"kind" unpack:""`
+	Expr Expr   `json:"expr"`
+	Func Expr   `json:"func"`
 	Loc  `json:"loc"`
 }
 
@@ -628,9 +628,9 @@ type (
 		Loc  `json:"loc"`
 	}
 	CallOp struct {
-		Kind string       `json:"kind" unpack:""`
-		Name *ID          `json:"name"`
-		Args []FuncOrExpr `json:"args"`
+		Kind string `json:"kind" unpack:""`
+		Name *ID    `json:"name"`
+		Args []Expr `json:"args"`
 		Loc  `json:"loc"`
 	}
 )
@@ -780,13 +780,6 @@ type FuncName struct {
 	Loc  `json:"loc"`
 }
 
-type FuncRef interface {
-	funcRefNode()
-}
-
-func (*Lambda) funcRefNode()   {}
-func (*FuncName) funcRefNode() {}
-
-// There's not an easy way to create an Expr|FuncRef sum type so we use
-// type any here and are careful how we use it.
-type FuncOrExpr any
+// XXX update
+func (*Lambda) exprNode()   {}
+func (*FuncName) exprNode() {}

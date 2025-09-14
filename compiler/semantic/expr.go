@@ -750,11 +750,7 @@ func (a *analyzer) maybeSubqueryCall(call *ast.Call, name string) *dag.Subquery 
 	if decl == nil || decl.bad {
 		return nil
 	}
-	var args []ast.FuncOrExpr
-	for _, arg := range call.Args {
-		args = append(args, arg)
-	}
-	userOp := a.semUserOp(call.Loc, decl, args)
+	userOp := a.semUserOp(call.Loc, decl, call.Args)
 	// When a user op is encountered inside an expression, we turn it into a
 	// subquery operating on a single-shot "this" value unless it's uncorrelated
 	// (i.e., starts with a from), in which case we put the uncorrelated body

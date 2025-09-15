@@ -72,24 +72,18 @@ func (s *Scope) LookupExpr(name string) (dag.Expr, error) {
 	return nil, nil
 }
 
-func (s *Scope) LookupFunc(name string) (*dag.FuncDef, *dag.Lambda, error) {
-	for {
-		entry := s.lookupEntry(name)
-		if entry == nil {
-			return nil, nil, nil
-		}
-		switch entry := entry.ref.(type) {
-		case *dag.Lambda:
-			return nil, entry, nil
-		case *dag.FuncName:
-			name = entry.Name
-			continue
-		case *dag.FuncDef:
-			return entry, nil, nil
-		default:
-			return nil, nil, fmt.Errorf("%q is not a function", name)
-		}
+func (s *Scope) LookupFunc(name string) (*dag.FuncDef, string, error) {
+	entry := s.lookupEntry(name)
+	if entry == nil {
+		return nil, "", nil
 	}
+	switch ref := entry.ref.(type) {
+	case *dag.FuncDef:
+		return ref, "", nil
+	case *builtin:
+		return nil, string(*ref), nil
+	}
+	return nil, "", fmt.Errorf("%q is not a function", name)
 }
 
 func (s *Scope) lookupOp(name string) (*opDecl, error) {

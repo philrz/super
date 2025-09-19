@@ -15,13 +15,12 @@ in the form of an existing function or a lambda expression,
 to every element in array or set `v` and
 returns an array or set of the results.
 
-The function `f` references an existing function
-with the `&` syntax as in
+The function `f` may reference a [user function](../../statements.md#func-statements) or a built-in function using the `&` syntax as in
 ```
 &<name>
 ```
-where `<name>` is an identifier referring to either a built-in function
-or a [user-defined function](../../statements.md#func-statements).
+where `<name>` is an identifier.
+
 Alternatively, `f` may be a lambda expression of the form
 ```
 lambda x: <expr>
@@ -32,7 +31,7 @@ where `<expr>` is any expression depending only on the lambda argument.
 
 ---
 
-Upper case each element of an array:
+_Upper case each element of an array using `&` for a built-in_
 ```mdtest-spq
 # spq
 values map(this, &upper)
@@ -44,7 +43,7 @@ values map(this, &upper)
 
 ---
 
-Using a user-defined function to convert epoch floats to time values:
+_A user function to convert epoch floats to time values_
 ```mdtest-spq {data-layout="stacked"}
 # spq
 fn floatToTime(x): (

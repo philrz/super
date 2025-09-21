@@ -8,6 +8,7 @@ import (
 	"github.com/brimdata/super/compiler/ast"
 	"github.com/brimdata/super/compiler/dag"
 	"github.com/brimdata/super/compiler/rungen"
+	"github.com/brimdata/super/compiler/semantic/sem"
 	"github.com/brimdata/super/pkg/field"
 	"github.com/brimdata/super/sup"
 )
@@ -92,7 +93,7 @@ func (s *Scope) lookupEntry(name string) *entry {
 	return nil
 }
 
-func (s *Scope) lookupExpr(name string) dag.Expr {
+func (s *Scope) lookupExpr(name string) sem.Expr {
 	if entry := s.lookupEntry(name); entry != nil {
 		// function parameters hide exteral definitions as you don't
 		// want the this.param ref to be overriden by a const etc.
@@ -104,7 +105,7 @@ func (s *Scope) lookupExpr(name string) dag.Expr {
 			// Named subquery handled elsewhere
 			return nil
 		}
-		return entry.ref.(dag.Expr)
+		return entry.ref.(sem.Expr)
 	}
 	return nil
 }
@@ -115,9 +116,9 @@ func (s *Scope) lookupFunc(name string) (string, error) {
 		return "", nil
 	}
 	switch ref := entry.ref.(type) {
-	case *dag.FuncDef:
+	case *sem.FuncDef:
 		return ref.Tag, nil
-	case *ast.FuncName:
+	case *sem.FuncRef:
 		return ref.Name, nil
 	}
 	return "", fmt.Errorf("%q is not bound to a function", name)
@@ -128,14 +129,14 @@ func (s *Scope) lookupFunc(name string) (string, error) {
 // In the case of unqualified col ref, check that it is not ambiguous
 // when there are multiple tables (i.e., from joins).
 // An unqualified field reference is valid only in dynamic schemas.
-func (s *Scope) resolve(path field.Path) (dag.Expr, error) {
+func (s *Scope) resolve(path field.Path) ([]string, error) {
 	// If there's no schema, we're not in a SQL context so we just
 	// return the path unmodified.  Otherwise, we apply SQL scoping
 	// rules to transform the abstract path to the dataflow path
 	// implied by the schema.
 	sch := s.schema
 	if sch == nil {
-		return dag.NewThis(path), nil
+		return path, nil
 	}
 	if len(path) == 0 {
 		// XXX this should really treat this as a column in sql context but
@@ -143,8 +144,7 @@ func (s *Scope) resolve(path field.Path) (dag.Expr, error) {
 		// should flag and maybe make it part of a strict mode (like bitwise |)
 		return nil, errors.New("cannot reference 'this' in relational context; consider the 'values' operator")
 	}
-	path, err := resolvePath(sch, path)
-	return dag.NewThis(path), err
+	return resolvePath(sch, path)
 }
 
 func resolvePath(sch schema, path field.Path) (field.Path, error) {

@@ -11,33 +11,49 @@ import (
 	"github.com/brimdata/super/compiler/ast"
 	"github.com/brimdata/super/compiler/dag"
 	"github.com/brimdata/super/compiler/parser"
+	"github.com/brimdata/super/compiler/semantic/sem"
 	"github.com/brimdata/super/compiler/srcfiles"
 	"github.com/brimdata/super/runtime/exec"
 )
+
+// Motivation: to do type checking, we need functions unraveled (or at least the
+// bindings simplified so we can unravel on the fly in recursion)
+// Challenge: if we resolve SQL to dataflow AST, then do type checks on
+// this AST, we need to map errors back to original SQL expressions.
+//
+// New breakdown:
+// Pass 1: convert SQL to dataflow AST, resolve symbols with scope
+// by flattening scopes (cte refs, function refs, and so forth)
+//  insert all implied sources
+// (after phase 1, scopes are all resolved and no longer needed)
+//
+// Invariant: all AST mods keep pointers to original source locs so error reporting
+// remains good all the way up to the DAG gen
 
 // Analyze performs a semantic analysis of the AST, translating it from AST
 // to DAG form, resolving syntax ambiguities, and performing constant propagation.
 // After semantic analysis, the DAG is ready for either optimization or compilation.
 func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput bool) (*dag.Main, error) {
 	files := p.Files()
-	a := newAnalyzer(ctx, files, env)
+	t := newTranslator(ctx, files, env)
 	astseq := p.Parsed()
 	if extInput {
 		astseq.Prepend(&ast.DefaultScan{Kind: "DefaultScan"})
 	}
-	seq := a.semSeq(astseq)
+	seq := t.semSeq(astseq)
 	if !HasSource(seq) {
-		if a.env.IsAttached() {
+		if t.env.IsAttached() {
 			if len(seq) == 0 {
 				return nil, errors.New("query text is missing")
 			}
-			seq.Prepend(&dag.NullScan{Kind: "NullScan"})
+			seq.Prepend(&sem.NullScan{})
 		} else {
 			// This is a local query and there's no external input
 			// (i.e., no command-line file args)
-			seq.Prepend(&dag.NullScan{Kind: "NullScan"})
+			seq.Prepend(&sem.NullScan{})
 		}
 	}
+	//XXX need daggen
 	seq = a.checkOutputs(true, seq)
 	r := newResolver(a)
 	seq, funcs := r.resolve(seq)
@@ -48,40 +64,41 @@ func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput
 	return &dag.Main{Funcs: funcs, Body: seq}, files.Error()
 }
 
-type analyzer struct {
+// Translate AST into semantic tree.  Resolve all bindings
+// between symbols and their entities and flatten all scopes
+// creating a global function table.  Convert SQL entities
+// to dataflow.
+type translator struct {
 	ctx         context.Context
 	files       *srcfiles.List
 	opStack     []*ast.OpDecl
 	cteStack    []*cte
-	outputs     map[*dag.Output]ast.Node
 	env         *exec.Environment
 	scope       *Scope
 	sctx        *super.Context
-	funcsByTag  map[string]*dag.FuncDef
-	funcsByDecl map[*ast.Decl]*dag.FuncDef
-	locs        map[dag.Expr]ast.Loc
+	funcsByTag  map[string]*sem.FuncDef
+	funcsByDecl map[*ast.Decl]*sem.FuncDef
 }
 
-func newAnalyzer(ctx context.Context, files *srcfiles.List, env *exec.Environment) *analyzer {
-	return &analyzer{
+func newTranslator(ctx context.Context, files *srcfiles.List, env *exec.Environment) *translator {
+	return &translator{
 		ctx:         ctx,
 		files:       files,
 		outputs:     make(map[*dag.Output]ast.Node),
 		env:         env,
 		scope:       NewScope(nil),
 		sctx:        super.NewContext(),
-		funcsByTag:  make(map[string]*dag.FuncDef),
-		funcsByDecl: make(map[*ast.Decl]*dag.FuncDef),
-		locs:        make(map[dag.Expr]ast.Loc),
+		funcsByTag:  make(map[string]*sem.FuncDef),
+		funcsByDecl: make(map[*ast.Decl]*sem.FuncDef),
 	}
 }
 
-func HasSource(seq dag.Seq) bool {
+func HasSource(seq sem.Seq) bool {
 	if len(seq) == 0 {
 		return false
 	}
 	switch op := seq[0].(type) {
-	case *dag.FileScan, *dag.HTTPScan, *dag.PoolScan, *dag.DBMetaScan, *dag.PoolMetaScan, *dag.CommitMetaScan, *dag.DeleteScan, *dag.NullScan, *dag.DefaultScan:
+	case *sem.FileScan, *sem.HTTPScan, *sem.PoolScan, *sem.DBMetaScan, *sem.PoolMetaScan, *sem.CommitMetaScan, *sem.DeleteScan, *sem.NullScan:
 		return true
 	case *dag.Fork:
 		for _, path := range op.Paths {
@@ -94,22 +111,22 @@ func HasSource(seq dag.Seq) bool {
 	return false
 }
 
-func (a *analyzer) enterScope() {
-	a.scope = NewScope(a.scope)
+func (t *translator) enterScope() {
+	t.scope = NewScope(t.scope)
 }
 
-func (a *analyzer) exitScope() {
-	a.scope = a.scope.parent
+func (t *translator) exitScope() {
+	t.scope = t.scope.parent
 }
 
-func (a *analyzer) newFunc(name string, params []string, e dag.Expr) string {
-	tag := strconv.Itoa(len(a.funcsByTag))
-	a.funcsByTag[tag] = &dag.FuncDef{
-		Kind:   "FuncDef",
+func (t *translator) newFunc(body ast.Expr, name string, params []string, e sem.Expr) string {
+	tag := strconv.Itoa(len(t.funcsByTag))
+	t.funcsByTag[tag] = &sem.FuncDef{
+		AST:    body,
 		Tag:    tag,
 		Name:   name,
 		Params: params,
-		Expr:   e,
+		Body:   e,
 	}
 	return tag
 }
@@ -133,19 +150,21 @@ func (e opCycleError) Error() string {
 	return b
 }
 
-func badExpr() dag.Expr {
-	return &dag.BadExpr{Kind: "BadExpr"}
+func badExpr() sem.Expr {
+	return &sem.BadExpr{}
 }
 
-func badOp() dag.Op {
-	return &dag.BadOp{Kind: "BadOp"}
+func badOp() sem.Op {
+	return &sem.BadOp{}
 }
 
-func (a *analyzer) error(n ast.Node, err error) {
-	a.files.AddError(err.Error(), n.Pos(), n.End())
+func (t *translator) error(n ast.Node, err error) {
+	t.files.AddError(err.Error(), n.Pos(), n.End())
 }
 
-func (a *analyzer) checkOutputs(isLeaf bool, seq dag.Seq) dag.Seq {
+// XXX this is for gendag XXX this is messed up
+// XXX this method should live on daggen
+func (t *translator) checkOutputs(isLeaf bool, seq dag.Seq) dag.Seq {
 	if len(seq) == 0 {
 		return seq
 	}
@@ -157,36 +176,36 @@ func (a *analyzer) checkOutputs(isLeaf bool, seq dag.Seq) dag.Seq {
 		switch o := o.(type) {
 		case *dag.Output:
 			if !isLast || !isLeaf {
-				n, ok := a.outputs[o]
+				n, ok := t.outputs[o]
 				if !ok {
 					panic("system error: untracked user output")
 				}
-				a.error(n, errors.New("output operator must be at flowgraph leaf"))
+				t.error(n, errors.New("output operator must be at flowgraph leaf"))
 			}
 		case *dag.Scatter:
 			for k := range o.Paths {
-				o.Paths[k] = a.checkOutputs(isLast && isLeaf, o.Paths[k])
+				o.Paths[k] = t.checkOutputs(isLast && isLeaf, o.Paths[k])
 			}
 		case *dag.Unnest:
-			o.Body = a.checkOutputs(false, o.Body)
+			o.Body = t.checkOutputs(false, o.Body)
 		case *dag.Fork:
 			for k := range o.Paths {
-				o.Paths[k] = a.checkOutputs(isLast && isLeaf, o.Paths[k])
+				o.Paths[k] = t.checkOutputs(isLast && isLeaf, o.Paths[k])
 			}
 		case *dag.Switch:
 			for k := range o.Cases {
-				o.Cases[k].Path = a.checkOutputs(isLast && isLeaf, o.Cases[k].Path)
+				o.Cases[k].Path = t.checkOutputs(isLast && isLeaf, o.Cases[k].Path)
 			}
 		case *dag.Mirror:
-			o.Main = a.checkOutputs(isLast && isLeaf, o.Main)
-			o.Mirror = a.checkOutputs(isLast && isLeaf, o.Mirror)
+			o.Main = t.checkOutputs(isLast && isLeaf, o.Main)
+			o.Mirror = t.checkOutputs(isLast && isLeaf, o.Mirror)
 		}
 	}
 	switch seq[lastN].(type) {
 	case *dag.Output, *dag.Scatter, *dag.Fork, *dag.Switch, *dag.Mirror:
 	default:
 		if isLeaf {
-			return append(seq, &dag.Output{Kind: "Output", Name: "main"})
+			return append(seq, &dag.Output{Name: "main"})
 		}
 	}
 	return seq

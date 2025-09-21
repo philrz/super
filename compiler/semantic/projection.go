@@ -5,6 +5,7 @@ import (
 
 	"github.com/brimdata/super/compiler/ast"
 	"github.com/brimdata/super/compiler/dag"
+	"github.com/brimdata/super/compiler/semantic/sem"
 )
 
 // Column of a select statement.  We bookkeep here whether
@@ -67,7 +68,7 @@ func (c *column) isStar() bool {
 // namedAgg gives us a place to bind temp name to each agg function.
 type namedAgg struct {
 	name string
-	agg  *dag.Agg
+	agg  *sem.AggFunc
 }
 
 type aggfuncs []namedAgg
@@ -76,28 +77,28 @@ func (a aggfuncs) tmp() string {
 	return fmt.Sprintf("t%d", len(a))
 }
 
-func (a *aggfuncs) subst(e dag.Expr) (dag.Expr, error) {
+func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 	var err error
 	switch e := e.(type) {
 	case nil:
 		return e, nil
-	case *dag.Agg:
+	case *sem.AggFunc:
 		// swap in a temp column for each agg function found, which
 		// will then be referred to by the containing expression.
 		// The agg function is computed into the tmp value with
 		// the generated aggregate operator.
 		tmp := a.tmp()
 		*a = append(*a, namedAgg{name: tmp, agg: e})
-		return dag.NewThis([]string{"in", tmp}), nil
-	case *dag.ArrayExpr:
+		return sem.NewThis([]string{"in", tmp}), nil
+	case *sem.ArrayExpr:
 		for _, elem := range e.Elems {
 			switch elem := elem.(type) {
-			case *dag.Spread:
+			case *sem.Spread:
 				elem.Expr, err = a.subst(elem.Expr)
 				if err != nil {
 					return nil, err
 				}
-			case *dag.VectorValue:
+			case *sem.VectorValue: //XXX
 				elem.Expr, err = a.subst(elem.Expr)
 				if err != nil {
 					return nil, err
@@ -106,7 +107,7 @@ func (a *aggfuncs) subst(e dag.Expr) (dag.Expr, error) {
 				panic(elem)
 			}
 		}
-	case *dag.BinaryExpr:
+	case *sem.BinaryExpr:
 		e.LHS, err = a.subst(e.LHS)
 		if err != nil {
 			return nil, err
@@ -115,14 +116,14 @@ func (a *aggfuncs) subst(e dag.Expr) (dag.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-	case *dag.Call:
+	case *sem.Call:
 		for k, arg := range e.Args {
 			e.Args[k], err = a.subst(arg)
 			if err != nil {
 				return nil, err
 			}
 		}
-	case *dag.Conditional:
+	case *sem.CondExpr:
 		e.Cond, err = a.subst(e.Cond)
 		if err != nil {
 			return nil, err
@@ -135,12 +136,12 @@ func (a *aggfuncs) subst(e dag.Expr) (dag.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-	case *dag.Dot:
+	case *sem.DotExpr: //XXX no such thing... just This.  hmmm
 		e.LHS, err = a.subst(e.LHS)
 		if err != nil {
 			return nil, err
 		}
-	case *dag.IndexExpr:
+	case *sem.IndexExpr:
 		e.Expr, err = a.subst(e.Expr)
 		if err != nil {
 			return nil, err
@@ -149,18 +150,13 @@ func (a *aggfuncs) subst(e dag.Expr) (dag.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-	case *dag.IsNullExpr:
+	case *sem.IsNullExpr:
 		e.Expr, err = a.subst(e.Expr)
 		if err != nil {
 			return nil, err
 		}
-	case *dag.Literal:
-	case *dag.MapCall:
-		e.Expr, err = a.subst(e.Expr)
-		if err != nil {
-			return nil, err
-		}
-	case *dag.MapExpr:
+	case *sem.LiteralExpr:
+	case *sem.MapExpr:
 		for _, ent := range e.Entries {
 			ent.Key, err = a.subst(ent.Key)
 			if err != nil {
@@ -171,15 +167,15 @@ func (a *aggfuncs) subst(e dag.Expr) (dag.Expr, error) {
 				return nil, err
 			}
 		}
-	case *dag.RecordExpr:
+	case *sem.RecordExpr:
 		for _, elem := range e.Elems {
 			switch elem := elem.(type) {
-			case *dag.Field:
+			case *sem.FieldExpr: //XXX
 				elem.Value, err = a.subst(elem.Value)
 				if err != nil {
 					return nil, err
 				}
-			case *dag.Spread:
+			case *sem.Spread:
 				elem.Expr, err = a.subst(elem.Expr)
 				if err != nil {
 					return nil, err
@@ -188,30 +184,30 @@ func (a *aggfuncs) subst(e dag.Expr) (dag.Expr, error) {
 				panic(elem)
 			}
 		}
-	case *dag.RegexpMatch:
+	case *sem.RegexpMatch:
 		e.Expr, err = a.subst(e.Expr)
 		if err != nil {
 			return nil, err
 		}
-	case *dag.RegexpSearch:
+	case *sem.RegexpSearch:
 		e.Expr, err = a.subst(e.Expr)
 		if err != nil {
 			return nil, err
 		}
-	case *dag.Search:
+	case *sem.Search:
 		e.Expr, err = a.subst(e.Expr)
 		if err != nil {
 			return nil, err
 		}
-	case *dag.SetExpr:
+	case *sem.SetExpr:
 		for _, elem := range e.Elems {
 			switch elem := elem.(type) {
-			case *dag.Spread:
+			case *sem.Spread:
 				elem.Expr, err = a.subst(elem.Expr)
 				if err != nil {
 					return nil, err
 				}
-			case *dag.VectorValue:
+			case *sem.VectorValue:
 				elem.Expr, err = a.subst(elem.Expr)
 				if err != nil {
 					return nil, err
@@ -220,7 +216,7 @@ func (a *aggfuncs) subst(e dag.Expr) (dag.Expr, error) {
 				panic(elem)
 			}
 		}
-	case *dag.SliceExpr:
+	case *sem.SliceExpr:
 		e.Expr, err = a.subst(e.Expr)
 		if err != nil {
 			return nil, err
@@ -233,8 +229,8 @@ func (a *aggfuncs) subst(e dag.Expr) (dag.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-	case *dag.This:
-	case *dag.UnaryExpr:
+	case *sem.ThisExpr:
+	case *sem.UnaryExpr:
 		e.Operand, err = a.subst(e.Operand)
 		if err != nil {
 			return nil, err

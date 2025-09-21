@@ -34,13 +34,10 @@ type Seq []Op
 
 type (
 	Aggregate struct {
-		Kind         string       `json:"kind" unpack:""`
-		Limit        int          `json:"limit"`
-		Keys         []Assignment `json:"keys"`
-		Aggs         []Assignment `json:"aggs"`
-		InputSortDir int          `json:"input_sort_dir,omitempty"`
-		PartialsIn   bool         `json:"partials_in,omitempty"`
-		PartialsOut  bool         `json:"partials_out,omitempty"`
+		Kind  string       `json:"kind" unpack:""`
+		Limit int          `json:"limit"`
+		Keys  []Assignment `json:"keys"`
+		Aggs  []Assignment `json:"aggs"`
 	}
 	// A BadOp node is a placeholder for an expression containing semantic
 	// errors.

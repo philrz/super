@@ -5,29 +5,29 @@ import (
 	"strconv"
 
 	"github.com/brimdata/super/compiler/ast"
-	"github.com/brimdata/super/compiler/dag"
+	"github.com/brimdata/super/compiler/semantic/sem"
 	"github.com/brimdata/super/runtime/sam/expr/function"
 )
 
 type resolver struct {
-	analyzer *analyzer
-	in       map[string]*dag.FuncDef
-	fixed    map[string]*dag.FuncDef
-	variants []*dag.FuncDef
-	params   []map[string]string
-	ntag     int
+	translator *translator
+	in         map[string]*sem.FuncDef
+	fixed      map[string]*sem.FuncDef
+	variants   []*sem.FuncDef
+	params     []map[string]string
+	ntag       int
 }
 
-func newResolver(a *analyzer) *resolver {
+func newResolver(t *translator) *resolver {
 	r := &resolver{
-		analyzer: a,
-		in:       a.funcsByTag,
-		fixed:    make(map[string]*dag.FuncDef),
+		translator: t,
+		in:         t.funcsByTag,
+		fixed:      make(map[string]*sem.FuncDef),
 	}
 	return r
 }
 
-func (r *resolver) resolve(seq dag.Seq) (dag.Seq, []*dag.FuncDef) {
+func (r *resolver) resolve(seq sem.Seq) (sem.Seq, []*sem.FuncDef) {
 	out := r.resolveSeq(seq)
 	funcs := r.variants
 	for _, f := range r.fixed {
@@ -41,186 +41,153 @@ func (r *resolver) resolve(seq dag.Seq) (dag.Seq, []*dag.FuncDef) {
 // function called (which is also possibly resolved) as indicated by a FuncRef.
 // Each function is also rewritten to remove the function parameters from its params.
 // After resolve is done, all CallParam or FuncRef pseudo-expression nodes are
-// removed from the DAG.  All functions are converted from the input function table
+// removed from the sem.  All functions are converted from the input function table
 // to the output function table whether or not they needed to be resolved.
 // Any FuncRefs that do not get bound to a CallParam (i.e., appear in random expressions)
 // are found and reported as error as are any CallParam that are called with non-FuncRef
 // arguments.
-func (r *resolver) resolveSeq(seq dag.Seq) dag.Seq {
-	var out dag.Seq
+func (r *resolver) resolveSeq(seq sem.Seq) sem.Seq {
+	var out sem.Seq
 	for _, op := range seq {
 		out = append(out, r.resolveOp(op))
 	}
 	return out
 }
 
-func (r *resolver) resolveOp(op dag.Op) dag.Op {
+func (r *resolver) resolveOp(op sem.Op) sem.Op {
 	switch op := op.(type) {
-	case *dag.Aggregate:
-		return &dag.Aggregate{
-			Kind:         "Aggregate",
-			Limit:        op.Limit,
-			Keys:         r.resolveAssignments(op.Keys),
-			Aggs:         r.resolveAssignments(op.Aggs),
-			InputSortDir: op.InputSortDir,
-			PartialsIn:   op.PartialsIn,
-			PartialsOut:  op.PartialsOut,
+	case *sem.AggregateOp:
+		return &sem.AggregateOp{
+			AST:   op.AST,
+			Limit: op.Limit,
+			Keys:  r.resolveAssignments(op.Keys),
+			Aggs:  r.resolveAssignments(op.Aggs),
 		}
-	case *dag.BadOp:
-	case *dag.Fork:
-		var paths []dag.Seq
+	case *sem.BadOp:
+	case *sem.ForkOp:
+		var paths []sem.Seq
 		for _, seq := range op.Paths {
 			paths = append(paths, r.resolveSeq(seq))
 		}
-		return &dag.Fork{
-			Kind:  "Fork",
+		return &sem.ForkOp{
 			Paths: paths,
 		}
-	case *dag.Scatter:
-		var paths []dag.Seq
-		for _, seq := range op.Paths {
-			paths = append(paths, r.resolveSeq(seq))
-		}
-		return &dag.Fork{
-			Kind:  "Fork",
-			Paths: paths,
-		}
-	case *dag.Switch:
-		var cases []dag.Case
+	case *sem.SwitchOp:
+		var cases []sem.Case
 		for _, c := range op.Cases {
-			cases = append(cases, dag.Case{
+			cases = append(cases, sem.Case{
 				Expr: r.resolveExpr(c.Expr),
 				Path: r.resolveSeq(c.Path),
 			})
 		}
-		return &dag.Switch{
-			Kind:  "Switch",
+		return &sem.SwitchOp{
+			AST:   op.AST,
 			Expr:  r.resolveExpr(op.Expr),
 			Cases: cases,
 		}
-	case *dag.Sort:
-		return &dag.Sort{
-			Kind:    "Sort",
-			Exprs:   r.resolveSortExprs(op.Exprs),
-			Reverse: op.Reverse,
+	case *sem.SortOp:
+		return &sem.SortOp{
+			AST:   op.AST,
+			Exprs: r.resolveSortExprs(op.Exprs),
 		}
-	case *dag.Cut:
-		return &dag.Cut{
-			Kind: "Cut",
+	case *sem.CutOp:
+		return &sem.CutOp{
+			AST:  op.AST,
 			Args: r.resolveAssignments(op.Args),
 		}
-	case *dag.Distinct:
-		return &dag.Distinct{
-			Kind: "Distinct",
+	case *sem.DebugOp:
+		return &sem.DebugOp{
+			AST:  op.AST,
 			Expr: r.resolveExpr(op.Expr),
 		}
-	case *dag.Drop:
-		return &dag.Drop{
-			Kind: "Drop",
+	case *sem.DistinctOp:
+		return &sem.DistinctOp{
+			AST:  op.AST,
+			Expr: r.resolveExpr(op.Expr),
+		}
+	case *sem.DropOp:
+		return &sem.DropOp{
+			AST:  op.AST,
 			Args: r.resolveExprs(op.Args),
 		}
-	case *dag.Head:
-	case *dag.Tail:
-	case *dag.Skip:
-	case *dag.Pass:
-	case *dag.Filter:
-		return &dag.Filter{
-			Kind: "Filter",
+	case *sem.HeadOp:
+	case *sem.TailOp:
+	case *sem.SkipOp:
+	case *sem.FilterOp:
+		return &sem.FilterOp{
+			AST:  op.AST,
 			Expr: r.resolveExpr(op.Expr),
 		}
-	case *dag.Uniq:
-	case *dag.Top:
-		return &dag.Top{
-			Kind:    "Top",
-			Limit:   op.Limit,
-			Exprs:   r.resolveSortExprs(op.Exprs),
-			Reverse: op.Reverse,
+	case *sem.UniqOp:
+	case *sem.TopOp:
+		return &sem.TopOp{
+			AST:   op.AST,
+			Limit: op.Limit,
+			Exprs: r.resolveSortExprs(op.Exprs),
 		}
-	case *dag.Put:
-		return &dag.Put{
-			Kind: "Put",
+	case *sem.PutOp:
+		return &sem.PutOp{
+			AST:  op.AST,
 			Args: r.resolveAssignments(op.Args),
 		}
-	case *dag.Rename:
-		return &dag.Rename{
-			Kind: "Rename",
+	case *sem.RenameOp:
+		return &sem.RenameOp{
+			AST:  op.AST,
 			Args: r.resolveAssignments(op.Args),
 		}
-	case *dag.Fuse:
-	case *dag.HashJoin:
-		return &dag.HashJoin{
-			Kind:       "HashJoin",
-			Style:      op.Style,
-			LeftAlias:  op.LeftAlias,
-			RightAlias: op.RightAlias,
-			LeftKey:    r.resolveExpr(op.LeftKey),
-			RightKey:   r.resolveExpr(op.RightKey),
-		}
-	case *dag.Join:
-		return &dag.Join{
-			Kind:       "Join",
+	case *sem.FuseOp:
+	case *sem.JoinOp:
+		return &sem.JoinOp{
+			AST:        op.AST,
 			Style:      op.Style,
 			LeftAlias:  op.LeftAlias,
 			RightAlias: op.RightAlias,
 			Cond:       r.resolveExpr(op.Cond),
 		}
-	case *dag.Explode:
-		return &dag.Explode{
-			Kind: "Explode",
+	case *sem.ExplodeOp:
+		return &sem.ExplodeOp{
+			AST:  op.AST,
 			Args: r.resolveExprs(op.Args),
 			Type: op.Type,
 			As:   op.As,
 		}
-	case *dag.Unnest:
-		return &dag.Unnest{
-			Kind: "Unnest",
+	case *sem.UnnestOp:
+		return &sem.UnnestOp{
+			AST:  op.AST,
 			Expr: r.resolveExpr(op.Expr),
 			Body: r.resolveSeq(op.Body),
 		}
-	case *dag.Values:
-		return &dag.Values{
-			Kind:  "Values",
+	case *sem.ValuesOp:
+		return &sem.ValuesOp{
+			AST:   op.AST,
 			Exprs: r.resolveExprs(op.Exprs),
 		}
-	case *dag.Merge:
-		return &dag.Merge{
-			Kind:  "Merge",
+	case *sem.MergeOp:
+		return &sem.MergeOp{
+			AST:   op.AST,
 			Exprs: r.resolveSortExprs(op.Exprs),
 		}
-	case *dag.Mirror:
-		return &dag.Mirror{
-			Kind:   "Mirror",
-			Main:   r.resolveSeq(op.Main),
-			Mirror: r.resolveSeq(op.Mirror),
-		}
-	case *dag.Combine:
-	case *dag.Load:
-	case *dag.Output:
-	case *dag.DefaultScan:
-	case *dag.FileScan:
-	case *dag.HTTPScan:
-	case *dag.PoolScan:
-	case *dag.RobotScan:
-		return &dag.RobotScan{
-			Kind:   "RobotScan",
+
+	case *sem.LoadOp:
+	case *sem.OutputOp:
+	case *sem.DefaultScan:
+	case *sem.FileScan:
+	case *sem.HTTPScan:
+	case *sem.PoolScan:
+	case *sem.RobotScan:
+		return &sem.RobotScan{
+			AST:    op.AST,
 			Expr:   r.resolveExpr(op.Expr),
 			Format: op.Format,
-			Filter: r.resolveExpr(op.Filter),
 		}
-	case *dag.DeleteScan:
-	case *dag.DBMetaScan:
-	case *dag.PoolMetaScan:
-	case *dag.CommitMetaScan:
-	case *dag.NullScan:
-	case *dag.Lister:
-	case *dag.Slicer:
-	case *dag.SeqScan:
-	case *dag.Deleter:
-		return &dag.Deleter{
-			Kind:      "Deleter",
-			Pool:      op.Pool,
-			Where:     r.resolveExpr(op.Where),
-			KeyPruner: r.resolveExpr(op.KeyPruner),
+	case *sem.DBMetaScan:
+	case *sem.PoolMetaScan:
+	case *sem.CommitMetaScan:
+	case *sem.NullScan:
+	case *sem.DeleteScan:
+		return &sem.DeleteScan{
+			AST:   op.AST,
+			Where: r.resolveExpr(op.Where),
 		}
 	default:
 		panic(op)
@@ -228,10 +195,10 @@ func (r *resolver) resolveOp(op dag.Op) dag.Op {
 	return op
 }
 
-func (r *resolver) resolveAssignments(assignments []dag.Assignment) []dag.Assignment {
-	var out []dag.Assignment
+func (r *resolver) resolveAssignments(assignments []sem.Assignment) []sem.Assignment {
+	var out []sem.Assignment
 	for _, ass := range assignments {
-		out = append(out, dag.Assignment{
+		out = append(out, sem.Assignment{
 			Kind: "Assignment",
 			LHS:  r.resolveExpr(ass.LHS),
 			RHS:  r.resolveExpr(ass.RHS),
@@ -240,10 +207,10 @@ func (r *resolver) resolveAssignments(assignments []dag.Assignment) []dag.Assign
 	return out
 }
 
-func (r *resolver) resolveSortExprs(exprs []dag.SortExpr) []dag.SortExpr {
-	var out []dag.SortExpr
+func (r *resolver) resolveSortExprs(exprs []sem.SortExpr) []sem.SortExpr {
+	var out []sem.SortExpr
 	for _, e := range exprs {
-		out = append(out, dag.SortExpr{
+		out = append(out, sem.SortExpr{
 			Key:   r.resolveExpr(e.Key),
 			Order: e.Order,
 			Nulls: e.Nulls})
@@ -251,160 +218,160 @@ func (r *resolver) resolveSortExprs(exprs []dag.SortExpr) []dag.SortExpr {
 	return out
 }
 
-func (r *resolver) resolveExprs(exprs []dag.Expr) []dag.Expr {
-	var out []dag.Expr
+func (r *resolver) resolveExprs(exprs []sem.Expr) []sem.Expr {
+	var out []sem.Expr
 	for _, e := range exprs {
 		out = append(out, r.resolveExpr(e))
 	}
 	return out
 }
 
-func (r *resolver) resolveExpr(e dag.Expr) dag.Expr {
+func (r *resolver) resolveExpr(e sem.Expr) sem.Expr {
 	switch e := e.(type) {
 	case nil:
 		return nil
-	case *dag.FuncRef:
+	case *sem.FuncRef:
 		// This needs to be in an argument list and can't be anywhere else... bad DAG
 		panic(e)
-	case *dag.CallParam:
+	case *sem.CallParam:
 		// This is a call to a parameter.  It must only appear enclosed in a FuncDef
 		// with params containing the name in the e.Param.  The function being referenced
 		// or passed in can be lazily created.
 		return r.resolveCallParam(e)
-	case *dag.Agg:
-		return &dag.Agg{
+	case *sem.Agg:
+		return &sem.Agg{
 			Kind:     "Agg",
 			Name:     e.Name,
 			Distinct: e.Distinct,
 			Expr:     r.resolveExpr(e.Expr),
 			Where:    r.resolveExpr(e.Where),
 		}
-	case *dag.ArrayExpr:
-		return &dag.ArrayExpr{
+	case *sem.ArrayExpr:
+		return &sem.ArrayExpr{
 			Kind:  "ArrayExpr",
 			Elems: r.resolveVectorElems(e.Elems),
 		}
-	case *dag.BadExpr:
-	case *dag.BinaryExpr:
-		return dag.NewBinaryExpr(e.Op, r.resolveExpr(e.LHS), r.resolveExpr(e.RHS))
-	case *dag.Call:
+	case *sem.BadExpr:
+	case *sem.BinaryExpr:
+		return sem.NewBinaryExpr(e.Op, r.resolveExpr(e.LHS), r.resolveExpr(e.RHS))
+	case *sem.Call:
 		return r.resolveCall(r.analyzer.locs[e], e.Tag, e.Args)
-	case *dag.Conditional:
-		return &dag.Conditional{
+	case *sem.Conditional:
+		return &sem.Conditional{
 			Kind: "Conditional",
 			Cond: r.resolveExpr(e.Cond),
 			Then: r.resolveExpr(e.Then),
 			Else: r.resolveExpr(e.Else),
 		}
-	case *dag.Dot:
-		return &dag.Dot{
+	case *sem.Dot:
+		return &sem.Dot{
 			Kind: "Dot",
 			LHS:  r.resolveExpr(e.LHS),
 			RHS:  e.RHS,
 		}
-	case *dag.IndexExpr:
-		return &dag.IndexExpr{
+	case *sem.IndexExpr:
+		return &sem.IndexExpr{
 			Kind:  "IndexExpr",
 			Expr:  r.resolveExpr(e.Expr),
 			Index: r.resolveExpr(e.Index),
 		}
-	case *dag.IsNullExpr:
-		return &dag.IsNullExpr{
+	case *sem.IsNullExpr:
+		return &sem.IsNullExpr{
 			Kind: "IsNullExpr",
 			Expr: r.resolveExpr(e.Expr),
 		}
-	case *dag.Literal:
-	case *dag.MapCall:
+	case *sem.Literal:
+	case *sem.MapCall:
 		loc := r.analyzer.locs[e]
-		call, ok := r.resolveCall(loc, e.Lambda.Tag, e.Lambda.Args).(*dag.Call)
+		call, ok := r.resolveCall(loc, e.Lambda.Tag, e.Lambda.Args).(*sem.Call)
 		if !ok {
 			return badExpr()
 		}
-		return &dag.MapCall{
+		return &sem.MapCall{
 			Kind:   "MapCall",
 			Expr:   r.resolveExpr(e.Expr),
 			Lambda: call,
 		}
-	case *dag.MapExpr:
-		var entries []dag.Entry
+	case *sem.MapExpr:
+		var entries []sem.Entry
 		for _, entry := range e.Entries {
-			entries = append(entries, dag.Entry{
+			entries = append(entries, sem.Entry{
 				Key:   r.resolveExpr(entry.Key),
 				Value: r.resolveExpr(entry.Value),
 			})
 		}
-		return &dag.MapExpr{
+		return &sem.MapExpr{
 			Kind:    "MapExpr",
 			Entries: entries,
 		}
-	case *dag.RecordExpr:
-		return &dag.RecordExpr{
+	case *sem.RecordExpr:
+		return &sem.RecordExpr{
 			Kind:  "RecordExpr",
 			Elems: r.resolveRecordElems(e.Elems),
 		}
-	case *dag.RegexpMatch:
-		return &dag.RegexpMatch{
+	case *sem.RegexpMatch:
+		return &sem.RegexpMatch{
 			Kind:    "RegexpMatch",
 			Pattern: e.Pattern,
 			Expr:    r.resolveExpr(e.Expr),
 		}
-	case *dag.RegexpSearch:
-		return &dag.RegexpSearch{
+	case *sem.RegexpSearch:
+		return &sem.RegexpSearch{
 			Kind:    "RegexpSearch",
 			Pattern: e.Pattern,
 			Expr:    r.resolveExpr(e.Expr),
 		}
-	case *dag.Search:
-		return &dag.Search{
+	case *sem.Search:
+		return &sem.Search{
 			Kind:  "Search",
 			Text:  e.Text,
 			Value: e.Value,
 			Expr:  r.resolveExpr(e.Expr),
 		}
-	case *dag.SetExpr:
-		return &dag.SetExpr{
+	case *sem.SetExpr:
+		return &sem.SetExpr{
 			Kind:  "SetExpr",
 			Elems: r.resolveVectorElems(e.Elems),
 		}
-	case *dag.SliceExpr:
-		return &dag.SliceExpr{
+	case *sem.SliceExpr:
+		return &sem.SliceExpr{
 			Kind: "SliceExpr",
 			Expr: r.resolveExpr(e.Expr),
 			From: r.resolveExpr(e.From),
 			To:   r.resolveExpr(e.To),
 		}
-	case *dag.Subquery:
+	case *sem.Subquery:
 		// We clear params before processing a subquery so you can't
 		// touch passed-in functions inside the first "this" of a correlated
 		// subquery.  We can support this later if people are interested.
 		// It requires a bit of surgery.
 		r.pushParams(make(map[string]string))
 		defer r.popParams()
-		return &dag.Subquery{
+		return &sem.Subquery{
 			Kind:       "Subquery",
 			Correlated: e.Correlated,
 			Body:       r.resolveSeq(e.Body),
 		}
-	case *dag.This:
-	case *dag.UnaryExpr:
-		return dag.NewUnaryExpr(e.Op, r.resolveExpr(e.Operand))
+	case *sem.This:
+	case *sem.UnaryExpr:
+		return sem.NewUnaryExpr(e.Op, r.resolveExpr(e.Operand))
 	default:
 		panic(e)
 	}
 	return e
 }
 
-func (r *resolver) resolveVectorElems(elems []dag.VectorElem) []dag.VectorElem {
-	var out []dag.VectorElem
+func (r *resolver) resolveVectorElems(elems []sem.VectorElem) []sem.VectorElem {
+	var out []sem.VectorElem
 	for _, elem := range elems {
 		switch elem := elem.(type) {
-		case *dag.Spread:
-			out = append(out, &dag.Spread{
+		case *sem.Spread:
+			out = append(out, &sem.Spread{
 				Kind: "Spread",
 				Expr: r.resolveExpr(elem.Expr),
 			})
-		case *dag.VectorValue:
-			out = append(out, &dag.VectorValue{
+		case *sem.VectorValue:
+			out = append(out, &sem.VectorValue{
 				Kind: "VectorValue",
 				Expr: r.resolveExpr(elem.Expr),
 			})
@@ -415,17 +382,17 @@ func (r *resolver) resolveVectorElems(elems []dag.VectorElem) []dag.VectorElem {
 	return out
 }
 
-func (r *resolver) resolveRecordElems(elems []dag.RecordElem) []dag.RecordElem {
-	var out []dag.RecordElem
+func (r *resolver) resolveRecordElems(elems []sem.RecordElem) []sem.RecordElem {
+	var out []sem.RecordElem
 	for _, elem := range elems {
 		switch elem := elem.(type) {
-		case *dag.Spread:
-			out = append(out, &dag.Spread{
+		case *sem.Spread:
+			out = append(out, &sem.Spread{
 				Kind: "Spread",
 				Expr: r.resolveExpr(elem.Expr),
 			})
-		case *dag.Field:
-			out = append(out, &dag.Field{
+		case *sem.Field:
+			out = append(out, &sem.Field{
 				Kind:  "Field",
 				Name:  elem.Name,
 				Value: r.resolveExpr(elem.Value),
@@ -441,7 +408,7 @@ func (r *resolver) error(loc ast.Loc, err error) {
 	r.analyzer.error(loc, err)
 }
 
-func (r *resolver) resolveCallParam(call *dag.CallParam) dag.Expr {
+func (r *resolver) resolveCallParam(call *sem.CallParam) sem.Expr {
 	oldTag := r.lookupParam(call.Param)
 	if oldTag == "" {
 		// This can happen when we go to resolve a parameter that wasn't bound to
@@ -460,9 +427,9 @@ func (r *resolver) resolveCallParam(call *dag.CallParam) dag.Expr {
 	return r.resolveCall(r.analyzer.locs[call], oldTag, call.Args)
 }
 
-func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []dag.Expr) dag.Expr {
+func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []sem.Expr) sem.Expr {
 	if isBuiltin(oldTag) {
-		return &dag.Call{
+		return &sem.Call{
 			Kind: "Call",
 			Tag:  oldTag,
 			Args: r.resolveExprs(args),
@@ -472,7 +439,7 @@ func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []dag.Expr) 
 	// function refs passed as args to lookup-table removing
 	// correponding args.
 	var params []string
-	var exprs []dag.Expr
+	var exprs []sem.Expr
 	funcDef := r.in[oldTag]
 	if len(funcDef.Params) != len(args) {
 		r.error(callLoc, fmt.Errorf("%q: expected %d params but called with %d", funcDef.Name, len(funcDef.Params), len(args)))
@@ -480,12 +447,12 @@ func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []dag.Expr) 
 	}
 	bindings := make(map[string]string)
 	for k, arg := range args {
-		if f, ok := arg.(*dag.FuncRef); ok {
+		if f, ok := arg.(*sem.FuncRef); ok {
 			bindings[funcDef.Params[k]] = f.Tag
 			continue
 		}
 		e := r.resolveExpr(arg)
-		if e, ok := e.(*dag.This); ok {
+		if e, ok := e.(*sem.This); ok {
 			if len(e.Path) == 1 {
 				// Propagate a function passed as a function value inside of
 				// a function to another function.
@@ -501,7 +468,7 @@ func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []dag.Expr) 
 	if len(funcDef.Params) == len(params) {
 		// No need to specialize this call since no function args are being passed.
 		newTag := r.lookupFixed(oldTag)
-		return &dag.Call{
+		return &sem.Call{
 			Kind: "Call",
 			Tag:  newTag,
 			Args: args,
@@ -512,7 +479,7 @@ func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []dag.Expr) 
 	r.pushParams(bindings)
 	defer r.popParams()
 	newTag := r.lookupVariant(oldTag, params)
-	return &dag.Call{
+	return &sem.Call{
 		Kind: "Call",
 		Tag:  newTag,
 		Args: exprs,
@@ -525,7 +492,7 @@ func (r *resolver) lookupFixed(oldTag string) string {
 	}
 	funcDef := r.in[oldTag]
 	newTag := r.nextTag()
-	newFuncDef := &dag.FuncDef{
+	newFuncDef := &sem.FuncDef{
 		Kind:   "FuncDef",
 		Tag:    newTag,
 		Name:   funcDef.Name,
@@ -539,7 +506,7 @@ func (r *resolver) lookupFixed(oldTag string) string {
 func (r *resolver) lookupVariant(oldTag string, params []string) string {
 	newTag := r.nextTag()
 	funcDef := r.in[oldTag]
-	r.variants = append(r.variants, &dag.FuncDef{
+	r.variants = append(r.variants, &sem.FuncDef{
 		Kind:   "FuncDef",
 		Tag:    newTag,
 		Name:   funcDef.Name,

@@ -9,7 +9,6 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/compiler/ast"
-	"github.com/brimdata/super/compiler/rungen"
 	"github.com/brimdata/super/compiler/semantic/sem"
 	"github.com/brimdata/super/compiler/sfmt"
 	"github.com/brimdata/super/pkg/nano"
@@ -269,11 +268,8 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 		if _, ok := e.Type.(*ast.DateTypeHack); ok {
 			// cast to time then bucket by 1d as a workaround for not currently
 			// supporting a "date" type.
-			cast := &sem.CallExpr{
-				AST:  e,
-				Tag:  "cast",
-				Args: []sem.Expr{expr, &sem.LiteralExpr{AST: e, Value: "<time>"}},
-			}
+			cast := sem.NewCall(e, "cast",
+				[]sem.Expr{expr, &sem.LiteralExpr{AST: e, Value: "<time>"}})
 			return &sem.CallExpr{
 				AST:  e,
 				Tag:  "bucket",
@@ -418,7 +414,7 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 	panic(e)
 }
 
-func (t *translator) semID(id *ast.ID) sem.Expr {
+func (t *translator) semID(id *ast.ID, lval bool) sem.Expr {
 	// We use static scoping here to see if an identifier is
 	// a "var" reference to the name or a field access
 	// and transform the AST node appropriately.  The resulting DAG
@@ -431,7 +427,7 @@ func (t *translator) semID(id *ast.ID) sem.Expr {
 	// an error to avoid a rake when such a function is mistakenly passed
 	// without "&" and otherwise turns into a field reference.
 	if entry := t.scope.lookupEntry(id.Name); entry != nil {
-		if _, ok := entry.ref.(*sem.FuncDef); ok {
+		if _, ok := entry.ref.(*sem.FuncDef); ok && !lval {
 			t.error(id, fmt.Errorf("function %q referenced but not called (consider &%s to create a function value)", id.Name, id.Name))
 			return badExpr()
 		}
@@ -507,7 +503,7 @@ func (t *translator) semRegexp(b *ast.BinaryExpr) sem.Expr {
 }
 
 func (t *translator) semBinary(e *ast.BinaryExpr) sem.Expr {
-	if path, bad := t.semDotted(e); path != nil {
+	if path, bad := t.semDotted(e, false); path != nil {
 		if t.scope.schema != nil {
 			path, err := t.scope.resolve(path)
 			if err != nil {
@@ -610,7 +606,7 @@ func (t *translator) isIndexOfThis(lhs, rhs sem.Expr) *sem.ThisExpr {
 }
 
 func isStringConst(sctx *super.Context, e sem.Expr) (field string, ok bool) {
-	val, err := rungen.EvalAtCompileTime(sctx, e) //XXX need a way to do this... defer?!
+	val, err := evalAtCompileTime(sctx, e) //XXX need a way to do this... defer?!
 	if err == nil && !val.IsError() && super.TypeUnder(val.Type()) == super.TypeString {
 		return string(val.Bytes()), true
 	}
@@ -830,7 +826,6 @@ func (t *translator) semCallByName(call *ast.Call, name string, args []sem.Expr)
 	return sem.NewCall(call, nameLower, args)
 }
 
-func (a *analyzer) semMapCall(loc ast.Loc, args []dag.Expr) dag.Expr {
 func (t *translator) maybeSubqueryCallByID(id *ast.ID) *sem.SubqueryExpr {
 	call := &ast.Call{
 		Kind: "Call",

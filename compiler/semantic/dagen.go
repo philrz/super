@@ -13,7 +13,7 @@ type dagen struct {
 }
 
 func (d *dagen) compile(seq *sem.Main) *dag.Main {
-
+	panic("TBD")
 }
 
 func evalAtCompileTime(sctx *super.Context, e sem.Expr) (super.Value, error) {

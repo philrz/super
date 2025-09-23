@@ -21,6 +21,7 @@ package sem
 
 import (
 	"github.com/brimdata/super/compiler/ast"
+	"github.com/brimdata/super/order"
 	"github.com/segmentio/ksuid"
 )
 
@@ -37,16 +38,18 @@ type Op interface {
 // Scanner ops implement both Scanner and Op
 type (
 	CommitMetaScan struct {
-		AST    *ast.FromElem
+		AST    ast.FromEntity
 		Pool   ksuid.KSUID
 		Commit ksuid.KSUID
 		Meta   string
 		Tap    bool
 	}
 	DBMetaScan struct {
-		AST *ast.DBMeta
+		AST  *ast.DBMeta
+		Meta string
 	}
-	DeleteScan struct {
+	DefaultScan struct{}
+	DeleteScan  struct {
 		AST    *ast.Delete
 		ID     ksuid.KSUID
 		Commit ksuid.KSUID
@@ -67,12 +70,12 @@ type (
 	}
 	NullScan     struct{}
 	PoolMetaScan struct {
-		AST  *ast.FromElem
+		AST  ast.FromEntity
 		ID   ksuid.KSUID
 		Meta string
 	}
 	PoolScan struct {
-		AST    *ast.FromElem
+		AST    ast.FromEntity
 		ID     ksuid.KSUID
 		Commit ksuid.KSUID
 	}
@@ -85,6 +88,7 @@ type (
 
 func (*CommitMetaScan) opNode() {}
 func (*DBMetaScan) opNode()     {}
+func (*DefaultScan) opNode()    {}
 func (*DeleteScan) opNode()     {}
 func (*FileScan) opNode()       {}
 func (*HTTPScan) opNode()       {}
@@ -166,11 +170,11 @@ type (
 	ExplodeOp struct {
 		AST  *ast.Explode
 		Args []Expr
-		Type Expr
-		As   Expr
+		Type string
+		As   string
 	}
 	FilterOp struct {
-		AST  ast.Expr // ast.Where or ast.OpExpr
+		AST  ast.Op // ast.Where, ast.OpExpr, ast.Search
 		Expr Expr
 	}
 	ForkOp struct {
@@ -181,7 +185,7 @@ type (
 	}
 	HeadOp struct {
 		AST   *ast.Head
-		Count Expr // const ref or only applies to declared ones?
+		Count int
 	}
 	JoinOp struct {
 		AST        ast.Op // CrossJoin, SQL*Join, Join, etc (might not need this)
@@ -204,7 +208,8 @@ type (
 		Exprs []SortExpr
 	}
 	OutputOp struct {
-		AST *ast.Output // Name here
+		AST  ast.Op
+		Name string
 	}
 	PutOp struct {
 		AST  ast.Op
@@ -227,8 +232,9 @@ type (
 		Count Expr
 	}
 	SortOp struct {
-		AST   *ast.Sort // Reverse flag in here
-		Exprs []SortExpr
+		AST     *ast.Sort
+		Exprs   []SortExpr
+		Reverse bool
 	}
 	SwitchOp struct {
 		AST   *ast.Switch
@@ -237,15 +243,17 @@ type (
 	}
 	TailOp struct {
 		AST   *ast.Tail
-		Count Expr
+		Count int
 	}
 	TopOp struct {
-		AST   *ast.Top // Reverse flag here
-		Limit Expr
-		Exprs []SortExpr
+		AST     *ast.Top
+		Limit   int
+		Exprs   []SortExpr
+		Reverse bool
 	}
 	UniqOp struct {
-		AST *ast.Uniq // Cflag in here
+		AST   *ast.Uniq
+		Cflag bool
 	}
 	UnnestOp struct {
 		AST  *ast.Unnest
@@ -253,7 +261,7 @@ type (
 		Body Seq
 	}
 	ValuesOp struct {
-		AST   ast.Expr // ast.Values or ast.OpExpr
+		AST   ast.Op // ast.Values or ast.OpExpr
 		Exprs []Expr
 	}
 )
@@ -271,8 +279,10 @@ type (
 		Path Seq
 	}
 	SortExpr struct {
-		AST  *ast.SortExpr // Order, Nulls inside here
-		Expr Expr
+		AST   ast.SortExpr
+		Expr  Expr
+		Order order.Which
+		Nulls order.Nulls
 	}
 )
 
@@ -312,4 +322,8 @@ type AggFunc struct {
 	Distinct bool
 	Expr     Expr
 	Where    Expr
+}
+
+func NewValues(o ast.Op, expr ...Expr) *ValuesOp {
+	return &ValuesOp{AST: o, Exprs: expr}
 }

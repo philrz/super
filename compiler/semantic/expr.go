@@ -1146,10 +1146,9 @@ func isCorrelated(seq sem.Seq) bool {
 	return true
 }
 
-/*
 func (t *translator) evalPositiveInteger(e ast.Expr) int {
 	expr := t.semExpr(e)
-	val, err := rungen.EvalAtCompileTime(t.sctx, expr) //XXX do this on later pass
+	val, err := evalAtCompileTime(t.sctx, expr)
 	if err != nil {
 		t.error(e, err)
 		return -1
@@ -1164,4 +1163,3 @@ func (t *translator) evalPositiveInteger(e ast.Expr) int {
 	}
 	return v
 }
-*/

@@ -7,7 +7,6 @@ import (
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/compiler/ast"
 	"github.com/brimdata/super/compiler/dag"
-	"github.com/brimdata/super/compiler/rungen"
 	"github.com/brimdata/super/compiler/semantic/sem"
 	"github.com/brimdata/super/pkg/field"
 	"github.com/brimdata/super/sup"
@@ -45,8 +44,8 @@ func (s *Scope) BindSymbol(name string, e any) error {
 	return nil
 }
 
-func (s *Scope) EvalAndBindConst(sctx *super.Context, name string, def dag.Expr) error {
-	val, err := rungen.EvalAtCompileTime(sctx, def)
+func (s *Scope) EvalAndBindConst(sctx *super.Context, name string, def sem.Expr) error {
+	val, err := evalAtCompileTime(sctx, def)
 	if err != nil {
 		return err
 	}

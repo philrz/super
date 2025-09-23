@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/brimdata/super/compiler/ast"
-	"github.com/brimdata/super/compiler/dag"
 	"github.com/brimdata/super/compiler/semantic/sem"
 )
 
@@ -24,7 +23,7 @@ import (
 type column struct {
 	name  string
 	loc   ast.Expr
-	expr  dag.Expr
+	expr  sem.Expr
 	isAgg bool
 }
 
@@ -49,7 +48,7 @@ func (p projection) aggCols() []column {
 	return aggs
 }
 
-func newColumn(name string, loc ast.Expr, e dag.Expr, funcs *aggfuncs) (*column, error) {
+func newColumn(name string, loc ast.Expr, e sem.Expr, funcs *aggfuncs) (*column, error) {
 	c := &column{name: name, loc: loc}
 	cnt := len(*funcs)
 	var err error
@@ -89,24 +88,17 @@ func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 		// the generated aggregate operator.
 		tmp := a.tmp()
 		*a = append(*a, namedAgg{name: tmp, agg: e})
-		return sem.NewThis([]string{"in", tmp}), nil
+		return sem.NewThis(nil /*XXX*/, []string{"in", tmp}), nil
 	case *sem.ArrayExpr:
-		for _, elem := range e.Elems {
-			switch elem := elem.(type) {
-			case *sem.Spread:
-				elem.Expr, err = a.subst(elem.Expr)
-				if err != nil {
-					return nil, err
-				}
-			case *sem.VectorValue: //XXX
-				elem.Expr, err = a.subst(elem.Expr)
-				if err != nil {
-					return nil, err
-				}
-			default:
-				panic(elem)
+		var elems []sem.Expr
+		for _, e := range e.Elems {
+			e, err = a.subst(e)
+			if err != nil {
+				return nil, err
 			}
+			elems = append(elems, e)
 		}
+		e.Elems = elems
 	case *sem.BinaryExpr:
 		e.LHS, err = a.subst(e.LHS)
 		if err != nil {
@@ -116,7 +108,7 @@ func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-	case *sem.Call:
+	case *sem.CallExpr:
 		for k, arg := range e.Args {
 			e.Args[k], err = a.subst(arg)
 			if err != nil {
@@ -168,54 +160,40 @@ func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 			}
 		}
 	case *sem.RecordExpr:
+		var elems []sem.Expr
 		for _, elem := range e.Elems {
-			switch elem := elem.(type) {
-			case *sem.FieldExpr: //XXX
-				elem.Value, err = a.subst(elem.Value)
-				if err != nil {
-					return nil, err
-				}
-			case *sem.Spread:
-				elem.Expr, err = a.subst(elem.Expr)
-				if err != nil {
-					return nil, err
-				}
-			default:
-				panic(elem)
+			e, err := a.subst(elem)
+			if err != nil {
+				return nil, err
 			}
+			elems = append(elems, e)
 		}
-	case *sem.RegexpMatch:
+		e.Elems = elems
+	case *sem.RegexpMatchExpr:
 		e.Expr, err = a.subst(e.Expr)
 		if err != nil {
 			return nil, err
 		}
-	case *sem.RegexpSearch:
+	case *sem.RegexpSearchExpr:
 		e.Expr, err = a.subst(e.Expr)
 		if err != nil {
 			return nil, err
 		}
-	case *sem.Search:
+	case *sem.SearchTermExpr:
 		e.Expr, err = a.subst(e.Expr)
 		if err != nil {
 			return nil, err
 		}
 	case *sem.SetExpr:
+		var elems []sem.Expr
 		for _, elem := range e.Elems {
-			switch elem := elem.(type) {
-			case *sem.Spread:
-				elem.Expr, err = a.subst(elem.Expr)
-				if err != nil {
-					return nil, err
-				}
-			case *sem.VectorValue:
-				elem.Expr, err = a.subst(elem.Expr)
-				if err != nil {
-					return nil, err
-				}
-			default:
-				panic(elem)
+			e, err := a.subst(elem)
+			if err != nil {
+				return nil, err
 			}
+			elems = append(elems, e)
 		}
+		e.Elems = elems
 	case *sem.SliceExpr:
 		e.Expr, err = a.subst(e.Expr)
 		if err != nil {

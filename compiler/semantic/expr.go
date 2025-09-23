@@ -38,7 +38,7 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 			Where:    where,
 		}
 	case *ast.ArrayExpr:
-		elems := t.semVectorElems(e.Elems)
+		elems := t.semArrayElems(e.Elems)
 		if subquery := t.arraySubquery(elems); subquery != nil {
 			return subquery
 		}
@@ -185,7 +185,7 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 		return t.semSubquery(e, e.Array, e.Body)
 	case *ast.RecordExpr:
 		fields := map[string]struct{}{}
-		var out []sem.Expr
+		var out []sem.RecordElem
 		for _, elem := range e.Elems {
 			switch elem := elem.(type) {
 			case *ast.FieldExpr:
@@ -195,7 +195,7 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 				}
 				fields[elem.Name.Text] = struct{}{}
 				e := t.semExpr(elem.Value)
-				out = append(out, &sem.FieldExpr{
+				out = append(out, &sem.FieldElem{
 					AST:   elem,
 					Name:  elem.Name.Text,
 					Value: e,
@@ -209,14 +209,14 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 				// Call semExpr even though we know this is an ID so
 				// SQL-context scope mappings are carried out.
 				v := t.semExpr(elem)
-				out = append(out, &sem.FieldExpr{
+				out = append(out, &sem.FieldElem{
 					AST:   elem,
 					Name:  elem.Name,
 					Value: v,
 				})
 			case *ast.Spread:
 				e := t.semExpr(elem.Expr)
-				out = append(out, &sem.SpreadExpr{
+				out = append(out, &sem.SpreadElem{
 					AST:  elem,
 					Expr: e,
 				})
@@ -228,7 +228,7 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 					continue
 				}
 				fields[name] = struct{}{}
-				out = append(out, &sem.FieldExpr{
+				out = append(out, &sem.FieldElem{
 					Name:  name,
 					Value: e,
 				})
@@ -245,7 +245,7 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 			Expr:    pathOf(e, "this"),
 		}
 	case *ast.SetExpr:
-		elems := t.semVectorElems(e.Elems)
+		elems := t.semArrayElems(e.Elems)
 		return &sem.SetExpr{
 			AST:   e,
 			Elems: elems,
@@ -356,10 +356,10 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 			Expr:  pathOf(e, "this"),
 		}
 	case *ast.TupleExpr:
-		elems := make([]sem.Expr, 0, len(e.Elems))
+		elems := make([]sem.RecordElem, 0, len(e.Elems))
 		for colno, elem := range e.Elems {
 			e := t.semExpr(elem)
-			elems = append(elems, &sem.FieldExpr{
+			elems = append(elems, &sem.FieldElem{
 				AST:   elem,
 				Name:  fmt.Sprintf("c%d", colno),
 				Value: e,
@@ -1047,14 +1047,14 @@ func (t *translator) semType(typ ast.Type) (string, error) {
 	return sup.FormatType(ztype), nil
 }
 
-func (t *translator) semVectorElems(elems []ast.VectorElem) []sem.Expr {
-	var out []sem.Expr
+func (t *translator) semArrayElems(elems []ast.VectorElem) []sem.ArrayElem {
+	var out []sem.ArrayElem
 	for _, elem := range elems {
 		switch elem := elem.(type) {
 		case *ast.Spread:
-			out = append(out, &sem.SpreadExpr{AST: elem, Expr: t.semExpr(elem)})
+			out = append(out, &sem.SpreadElem{AST: elem, Expr: t.semExpr(elem)})
 		case *ast.VectorValue:
-			out = append(out, t.semExpr(elem.Expr))
+			out = append(out, &sem.ExprElem{AST: nil /*XXX*/, Expr: t.semExpr(elem.Expr)})
 		}
 	}
 	return out
@@ -1087,16 +1087,16 @@ func (t *translator) semFString(f *ast.FString) sem.Expr {
 	return out
 }
 
-func (t *translator) arraySubquery(elems []sem.Expr) *sem.SubqueryExpr {
-	if len(elems) != 1 {
-		return nil
+func (t *translator) arraySubquery(elems []sem.ArrayElem) *sem.SubqueryExpr {
+	if len(elems) == 1 {
+		if elem, ok := elems[0].(*sem.ExprElem); ok {
+			if subquery, ok := elem.Expr.(*sem.SubqueryExpr); ok {
+				subquery.Array = true
+				return subquery
+			}
+		}
 	}
-	subquery, ok := elems[0].(*sem.SubqueryExpr)
-	if !ok {
-		return nil
-	}
-	subquery.Array = true
-	return subquery
+	return nil
 }
 
 func (t *translator) semSubquery(aexpr ast.Expr, array bool, body ast.Seq) *sem.SubqueryExpr {

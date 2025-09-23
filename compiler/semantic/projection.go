@@ -90,13 +90,9 @@ func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 		*a = append(*a, namedAgg{name: tmp, agg: e})
 		return sem.NewThis(nil /*XXX*/, []string{"in", tmp}), nil
 	case *sem.ArrayExpr:
-		var elems []sem.Expr
-		for _, e := range e.Elems {
-			e, err = a.subst(e)
-			if err != nil {
-				return nil, err
-			}
-			elems = append(elems, e)
+		elems, err := a.substArrayElems(e.Elems)
+		if err != nil {
+			return nil, err
 		}
 		e.Elems = elems
 	case *sem.BinaryExpr:
@@ -160,13 +156,24 @@ func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 			}
 		}
 	case *sem.RecordExpr:
-		var elems []sem.Expr
+		var elems []sem.RecordElem
 		for _, elem := range e.Elems {
-			e, err := a.subst(elem)
-			if err != nil {
-				return nil, err
+			switch elem := elem.(type) {
+			case *sem.FieldElem:
+				sub, err := a.subst(elem.Value)
+				if err != nil {
+					return nil, err
+				}
+				elems = append(elems, &sem.FieldElem{AST: elem.AST, Name: elem.Name, Value: sub})
+			case *sem.SpreadElem:
+				sub, err := a.subst(elem.Expr)
+				if err != nil {
+					return nil, err
+				}
+				elems = append(elems, &sem.SpreadElem{AST: elem.AST, Expr: sub})
+			default:
+				panic(elem)
 			}
-			elems = append(elems, e)
 		}
 		e.Elems = elems
 	case *sem.RegexpMatchExpr:
@@ -185,13 +192,9 @@ func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 			return nil, err
 		}
 	case *sem.SetExpr:
-		var elems []sem.Expr
-		for _, elem := range e.Elems {
-			e, err := a.subst(elem)
-			if err != nil {
-				return nil, err
-			}
-			elems = append(elems, e)
+		elems, err := a.substArrayElems(e.Elems)
+		if err != nil {
+			return nil, err
 		}
 		e.Elems = elems
 	case *sem.SliceExpr:
@@ -215,4 +218,27 @@ func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 		}
 	}
 	return e, nil
+}
+
+func (a *aggfuncs) substArrayElems(elems []sem.ArrayElem) ([]sem.ArrayElem, error) {
+	var out []sem.ArrayElem
+	for _, e := range elems {
+		switch e := e.(type) {
+		case *sem.SpreadElem:
+			sub, err := a.subst(e.Expr)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, &sem.SpreadElem{AST: e.AST, Expr: sub})
+		case *sem.ExprElem:
+			sub, err := a.subst(e.Expr)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, &sem.ExprElem{AST: e.AST, Expr: sub})
+		default:
+			panic(e)
+		}
+	}
+	return out, nil
 }

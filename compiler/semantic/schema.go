@@ -215,7 +215,7 @@ func (*dynamicSchema) resolveOrdinal(col int) (sem.Expr, error) {
 	}
 	return &sem.IndexExpr{
 		AST:   nil, //XXX need some kind of dummy for internally generated
-		Expr:  sem.NewThis(nil),
+		Expr:  sem.NewThis(nil /*XXX*/, nil),
 		Index: &sem.LiteralExpr{Value: strconv.Itoa(col)},
 	}, nil
 }
@@ -224,7 +224,7 @@ func (s *staticSchema) resolveOrdinal(col int) (sem.Expr, error) {
 	if col <= 0 || col > len(s.columns) {
 		return nil, fmt.Errorf("position %d is not in select list", col)
 	}
-	return sem.NewThis([]string{s.columns[col-1]}), nil
+	return sem.NewThis(nil /*XXX*/, []string{s.columns[col-1]}), nil
 }
 
 func (s *selectSchema) resolveOrdinal(col int) (sem.Expr, error) {
@@ -257,7 +257,7 @@ func (s *subquerySchema) resolveOrdinal(col int) (sem.Expr, error) {
 func appendExprToPath(path string, e sem.Expr) sem.Expr {
 	switch e := e.(type) {
 	case *sem.ThisExpr:
-		return sem.NewThis(append([]string{path}, e.Path...))
+		return sem.NewThis(nil /*XXX*/, append([]string{path}, e.Path...))
 	case *sem.IndexExpr:
 		return &sem.IndexExpr{
 			//AST:XXX
@@ -299,7 +299,7 @@ func (s *selectSchema) deref(name string) (sem.Expr, schema) {
 		// e.g., record expression with fixed columns as an anonSchema.
 		outSchema = &dynamicSchema{name: name}
 	}
-	return pathOf("out"), outSchema
+	return pathOf(nil /*XXX*/, "out"), outSchema
 }
 
 func (j *joinSchema) deref(name string) (sem.Expr, schema) {
@@ -310,19 +310,19 @@ func (j *joinSchema) deref(name string) (sem.Expr, schema) {
 // spread left/right join legs into "this"
 func joinSpread(left, right sem.Expr) *sem.RecordExpr {
 	if left == nil {
-		left = sem.NewThis(nil)
+		left = sem.NewThis(nil /*XXX*/, nil)
 	}
 	if right == nil {
-		right = sem.NewThis(nil)
+		right = sem.NewThis(nil /*XXX*/, nil)
 	}
 	return &sem.RecordExpr{
 		//AST:XXX
-		Elems: []sem.Expr{
-			&sem.Spread{
+		Elems: []sem.RecordElem{
+			&sem.SpreadElem{
 				//AST
 				Expr: left,
 			},
-			&sem.Spread{
+			&sem.SpreadElem{
 				//AST
 				Expr: right,
 			},

@@ -670,7 +670,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 	case *ast.Skip:
 		return append(seq, &sem.SkipOp{
 			AST:   o,
-			Count: t.semExpr(o.Count),
+			Count: t.evalPositiveInteger(o.Count),
 		})
 	case *ast.Uniq:
 		return append(seq, &sem.UniqOp{
@@ -890,18 +890,18 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 					"error",
 					[]sem.Expr{&sem.RecordExpr{
 						AST: nil, //XXX
-						Elems: []sem.Expr{
-							&sem.FieldExpr{
+						Elems: []sem.RecordElem{
+							&sem.FieldElem{
 								AST:   nil, //XXX
 								Name:  "message",
 								Value: &sem.LiteralExpr{AST: nil /*XXX*/, Value: `"assertion failed"`},
 							},
-							&sem.FieldExpr{
+							&sem.FieldElem{
 								AST:   nil, //XXX
 								Name:  "expr",
 								Value: &sem.LiteralExpr{AST: nil /*XXX*/, Value: sup.QuotedString(o.Text)},
 							},
-							&sem.FieldExpr{
+							&sem.FieldElem{
 								AST:   nil, //XXX
 								Name:  "on",
 								Value: sem.NewThis(nil /*XXX*/, nil),

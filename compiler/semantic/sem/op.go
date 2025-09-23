@@ -229,7 +229,7 @@ type (
 	}
 	SkipOp struct {
 		AST   *ast.Skip
-		Count Expr
+		Count int
 	}
 	SortOp struct {
 		AST     *ast.Sort
@@ -326,4 +326,8 @@ type AggFunc struct {
 
 func NewValues(o ast.Op, expr ...Expr) *ValuesOp {
 	return &ValuesOp{AST: o, Exprs: expr}
+}
+
+func NewFilter(o ast.Op, expr Expr) *FilterOp {
+	return &FilterOp{AST: o, Expr: expr}
 }

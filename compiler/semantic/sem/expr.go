@@ -10,13 +10,11 @@ type Expr interface {
 
 //XXX get rid of VectorValue is separate PR... can just use assertion on Expr
 
-// XXX alphabetize
-
 // The type definitions of all entities that implement the Expr interface.
 type (
 	ArrayExpr struct {
 		AST   *ast.ArrayExpr
-		Elems []Expr
+		Elems []ArrayElem
 	}
 	BadExpr     struct{}
 	BetweenExpr struct {
@@ -76,11 +74,6 @@ type (
 		AST  *ast.Exists
 		Body Seq
 	}
-	FieldExpr struct {
-		AST   ast.Expr // Could be an inferred expr or ast.FieldExpr
-		Name  string
-		Value Expr
-	}
 	// XXX we can probably get rid of this but keep for now
 	FStringExpr struct {
 		AST  *ast.FStringExpr
@@ -112,10 +105,9 @@ type (
 		AST     *ast.MapExpr
 		Entries []Entry
 	}
-	// Record elements has been resolved to name:expr or it's a spread
 	RecordExpr struct {
 		AST   ast.Expr // ast.TupleExpr or ast.RecordExpr
-		Elems []Expr
+		Elems []RecordElem
 	}
 	RegexpMatchExpr struct {
 		AST     ast.Expr // ast.Glob or ast.Regexp
@@ -135,17 +127,13 @@ type (
 	}
 	SetExpr struct {
 		AST   *ast.SetExpr
-		Elems []Expr
+		Elems []ArrayElem
 	}
 	SliceExpr struct {
 		AST  ast.Expr
 		Expr Expr
 		From Expr
 		To   Expr
-	}
-	SpreadExpr struct {
-		AST  *ast.Spread
-		Expr Expr
 	}
 	StructuredError struct {
 		AST     ast.Expr
@@ -194,9 +182,37 @@ type When struct {
 	Then Expr
 }
 
-// Sum types for array, set, and record bodies
+// The sum type for array, set, and record elements.  There is not an easy way
+// of creating a Go pseudo-type
 
-type ()
+type ArrayElem interface {
+	arrayElemNode()
+}
+
+type RecordElem interface {
+	recordElemNode()
+}
+
+type (
+	FieldElem struct {
+		AST   ast.Expr // Could be an inferred expr or ast.FieldExpr
+		Name  string
+		Value Expr
+	}
+	SpreadElem struct {
+		AST  *ast.Spread
+		Expr Expr
+	}
+	ExprElem struct {
+		AST  *ast.Spread
+		Expr Expr
+	}
+)
+
+func (*ExprElem) arrayElemNode()    {}
+func (*FieldElem) recordElemNode()  {}
+func (*SpreadElem) arrayElemNode()  {}
+func (*SpreadElem) recordElemNode() {}
 
 func (*ArrayExpr) exprNode()        {}
 func (*BadExpr) exprNode()          {}
@@ -209,28 +225,23 @@ func (*CaseExpr) exprNode()         {}
 func (*CastExpr) exprNode()         {}
 func (*DotExpr) exprNode()          {}
 func (*Exists) exprNode()           {}
-func (*FieldExpr) exprNode()        {}
 func (*IndexExpr) exprNode()        {}
 func (*IsNullExpr) exprNode()       {}
 func (*LambdaExpr) exprNode()       {}
-func (*LiteralExpr) exprNode()      {} //XXX call this PrimitiveExpr?
+func (*LiteralExpr) exprNode()      {}
 func (*MapCallExpr) exprNode()      {}
 func (*MapExpr) exprNode()          {}
 func (*RecordExpr) exprNode()       {}
 func (*RegexpMatchExpr) exprNode()  {}
 func (*RegexpSearchExpr) exprNode() {}
-func (*SearchTermExpr) exprNode()   {} // XXX SearchTerm? => should be converted to normal expr
+func (*SearchTermExpr) exprNode()   {}
 func (*SetExpr) exprNode()          {}
 func (*SliceExpr) exprNode()        {}
-func (*SpreadExpr) exprNode()       {}
 func (*SQLTimeValue) exprNode()     {}
 func (*StructuredError) exprNode()  {}
 func (*SubqueryExpr) exprNode()     {}
 func (*ThisExpr) exprNode()         {}
 func (*UnaryExpr) exprNode()        {}
-
-func (*Assignment) exprNode() {} //XXX seems like this shouldn't be expression (except lval for stuff)
-func (*AggFunc) exprNode()    {} //XXX seems like this shouldn't be expression
 
 // FuncRef is a pseudo-expression that represents a function reference as a value.
 // It is not used by the runtime (but could be if we wanted to support this).  Instead,
@@ -241,8 +252,6 @@ type FuncRef struct {
 	AST ast.Expr // can be lambda use or the function name reference
 	Tag string
 }
-
-//XXX move this into sem
 
 // CallParam is a pseudo-expression that is like a call but represents the call
 // of a FuncRef passed as an argument with the parameter name given by Param.
@@ -256,8 +265,12 @@ type CallParam struct {
 	Args  []Expr
 }
 
-func (*FuncRef) exprNode()   {}
-func (*CallParam) exprNode() {}
+func (*FuncRef) arrayElemNode()    {}
+func (*FuncRef) exprNode()         {}
+func (*FuncRef) recordElemNode()   {}
+func (*CallParam) arrayElemNode()  {}
+func (*CallParam) exprNode()       {}
+func (*CallParam) recordElemNode() {}
 
 func NewThis(e ast.Expr, path []string) *ThisExpr {
 	return &ThisExpr{AST: e, Path: path} //XXX AST? should have to include dummy message?
@@ -287,3 +300,6 @@ func NewCall(e ast.Expr, tag string, args []Expr) *CallExpr {
 		Args: args,
 	}
 }
+
+// XXX
+func (*AggFunc) exprNode() {}

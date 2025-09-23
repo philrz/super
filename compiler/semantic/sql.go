@@ -69,7 +69,7 @@ func (t *translator) semSelect(sel *ast.SQLSelect, seq sem.Seq) (sem.Seq, schema
 	}
 	seq = t.genValues(proj, where, sch, seq)
 	if sel.Distinct {
-		seq = t.genDistinct(pathOf("out"), seq)
+		seq = t.genDistinct(pathOf(nil /*XXX*/, "out"), seq)
 	}
 	return seq, sch
 }
@@ -78,7 +78,7 @@ func (t *translator) semHaving(sch schema, e ast.Expr, funcs *aggfuncs) (sem.Exp
 	if e == nil {
 		return nil, nil
 	}
-	return funcs.subst(a.semExprSchema(sch, e))
+	return funcs.subst(t.semExprSchema(sch, e))
 }
 
 func (t *translator) genValues(proj projection, where sem.Expr, sch *selectSchema, seq sem.Seq) sem.Seq {
@@ -87,7 +87,7 @@ func (t *translator) genValues(proj projection, where sem.Expr, sch *selectSchem
 	}
 	seq = t.genColumns(proj, sch, seq)
 	if where != nil {
-		seq = append(seq, sem.NewFilter(where))
+		seq = append(seq, sem.NewFilter(nil /*XXX*/, where))
 	}
 	return seq
 }
@@ -98,48 +98,48 @@ func (t *translator) genColumns(proj projection, sch *selectSchema, seq sem.Seq)
 		if col.isAgg {
 			continue
 		}
-		var elems []sem.Expr
+		var elems []sem.RecordElem
 		if notFirst {
-			elems = append(elems, &sem.SpreadExpr{
+			elems = append(elems, &sem.SpreadElem{
 				AST:  nil, //XXX
-				Expr: sem.NewThis([]string{"out"}),
+				Expr: sem.NewThis(nil /*XXX*/, []string{"out"}),
 			})
 		} else {
 			notFirst = true
 		}
 		if col.isStar() {
 			for _, path := range unravel(sch, nil) {
-				elems = append(elems, &sem.Spread{
-					Kind: "Spread",
-					Expr: sem.NewThis(path),
+				elems = append(elems, &sem.SpreadElem{
+					AST:  nil, //XXX
+					Expr: sem.NewThis(nil /*XXX*/, path),
 				})
 			}
 		} else {
-			elems = append(elems, &sem.Field{
-				Kind:  "Field",
+			elems = append(elems, &sem.FieldElem{
+				AST:   nil, /*XXX*/
 				Name:  col.name,
 				Value: col.expr,
 			})
 		}
 		e := &sem.RecordExpr{
-			Kind: "RecordExpr",
+			AST: nil, //XXX
 			Elems: []sem.RecordElem{
-				&sem.Field{
-					Kind:  "Field",
+				&sem.FieldElem{
+					AST:   nil, /*XXX*/
 					Name:  "in",
-					Value: sem.NewThis(field.Path{"in"}),
+					Value: sem.NewThis(nil /*XXX*/, field.Path{"in"}),
 				},
-				&sem.Field{
-					Kind: "Field",
+				&sem.FieldElem{
+					AST:  nil, /*XXX*/
 					Name: "out",
 					Value: &sem.RecordExpr{
-						Kind:  "RecordExpr",
+						AST:   nil, /*XXX*/
 						Elems: elems,
 					},
 				},
 			},
 		}
-		seq = append(seq, sem.NewValues(e))
+		seq = append(seq, sem.NewValues(nil /*XXX*/, e))
 	}
 	return seq
 }
@@ -159,45 +159,45 @@ func unravel(schema schema, prefix field.Path) []field.Path {
 func (t *translator) genAggregate(loc ast.Loc, proj projection, where sem.Expr, keyExprs []exprloc, funcs aggfuncs, having sem.Expr, seq sem.Seq) sem.Seq {
 	if proj.hasStar() {
 		// XXX take this out and figure out to incorporate this especially if we know the input schema
-		a.error(loc, errors.New("aggregate mixed with *-selector not yet supported"))
+		t.error(loc, errors.New("aggregate mixed with *-selector not yet supported"))
 		return append(seq, badOp())
 	}
 	if len(proj) != len(proj.aggCols()) {
 		// Yield expressions for potentially left-to-right-dependent
 		// column expressions of the grouping expression components.
-		seq = a.genValues(proj, nil, nil, seq)
+		seq = t.genValues(proj, nil, nil, seq)
 	}
 	if where != nil {
-		seq = append(seq, sem.NewFilter(where))
+		seq = append(seq, sem.NewFilter(nil /*XXX*/, where))
 	}
 	var aggCols []sem.Assignment
 	for _, named := range funcs {
 		a := sem.Assignment{
-			Kind: "Assignment",
-			LHS:  sem.NewThis([]string{named.name}),
-			RHS:  named.agg,
+			AST: nil, /*XXX*/
+			LHS: sem.NewThis(nil /*XXX*/, []string{named.name}),
+			RHS: named.agg,
 		}
 		aggCols = append(aggCols, a)
 	}
 	var keyCols []sem.Assignment
 	for k, e := range keyExprs {
 		keyCols = append(keyCols, sem.Assignment{
-			Kind: "Assignment",
-			LHS:  sem.NewThis([]string{fmt.Sprintf("k%d", k)}),
-			RHS:  e.expr,
+			AST: nil, /*XXX*/
+			LHS: sem.NewThis(nil /*XXX*/, []string{fmt.Sprintf("k%d", k)}),
+			RHS: e.expr,
 		})
 	}
-	seq = append(seq, &sem.Aggregate{
-		Kind: "Aggregate",
+	seq = append(seq, &sem.AggregateOp{
+		AST:  nil, /*XXX*/
 		Aggs: aggCols,
 		Keys: keyCols,
 	})
 	seq = valuesExpr(wrapThis("in"), seq)
-	seq = a.genAggregateOutput(proj, keyExprs, seq)
+	seq = t.genAggregateOutput(proj, keyExprs, seq)
 	if having != nil {
-		seq = append(seq, sem.NewFilter(having))
+		seq = append(seq, sem.NewFilter(nil /*XXX*/, having))
 	}
-	return valuesExpr(pathOf("out"), seq)
+	return valuesExpr(pathOf(nil /*XXX*/, "out"), seq)
 }
 
 func (t *translator) genAggregateOutput(proj projection, keyExprs []exprloc, seq sem.Seq) sem.Seq {
@@ -209,9 +209,9 @@ func (t *translator) genAggregateOutput(proj projection, keyExprs []exprloc, seq
 		}
 		var elems []sem.RecordElem
 		if notFirst {
-			elems = append(elems, &sem.Spread{
-				Kind: "Spread",
-				Expr: sem.NewThis([]string{"out"}),
+			elems = append(elems, &sem.SpreadElem{
+				AST:  nil, //XXX
+				Expr: sem.NewThis(nil /*XXX*/, []string{"out"}),
 			})
 		} else {
 			notFirst = true
@@ -231,8 +231,8 @@ func (t *translator) genAggregateOutput(proj projection, keyExprs []exprloc, seq
 			if which >= 0 {
 				a.error(keyExprs[which].loc, fmt.Errorf("aggregate functions are not allowed in GROUP BY"))
 			}
-			elems = append(elems, &sem.Field{
-				Kind:  "Field",
+			elems = append(elems, &sem.FieldElem{
+				AST:   nil, //XXX
 				Name:  col.name,
 				Value: col.expr,
 			})
@@ -240,8 +240,8 @@ func (t *translator) genAggregateOutput(proj projection, keyExprs []exprloc, seq
 			if which < 0 {
 				a.error(col.loc, fmt.Errorf("no corresponding grouping element for non-aggregate %q", col.name))
 			}
-			elems = append(elems, &sem.Field{
-				Kind:  "Field",
+			elems = append(elems, &sem.FieldElem{
+				AST:   nil, //XXX
 				Name:  col.name,
 				Value: sem.NewThis([]string{"in", fmt.Sprintf("k%d", which)}),
 			})
@@ -249,13 +249,13 @@ func (t *translator) genAggregateOutput(proj projection, keyExprs []exprloc, seq
 		e := &sem.RecordExpr{
 			Kind: "RecordExpr",
 			Elems: []sem.RecordElem{
-				&sem.Field{
-					Kind:  "Field",
+				&sem.FieldElem{
+					AST:   nil, //XXX
 					Name:  "in",
 					Value: sem.NewThis(field.Path{"in"}),
 				},
-				&sem.Field{
-					Kind: "Field",
+				&sem.FieldElem{
+					AST:  nil, //XXX
 					Name: "out",
 					Value: &sem.RecordExpr{
 						Kind:  "RecordExpr",
@@ -285,7 +285,7 @@ func (t *translator) semSelectFrom(loc ast.Loc, from *ast.From, seq sem.Seq) (se
 	}
 	off := len(seq)
 	hasParent := off > 0
-	seq, sch := a.semFrom(from, seq)
+	seq, sch := t.semFrom(from, seq)
 	if off >= len(seq) {
 		// The chain didn't get lengthed so semFrom must have enocounteded
 		// an error...
@@ -295,7 +295,7 @@ func (t *translator) semSelectFrom(loc ast.Loc, from *ast.From, seq sem.Seq) (se
 	// only if it's not a RobotScan where the parent feeds the from operateor.
 	if _, ok := seq[off].(*sem.RobotScan); !ok {
 		if hasParent {
-			a.error(loc, errors.New("SELECT cannot have both an embedded FROM clause and input from parents"))
+			t.error(loc, errors.New("SELECT cannot have both an embedded FROM clause and input from parents"))
 			return append(seq, badOp()), nil
 		}
 	}
@@ -304,32 +304,32 @@ func (t *translator) semSelectFrom(loc ast.Loc, from *ast.From, seq sem.Seq) (se
 
 func (t *translator) semSelectValue(sel *ast.SQLSelect, sch schema, seq sem.Seq) (sem.Seq, schema) {
 	if sel.GroupBy != nil {
-		a.error(sel, errors.New("SELECT VALUE cannot be used with GROUP BY"))
+		t.error(sel, errors.New("SELECT VALUE cannot be used with GROUP BY"))
 		seq = append(seq, badOp())
 	}
 	if sel.Having != nil {
-		a.error(sel, errors.New("SELECT VALUE cannot be used with HAVING"))
+		t.error(sel, errors.New("SELECT VALUE cannot be used with HAVING"))
 		seq = append(seq, badOp())
 	}
 	exprs := make([]sem.Expr, 0, len(sel.Selection.Args))
 	for _, as := range sel.Selection.Args {
 		if as.Label != nil {
-			a.error(sel, errors.New("SELECT VALUE cannot have AS clause in selection"))
+			t.error(sel, errors.New("SELECT VALUE cannot have AS clause in selection"))
 		}
 		var e sem.Expr
 		if as.Expr == nil {
-			e = sem.NewThis(nil)
+			e = sem.NewThis(nil /*XXX*/, nil)
 		} else {
-			e = a.semExprSchema(sch, as.Expr)
+			e = t.semExprSchema(sch, as.Expr)
 		}
 		exprs = append(exprs, e)
 	}
 	if sel.Where != nil {
 		seq = append(seq, sem.NewFilter(a.semExprSchema(sch, sel.Where)))
 	}
-	seq = append(seq, sem.NewValues(exprs...))
+	seq = append(seq, sem.NewValues(nil, exprs...))
 	if sel.Distinct {
-		seq = a.genDistinct(pathOf("this"), seq)
+		seq = t.genDistinct(pathOf(nil /*XXX*/, "this"), seq)
 	}
 	return seq, &dynamicSchema{}
 }
@@ -478,11 +478,11 @@ func (t *translator) semSQLOp(op ast.Op, seq sem.Seq) (sem.Seq, schema) {
 		for _, e := range op.Exprs {
 			exprs = append(exprs, a.semSortExpr(schema, e, false))
 		}
-		return append(out, &sem.Sort{Kind: "Sort", Exprs: exprs}), schema
+		return append(out, &sem.SortOp{AST: nil /*XXX*/, Exprs: exprs}), schema
 	case *ast.SQLLimitOffset:
 		out, schema := a.semSQLOp(op.Op, seq)
 		if op.Offset != nil {
-			out = append(out, &sem.Skip{Kind: "Skip", Count: a.evalPositiveInteger(op.Offset)})
+			out = append(out, &sem.SkipOp{AST: nil /*XXX*/, Count: t.evalPositiveInteger(op.Offset)})
 		}
 		if op.Limit != nil {
 			out = append(out, &sem.Head{Kind: "Head", Count: a.evalPositiveInteger(op.Limit)})

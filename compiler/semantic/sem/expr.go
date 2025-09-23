@@ -143,7 +143,7 @@ type (
 		From Expr
 		To   Expr
 	}
-	Spread struct {
+	SpreadExpr struct {
 		AST  *ast.Spread
 		Expr Expr
 	}
@@ -194,6 +194,10 @@ type When struct {
 	Then Expr
 }
 
+// Sum types for array, set, and record bodies
+
+type ()
+
 func (*ArrayExpr) exprNode()        {}
 func (*BadExpr) exprNode()          {}
 func (*BinaryExpr) exprNode()       {}
@@ -218,7 +222,7 @@ func (*RegexpSearchExpr) exprNode() {}
 func (*SearchTermExpr) exprNode()   {} // XXX SearchTerm? => should be converted to normal expr
 func (*SetExpr) exprNode()          {}
 func (*SliceExpr) exprNode()        {}
-func (*Spread) exprNode()           {} //XXX we could bring back RecordElem etc because stuff is resolved
+func (*SpreadExpr) exprNode()       {}
 func (*SQLTimeValue) exprNode()     {}
 func (*StructuredError) exprNode()  {}
 func (*SubqueryExpr) exprNode()     {}

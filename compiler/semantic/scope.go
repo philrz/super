@@ -75,9 +75,9 @@ func (s *Scope) lookupOp(name string) (*opDecl, error) {
 	return nil, nil
 }
 
-func (s *Scope) lookupQuery(name string) dag.Seq {
+func (s *Scope) lookupQuery(name string) sem.Seq {
 	if entry := s.lookupEntry(name); entry != nil {
-		if seq, ok := entry.ref.(dag.Seq); ok {
+		if seq, ok := entry.ref.(sem.Seq); ok {
 			return seq
 		}
 	}

@@ -120,7 +120,7 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 		return &sem.RegexpSearchExpr{
 			AST:     e,
 			Pattern: reglob.Reglob(e.Pattern),
-			Expr:    pathOf("this"),
+			Expr:    pathOf(e, "this"),
 		}
 	case *ast.ID:
 		id := t.semID(e, false)
@@ -216,25 +216,23 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 				})
 			case *ast.Spread:
 				e := t.semExpr(elem.Expr)
-				out = append(out, &sem.Spread{
+				out = append(out, &sem.SpreadExpr{
 					AST:  elem,
 					Expr: e,
 				})
 			default:
-				e := a.semExpr(elem)
+				e := t.semExpr(elem)
 				name := inferColumnName(e, elem)
 				if _, ok := fields[name]; ok {
-					a.error(elem, fmt.Errorf("record expression: %w", &super.DuplicateFieldError{Name: name}))
+					t.error(elem, fmt.Errorf("record expression: %w", &super.DuplicateFieldError{Name: name}))
 					continue
 				}
 				fields[name] = struct{}{}
-				out = append(out, &dag.Field{
-					Kind:  "Field",
+				out = append(out, &sem.FieldExpr{
 					Name:  name,
 					Value: e,
 				})
 			}
-
 		}
 		return &sem.RecordExpr{
 			AST:   e,
@@ -268,23 +266,14 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 		if _, ok := e.Type.(*ast.DateTypeHack); ok {
 			// cast to time then bucket by 1d as a workaround for not currently
 			// supporting a "date" type.
-			cast := sem.NewCall(e, "cast",
-				[]sem.Expr{expr, &sem.LiteralExpr{AST: e, Value: "<time>"}})
-			return &sem.CallExpr{
-				AST:  e,
-				Tag:  "bucket",
-				Args: []sem.Expr{cast, &sem.LiteralExpr{AST: e, Value: "1d"}},
-			}
+			cast := sem.NewCall(e, "cast", []sem.Expr{expr, &sem.LiteralExpr{AST: e, Value: "<time>"}})
+			return sem.NewCall(e, "bucket", []sem.Expr{cast, &sem.LiteralExpr{AST: e, Value: "1d"}})
 		}
 		typ := t.semExpr(&ast.TypeValue{
 			Kind:  "TypeValue",
 			Value: e.Type,
 		})
-		return &sem.CallExpr{
-			AST:  e,
-			Tag:  "cast",
-			Args: []sem.Expr{expr, typ},
-		}
+		return sem.NewCall(e, "cast", []sem.Expr{expr, typ})
 	case *ast.SQLSubstring:
 		expr := t.semExpr(e.Expr)
 		if e.From == nil && e.For == nil {
@@ -682,25 +671,15 @@ func (t *translator) semCall(call *ast.Call) sem.Expr {
 	}
 }
 
-func (t *translator) maybeSubquery(name string) *sem.Subquery {
-	if seq := a.scope.lookupQuery(name); seq != nil {
-		return &sem.Subquery{
-			Kind:       "Subquery",
+func (t *translator) maybeSubquery(name string) *sem.SubqueryExpr {
+	if seq := t.scope.lookupQuery(name); seq != nil {
+		return &sem.SubqueryExpr{
+			AST:        nil, //XXX get rid of?
 			Correlated: isCorrelated(seq),
 			Body:       seq,
 		}
 	}
 	return nil
-}
-
-func (a *analyzer) semCallLambda(lambda *ast.Lambda, args []dag.Expr) dag.Expr {
-	call := &dag.Call{
-		Kind: "Call",
-		Tag:  a.newFunc("lambda", idsAsStrings(lambda.Params), a.semExpr(lambda.Expr)),
-		Args: args,
-	}
-	a.locs[call] = lambda.Loc
-	return call
 }
 
 func (t *translator) semCallLambda(lambda *ast.Lambda, args []sem.Expr) sem.Expr {
@@ -725,26 +704,8 @@ func (t *translator) semCallByName(call *ast.Call, name string, args []sem.Expr)
 				Param: name,
 				Args:  args,
 			}
-			a.locs[callParam] = call.Loc
-			return callParam
-		case *dag.FuncRef:
-			e := &dag.Call{
-				Kind: "Call",
-				Tag:  ref.Tag,
-				Args: args,
-			}
-			a.locs[e] = call.Loc
-			return e
-		case *dag.FuncDef:
-			e := &dag.Call{
-				Kind: "Call",
-				Tag:  ref.Tag,
-				Args: args,
-			}
-			a.locs[e] = call.Loc
-			return e
 		case *opDecl:
-			a.error(call, fmt.Errorf("cannot call user operator %q in an expression (consider subquery syntax)", name))
+			t.error(call, fmt.Errorf("cannot call user operator %q in an expression (consider subquery syntax)", name))
 			return badExpr()
 		case *sem.FuncRef:
 			return sem.NewCall(call, ref.Tag, args)
@@ -939,14 +900,14 @@ func (t *translator) semAssignment(assign *ast.Assignment) sem.Assignment {
 	return sem.Assignment{AST: assign, LHS: lhs, RHS: rhs}
 }
 
-func (a *analyzer) semLval(e ast.Expr) dag.Expr {
+func (t *translator) semLval(e ast.Expr) sem.Expr {
 	if id, ok := e.(*ast.ID); ok {
-		return a.semID(id, true)
+		return t.semID(id, true)
 	}
-	return a.semExpr(e)
+	return t.semExpr(e)
 }
 
-func isLval(e dag.Expr) bool {
+func isLval(e sem.Expr) bool {
 	switch e := e.(type) {
 	case *sem.IndexExpr:
 		return isLval(e.Expr)
@@ -1089,13 +1050,11 @@ func (t *translator) semType(typ ast.Type) (string, error) {
 func (t *translator) semVectorElems(elems []ast.VectorElem) []sem.Expr {
 	var out []sem.Expr
 	for _, elem := range elems {
-		switch selem := elem.(type) {
+		switch elem := elem.(type) {
 		case *ast.Spread:
-			e := t.semExpr(elem.Expr)
-			out = append(out, &sem.Spread{AST: elem, Expr: e})
+			out = append(out, &sem.SpreadExpr{AST: elem, Expr: t.semExpr(elem)})
 		case *ast.VectorValue:
-			e := t.semExpr(selem.Expr)
-			out = append(out, &sem.VectorValue{AST: elem, Expr: e})
+			out = append(out, t.semExpr(elem.Expr))
 		}
 	}
 	return out
@@ -1123,20 +1082,16 @@ func (t *translator) semFString(f *ast.FString) sem.Expr {
 			out = e
 			continue
 		}
-		out = sem.NewBinaryExpr("+", out, e)
+		out = sem.NewBinaryExpr(f, "+", out, e)
 	}
 	return out
 }
 
-func (t *translator) arraySubquery(elems []sem.VectorElem) *sem.SubqueryExpr {
+func (t *translator) arraySubquery(elems []sem.Expr) *sem.SubqueryExpr {
 	if len(elems) != 1 {
 		return nil
 	}
-	elem, ok := elems[0].(*sem.VectorValue)
-	if !ok {
-		return nil
-	}
-	subquery, ok := elem.Expr.(*sem.Subquery)
+	subquery, ok := elems[0].(*sem.SubqueryExpr)
 	if !ok {
 		return nil
 	}

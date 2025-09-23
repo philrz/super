@@ -98,10 +98,10 @@ func (t *translator) genColumns(proj projection, sch *selectSchema, seq sem.Seq)
 		if col.isAgg {
 			continue
 		}
-		var elems []sem.RecordElem
+		var elems []sem.Expr
 		if notFirst {
-			elems = append(elems, &sem.Spread{
-				Kind: "Spread",
+			elems = append(elems, &sem.SpreadExpr{
+				AST:  nil, //XXX
 				Expr: sem.NewThis([]string{"out"}),
 			})
 		} else {

@@ -199,9 +199,9 @@ func (r *resolver) resolveAssignments(assignments []sem.Assignment) []sem.Assign
 	var out []sem.Assignment
 	for _, ass := range assignments {
 		out = append(out, sem.Assignment{
-			Kind: "Assignment",
-			LHS:  r.resolveExpr(ass.LHS),
-			RHS:  r.resolveExpr(ass.RHS),
+			AST: ass.AST,
+			LHS: r.resolveExpr(ass.LHS),
+			RHS: r.resolveExpr(ass.RHS),
 		})
 	}
 	return out
@@ -211,7 +211,8 @@ func (r *resolver) resolveSortExprs(exprs []sem.SortExpr) []sem.SortExpr {
 	var out []sem.SortExpr
 	for _, e := range exprs {
 		out = append(out, sem.SortExpr{
-			Key:   r.resolveExpr(e.Key),
+			AST:   e.AST,
+			Expr:  r.resolveExpr(e.Expr),
 			Order: e.Order,
 			Nulls: e.Nulls})
 	}
@@ -238,9 +239,9 @@ func (r *resolver) resolveExpr(e sem.Expr) sem.Expr {
 		// with params containing the name in the e.Param.  The function being referenced
 		// or passed in can be lazily created.
 		return r.resolveCallParam(e)
-	case *sem.Agg:
-		return &sem.Agg{
-			Kind:     "Agg",
+	case *sem.AggFunc:
+		return &sem.AggFunc{
+			AST:      e.AST,
 			Name:     e.Name,
 			Distinct: e.Distinct,
 			Expr:     r.resolveExpr(e.Expr),
@@ -248,47 +249,46 @@ func (r *resolver) resolveExpr(e sem.Expr) sem.Expr {
 		}
 	case *sem.ArrayExpr:
 		return &sem.ArrayExpr{
-			Kind:  "ArrayExpr",
+			AST:   e.AST,
 			Elems: r.resolveVectorElems(e.Elems),
 		}
 	case *sem.BadExpr:
 	case *sem.BinaryExpr:
-		return sem.NewBinaryExpr(e.Op, r.resolveExpr(e.LHS), r.resolveExpr(e.RHS))
-	case *sem.Call:
-		return r.resolveCall(r.analyzer.locs[e], e.Tag, e.Args)
-	case *sem.Conditional:
-		return &sem.Conditional{
-			Kind: "Conditional",
+		return sem.NewBinaryExpr(e.AST, e.Op, r.resolveExpr(e.LHS), r.resolveExpr(e.RHS))
+	case *sem.CallExpr:
+		return r.resolveCall(e.AST, e.Tag, e.Args)
+	case *sem.CondExpr:
+		return &sem.CondExpr{
+			AST:  e.AST,
 			Cond: r.resolveExpr(e.Cond),
 			Then: r.resolveExpr(e.Then),
 			Else: r.resolveExpr(e.Else),
 		}
-	case *sem.Dot:
-		return &sem.Dot{
-			Kind: "Dot",
-			LHS:  r.resolveExpr(e.LHS),
-			RHS:  e.RHS,
+	case *sem.DotExpr:
+		return &sem.DotExpr{
+			AST: e.AST,
+			LHS: r.resolveExpr(e.LHS),
+			RHS: e.RHS,
 		}
 	case *sem.IndexExpr:
 		return &sem.IndexExpr{
-			Kind:  "IndexExpr",
+			AST:   e.AST,
 			Expr:  r.resolveExpr(e.Expr),
 			Index: r.resolveExpr(e.Index),
 		}
 	case *sem.IsNullExpr:
 		return &sem.IsNullExpr{
-			Kind: "IsNullExpr",
+			AST:  e.AST,
 			Expr: r.resolveExpr(e.Expr),
 		}
-	case *sem.Literal:
-	case *sem.MapCall:
-		loc := r.analyzer.locs[e]
-		call, ok := r.resolveCall(loc, e.Lambda.Tag, e.Lambda.Args).(*sem.Call)
+	case *sem.LiteralExpr:
+	case *sem.MapCallExpr:
+		call, ok := r.resolveCall(e.AST, e.Lambda.Tag, e.Lambda.Args).(*sem.CallExpr)
 		if !ok {
 			return badExpr()
 		}
-		return &sem.MapCall{
-			Kind:   "MapCall",
+		return &sem.MapCallExpr{
+			AST:    e.AST,
 			Expr:   r.resolveExpr(e.Expr),
 			Lambda: call,
 		}
@@ -427,10 +427,10 @@ func (r *resolver) resolveCallParam(call *sem.CallParam) sem.Expr {
 	return r.resolveCall(r.analyzer.locs[call], oldTag, call.Args)
 }
 
-func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []sem.Expr) sem.Expr {
+func (r *resolver) resolveCall(callAST ast.Expr, oldTag string, args []sem.Expr) sem.Expr {
 	if isBuiltin(oldTag) {
-		return &sem.Call{
-			Kind: "Call",
+		return &sem.CallExpr{
+			AST:  callAST,
 			Tag:  oldTag,
 			Args: r.resolveExprs(args),
 		}
@@ -442,7 +442,8 @@ func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []sem.Expr) 
 	var exprs []sem.Expr
 	funcDef := r.in[oldTag]
 	if len(funcDef.Params) != len(args) {
-		r.error(callLoc, fmt.Errorf("%q: expected %d params but called with %d", funcDef.Name, len(funcDef.Params), len(args)))
+		loc, _ := callAST.(ast.Node)
+		r.error(loc, fmt.Errorf("%q: expected %d params but called with %d", funcDef.Name, len(funcDef.Params), len(args)))
 		return badExpr()
 	}
 	bindings := make(map[string]string)
@@ -452,7 +453,7 @@ func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []sem.Expr) 
 			continue
 		}
 		e := r.resolveExpr(arg)
-		if e, ok := e.(*sem.This); ok {
+		if e, ok := e.(*sem.ThisExpr); ok {
 			if len(e.Path) == 1 {
 				// Propagate a function passed as a function value inside of
 				// a function to another function.
@@ -468,8 +469,8 @@ func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []sem.Expr) 
 	if len(funcDef.Params) == len(params) {
 		// No need to specialize this call since no function args are being passed.
 		newTag := r.lookupFixed(oldTag)
-		return &sem.Call{
-			Kind: "Call",
+		return &sem.CallExpr{
+			AST:  callAST,
 			Tag:  newTag,
 			Args: args,
 		}
@@ -479,8 +480,8 @@ func (r *resolver) resolveCall(callLoc ast.Loc, oldTag string, args []sem.Expr) 
 	r.pushParams(bindings)
 	defer r.popParams()
 	newTag := r.lookupVariant(oldTag, params)
-	return &sem.Call{
-		Kind: "Call",
+	return &sem.CallExpr{
+		AST:  callAST,
 		Tag:  newTag,
 		Args: exprs,
 	}

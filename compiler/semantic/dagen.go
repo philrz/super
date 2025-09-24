@@ -522,14 +522,10 @@ func (d *dagen) debugOp(o *sem.DebugOp, branch sem.Seq, seq dag.Seq) dag.Seq {
 	})
 }
 
-// We should separate adding default outputs (do that in rungen) from checking
-// for bad output ops.
-
-// checkOutputs traverses the DAG and reports an error if any output
-// nodes are in non-leave positions and as an output "main" to each
-// leaf that is not connected
-// - Report an error in any outputs are not located in the leaves.
-// - Add output operators to any leaves where they do not exist.
+// addMissingOutputs traverses the DAG and adds a "main" output to any path
+// that otherwise terminates in a non-output leaf.
+// XXX this should be folded into rungen as the builder can simply do this
+// and accept DAGs that don't have these.
 func (d *dagen) addMissingOutputs(isLeaf bool, seq dag.Seq) dag.Seq {
 	if len(seq) == 0 {
 		return seq

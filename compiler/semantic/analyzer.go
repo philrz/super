@@ -128,6 +128,8 @@ func (t *translator) newFunc(body ast.Expr, name string, params []string, e sem.
 	return tag
 }
 
+// checkOutputOps ensures that no output operator has a downsteam entity and
+// logs an error on any offending output operator.
 func checkOutputOps(r reporter, isLeaf bool, seq sem.Seq) bool {
 	for i, o := range seq {
 		isLast := len(seq)-1 == i

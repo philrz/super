@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"reflect"
 	"slices"
 	"strings"
 
@@ -577,15 +576,17 @@ func (t *translator) semJoinCond(cond ast.JoinCond, leftAlias, rightAlias string
 			return t.semJoinCond(&ast.JoinUsingCond{Fields: []ast.Expr{id}}, leftAlias, rightAlias)
 		}
 		e := t.semExpr(cond.Expr)
-		//XXX
-		sem.WalkT(reflect.ValueOf(e), func(e *sem.ThisExpr) *sem.ThisExpr {
-			if len(e.Path) == 0 {
-				t.error(cond.Expr, errors.New(`join expression cannot refer to "this"`))
-			} else if name := e.Path[0]; name != leftAlias && name != rightAlias {
-				t.error(cond.Expr, fmt.Errorf("ambiguous field reference %q", name))
-			}
-			return e
-		})
+		//XXX need to turn this back on
+		/*
+			sem.WalkT(reflect.ValueOf(e), func(e *sem.ThisExpr) *sem.ThisExpr {
+				if len(e.Path) == 0 {
+					t.error(cond.Expr, errors.New(`join expression cannot refer to "this"`))
+				} else if name := e.Path[0]; name != leftAlias && name != rightAlias {
+					t.error(cond.Expr, fmt.Errorf("ambiguous field reference %q", name))
+				}
+				return e
+			})
+		*/
 		return e
 	case *ast.JoinUsingCond:
 		if t.scope.schema != nil {

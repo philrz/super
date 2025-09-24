@@ -55,6 +55,72 @@ func (d *dagen) seq(seq sem.Seq) dag.Seq {
 
 func (d *dagen) op(op sem.Op) dag.Op {
 	switch op := op.(type) {
+	//
+	// First, alphabetized scanners.
+	// Then below, alphabetized non-scanner ops.
+	//
+	case *sem.CommitMetaScan:
+		return &dag.CommitMetaScan{
+			Kind:   "CommitMetaScan",
+			Pool:   op.Pool,
+			Commit: op.Commit,
+			Meta:   op.Meta,
+		}
+	case *sem.DBMetaScan:
+		return &dag.DBMetaScan{
+			Kind: "DBMetaScan",
+			Meta: op.Meta,
+		}
+	case *sem.DefaultScan:
+		return &dag.DefaultScan{
+			Kind: "DefaultScan",
+		}
+	case *sem.DeleteScan:
+		return &dag.DeleteScan{
+			Kind:   "DeleteScan",
+			ID:     op.ID,
+			Commit: op.Commit,
+		}
+	case *sem.FileScan:
+		return &dag.FileScan{
+			Kind:   "FileScan",
+			Path:   op.Path,
+			Format: op.Format,
+		}
+	case *sem.HTTPScan:
+		return &dag.HTTPScan{
+			Kind:    "HTTPScan",
+			URL:     op.URL,
+			Format:  op.Format,
+			Method:  op.Method,
+			Headers: op.Headers,
+			Body:    op.Body,
+		}
+	case *sem.NullScan:
+		return &dag.NullScan{
+			Kind: "NullScan",
+		}
+	case *sem.PoolMetaScan:
+		return &dag.PoolMetaScan{
+			Kind: "PoolMetaScan",
+			ID:   op.ID,
+			Meta: op.Meta,
+		}
+	case *sem.PoolScan:
+		return &dag.PoolScan{
+			Kind:   "PoolScan",
+			ID:     op.ID,
+			Commit: op.Commit,
+		}
+	case *sem.RobotScan:
+		return &dag.RobotScan{
+			Kind:   "RobotScan",
+			Expr:   d.expr(op.Expr),
+			Format: op.Format,
+		}
+	//
+	// Now, the alphabetized non-scanner ops.
+	//
 	case *sem.AggregateOp:
 		return &dag.Aggregate{
 			Kind:  "Aggregate",

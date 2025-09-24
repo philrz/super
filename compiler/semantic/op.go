@@ -170,7 +170,7 @@ func (t *translator) fileScanColumns(op *sem.FileScan) ([]string, bool) {
 
 func (t *translator) semFromExpr(entity *ast.ExprEntity, args []ast.OpArg, seq sem.Seq) (sem.Seq, string) {
 	expr := t.semExpr(entity.Expr)
-	val, err := evalAtCompileTime(t.sctx, expr)
+	val, err := t.eval(expr)
 	if err == nil && !hasError(val) {
 		if bad := t.hasFromParent(entity, seq); bad != nil {
 			return bad, ""
@@ -296,7 +296,7 @@ func (t *translator) semFromURL(urlLoc ast.Node, u string, args []ast.OpArg) sem
 	body, _ := t.textArg(opArgs, "body")
 	var headers map[string][]string
 	if e, loc := t.exprArg(opArgs, "headers"); e != nil {
-		val, err := evalAtCompileTime(t.sctx, e)
+		val, err := t.eval(e)
 		if err != nil {
 			t.error(loc, err)
 		} else {
@@ -691,7 +691,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 		limit := 1
 		if o.Limit != nil {
 			l := t.semExpr(o.Limit)
-			val, err := evalAtCompileTime(t.sctx, l)
+			val, err := t.eval(l)
 			if err != nil {
 				t.error(o.Limit, err)
 				return append(seq, badOp())
@@ -994,7 +994,7 @@ func (t *translator) semDecls(decls []ast.Decl) {
 
 func (t *translator) semConstDecl(c *ast.ConstDecl) {
 	e := t.semExpr(c.Expr)
-	if err := t.scope.EvalAndBindConst(t.sctx, c.Name.Name, e); err != nil {
+	if err := t.evalAndBindConst(c.Name.Name, e); err != nil {
 		t.error(c, err)
 	}
 }
@@ -1015,7 +1015,7 @@ func (t *translator) semTypeDecl(d *ast.TypeDecl) {
 		AST:   d.Name,
 		Value: fmt.Sprintf("<%s=%s>", sup.QuotedName(d.Name.Name), typ),
 	}
-	if err := t.scope.EvalAndBindConst(t.sctx, d.Name.Name, e); err != nil {
+	if err := t.evalAndBindConst(d.Name.Name, e); err != nil {
 		t.error(d.Name, err)
 	}
 }
@@ -1305,6 +1305,58 @@ func (t *translator) exprArg(o opArgs, key string) (sem.Expr, ast.Loc) {
 	return nil, ast.Loc{}
 }
 
-func isURL(s string) bool {
-	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
+func (t *translator) evalString(e sem.Expr) (field string, ok bool) {
+	val, err := t.eval(e)
+	if err == nil && !val.IsError() && super.TypeUnder(val.Type()) == super.TypeString {
+		return string(val.Bytes()), true
+	}
+	return "", false
+}
+
+func (t *translator) evalPositiveInteger(e ast.Expr) int {
+	expr := t.semExpr(e)
+	val, err := t.eval(expr)
+	if err != nil {
+		t.error(e, err)
+		return -1
+	}
+	if !super.IsInteger(val.Type().ID()) || val.IsNull() {
+		t.error(e, fmt.Errorf("expression value must be an integer value: %s", sup.FormatValue(val)))
+		return -1
+	}
+	v := int(val.AsInt())
+	if v < 0 {
+		t.error(e, errors.New("expression value must be a positive integer"))
+	}
+	return v
+}
+
+func (t *translator) evalAndBindConst(name string, e sem.Expr) error {
+	val, err := t.eval(e)
+	if err != nil {
+		return err
+	}
+	if val.IsError() {
+		if val.IsMissing() { //XXX this should be detected by evaluator type
+			return fmt.Errorf("const %q: cannot have variable dependency", name)
+		} else {
+			return fmt.Errorf("const %q: %q", name, string(val.Bytes()))
+		}
+	}
+	literal := &dag.Literal{
+		Kind:  "Literal",
+		Value: sup.FormatValue(val), //XXX so Literal can be any sup value not jsut a primitive
+	}
+	return t.scope.BindSymbol(name, literal)
+}
+
+func (t *translator) eval(e sem.Expr) (super.Value, error) {
+	// We're in the middle of a semantic analysis but want to compile the
+	// translated expression.  Operator thunks have been unfolded but
+	// funcs haven't been resolved, but that's because we'll copy all the state
+	// we need into a new instance of a translator (using the evaulator)
+	// and we'll compile this all the way to a DAG an rungen it.  This is pretty
+	// general because we need to handle things like subqueries that call
+	// operator sequences that result in a constant value.
+	panic("TBD")
 }

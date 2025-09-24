@@ -473,7 +473,7 @@ func (t *translator) semRegexp(b *ast.BinaryExpr) sem.Expr {
 	if b.Op != "~" {
 		return nil
 	}
-	s, ok := isStringConst(t.sctx, t.semExpr(b.RHS))
+	s, ok := t.evalString(t.semExpr(b.RHS))
 	if !ok {
 		t.error(b, errors.New(`right-hand side of ~ expression must be a string literal`))
 		return badExpr()
@@ -534,7 +534,7 @@ func (t *translator) semBinary(e *ast.BinaryExpr) sem.Expr {
 	lhs := t.semExpr(e.LHS)
 	rhs := t.semExpr(e.RHS)
 	if op == "like" || op == "not like" {
-		s, ok := isStringConst(t.sctx, rhs)
+		s, ok := t.evalString(rhs)
 		if !ok {
 			t.error(e.RHS, errors.New("non-constant pattern for LIKE not supported"))
 			return badExpr()
@@ -585,20 +585,12 @@ func (t *translator) semBinary(e *ast.BinaryExpr) sem.Expr {
 
 func (t *translator) isIndexOfThis(lhs, rhs sem.Expr) *sem.ThisExpr {
 	if this, ok := lhs.(*sem.ThisExpr); ok {
-		if s, ok := isStringConst(t.sctx, rhs); ok {
+		if s, ok := t.evalString(rhs); ok {
 			this.Path = append(this.Path, s)
 			return this
 		}
 	}
 	return nil
-}
-
-func isStringConst(sctx *super.Context, e sem.Expr) (field string, ok bool) {
-	val, err := evalAtCompileTime(sctx, e) //XXX need a way to do this... defer?!
-	if err == nil && !val.IsError() && super.TypeUnder(val.Type()) == super.TypeString {
-		return string(val.Bytes()), true
-	}
-	return "", false
 }
 
 func (t *translator) semExprNullable(e ast.Expr) sem.Expr {
@@ -747,7 +739,7 @@ func (t *translator) semCallByName(call *ast.Call, name string, args []sem.Expr)
 			t.error(call, err)
 			return badExpr()
 		}
-		pattern, ok := isStringConst(t.sctx, args[0])
+		pattern, ok := t.evalString(args[0])
 		if !ok {
 			return sem.NewCall(call, "grep", args)
 		}
@@ -1143,22 +1135,4 @@ func isCorrelated(seq sem.Seq) bool {
 		return !(ok1 || ok2)
 	}
 	return true
-}
-
-func (t *translator) evalPositiveInteger(e ast.Expr) int {
-	expr := t.semExpr(e)
-	val, err := evalAtCompileTime(t.sctx, expr)
-	if err != nil {
-		t.error(e, err)
-		return -1
-	}
-	if !super.IsInteger(val.Type().ID()) || val.IsNull() {
-		t.error(e, fmt.Errorf("expression value must be an integer value: %s", sup.FormatValue(val)))
-		return -1
-	}
-	v := int(val.AsInt())
-	if v < 0 {
-		t.error(e, errors.New("expression value must be a positive integer"))
-	}
-	return v
 }

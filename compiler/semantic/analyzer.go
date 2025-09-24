@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/compiler/ast"
@@ -51,7 +52,7 @@ func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput
 			semSeq.Prepend(&sem.NullScan{})
 		}
 	}
-	r := newResolver(t)
+	r := newResolver(t) //XXX t is really error reporting... change
 	semSeq, funcs := r.resolve(semSeq)
 	d := newDagen(t)
 	main := d.assemble(semSeq, funcs)
@@ -63,8 +64,8 @@ func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput
 // creating a global function table.  Convert SQL entities
 // to dataflow.
 type translator struct {
+	reporter
 	ctx         context.Context
-	files       *srcfiles.List
 	opStack     []*ast.OpDecl
 	cteStack    []*cte
 	env         *exec.Environment
@@ -76,8 +77,8 @@ type translator struct {
 
 func newTranslator(ctx context.Context, files *srcfiles.List, env *exec.Environment) *translator {
 	return &translator{
+		reporter:    reporter{files},
 		ctx:         ctx,
-		files:       files,
 		env:         env,
 		scope:       NewScope(nil),
 		sctx:        super.NewContext(),
@@ -151,18 +152,20 @@ func badOp() sem.Op {
 	return &sem.BadOp{}
 }
 
-func (t *translator) error(n ast.Node, err error) {
-	t.files.AddError(err.Error(), n.Pos(), n.End())
+type reporter struct {
+	*srcfiles.List
 }
 
-func (t *translator) compileExpr(e sem.Expr) (dag.Expr, error) {
-	// We're in the middle of a semantic analysis but want to compile the
-	// translated expression.  But funcs haven't been resolved and we haven't
-	// done type checking... how does this work?!
-	// XXX this is too hard for generic expressions... for consts, we can compute
-	// a closure of everything we need (it's just funcdefs and ops?)
-	// and re-enter the semantic pass with the subset
-	// of stuff ensuring
-	// think about Ops... they get dethunked by the time they are sem.Op right?
-	panic("TBD")
+func (r reporter) error(n ast.Node, err error) {
+	r.AddError(err.Error(), n.Pos(), n.End())
+}
+
+// We should get rid of this and make sure tracking refs follow
+// everything that needs to report errors.
+func (r reporter) errorNoLoc(err error) {
+	r.AddError(err.Error(), -1, -1)
+}
+
+func isURL(s string) bool {
+	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }

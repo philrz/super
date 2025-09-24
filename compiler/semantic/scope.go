@@ -4,12 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/brimdata/super"
 	"github.com/brimdata/super/compiler/ast"
 	"github.com/brimdata/super/compiler/dag"
 	"github.com/brimdata/super/compiler/semantic/sem"
 	"github.com/brimdata/super/pkg/field"
-	"github.com/brimdata/super/sup"
 )
 
 type Scope struct {
@@ -42,25 +40,6 @@ func (s *Scope) BindSymbol(name string, e any) error {
 	}
 	s.symbols[name] = &entry{ref: e, order: len(s.symbols)}
 	return nil
-}
-
-func (s *Scope) EvalAndBindConst(sctx *super.Context, name string, def sem.Expr) error {
-	val, err := evalAtCompileTime(sctx, def)
-	if err != nil {
-		return err
-	}
-	if val.IsError() {
-		if val.IsMissing() {
-			return fmt.Errorf("const %q: cannot have variable dependency", name)
-		} else {
-			return fmt.Errorf("const %q: %q", name, string(val.Bytes()))
-		}
-	}
-	literal := &dag.Literal{
-		Kind:  "Literal",
-		Value: sup.FormatValue(val),
-	}
-	return s.BindSymbol(name, literal)
 }
 
 func (s *Scope) lookupOp(name string) (*opDecl, error) {

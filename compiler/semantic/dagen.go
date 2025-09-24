@@ -5,7 +5,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/brimdata/super"
 	"github.com/brimdata/super/compiler/dag"
 	"github.com/brimdata/super/compiler/semantic/sem"
 )
@@ -43,8 +42,9 @@ func (d *dagen) seq(seq sem.Seq) dag.Seq {
 	var out dag.Seq
 	for k, op := range seq {
 		//XXX this doesn't seem right... why can't we just have
-		// a global entity that bypasses the puller protocol and
-		// exits on ctx.Done?
+		// a runtime output entity that concurrently pulls from all
+		// the debug channels (guaranteeing on deadlock) and pulls until
+		// all are blocked and main DAG is done?
 		if debugOp, ok := op.(*sem.DebugOp); ok {
 			return d.debugOp(debugOp, seq[k+1:], out)
 		}
@@ -346,6 +346,51 @@ func (d *dagen) expr(e sem.Expr) dag.Expr {
 	panic(e)
 }
 
+func (d *dagen) arrayElems(elems []sem.ArrayElem) []dag.VectorElem {
+	var out []dag.VectorElem
+	for _, elem := range elems {
+		switch elem := elem.(type) {
+		case *sem.SpreadElem:
+			out = append(out, d.spread(elem.Expr))
+		case *sem.ExprElem:
+			out = append(out, &dag.VectorValue{Kind: "VectorValue", Expr: d.expr(elem.Expr)})
+		default:
+			panic(elem)
+		}
+	}
+	return out
+}
+
+func (d *dagen) recordElems(elems []sem.RecordElem) []dag.RecordElem {
+	var out []dag.RecordElem
+	for _, elem := range elems {
+		switch elem := elem.(type) {
+		case *sem.SpreadElem:
+			out = append(out, d.spread(elem.Expr))
+		case *sem.FieldElem:
+			out = append(out, &dag.Field{Kind: "Field", Name: elem.Name, Value: d.expr(elem.Value)})
+		default:
+			panic(elem)
+		}
+	}
+	return out
+}
+
+func (d *dagen) spread(e sem.Expr) *dag.Spread {
+	return &dag.Spread{
+		Kind: "Spread",
+		Expr: d.expr(e),
+	}
+}
+
+func (d *dagen) entries(entries []sem.Entry) []dag.Entry {
+	var out []dag.Entry
+	for _, entry := range entries {
+		out = append(out, dag.Entry{Key: d.expr(entry.Key), Value: d.expr(entry.Value)})
+	}
+	return out
+}
+
 func (d *dagen) subquery(e *sem.SubqueryExpr) *dag.Subquery {
 	subquery := &dag.Subquery{
 		Kind:       "Subquery",
@@ -362,7 +407,7 @@ func (d *dagen) subquery(e *sem.SubqueryExpr) *dag.Subquery {
 func collectThis(seq dag.Seq) dag.Seq {
 	collect := dag.Assignment{
 		Kind: "Assignment",
-		LHS:  pathOf("collect"),
+		LHS:  dag.NewThis([]string{"collect"}),
 		RHS:  &dag.Agg{Kind: "Agg", Name: "collect", Expr: dag.NewThis(nil)},
 	}
 	aggOp := &dag.Aggregate{
@@ -371,7 +416,7 @@ func collectThis(seq dag.Seq) dag.Seq {
 	}
 	emitOp := &dag.Values{
 		Kind:  "Values",
-		Exprs: []dag.Expr{pathOf("collect")},
+		Exprs: []dag.Expr{dag.NewThis([]string{"collect"})},
 	}
 	seq = append(seq, aggOp)
 	return append(seq, emitOp)
@@ -412,12 +457,19 @@ func (d *dagen) debugOp(o *sem.DebugOp, branch sem.Seq, seq dag.Seq) dag.Seq {
 	})
 }
 
+// We should separate adding default outputs (do that in rungen) from checking
+// for bad output ops.
+
+// checkOutputs traverses the DAG and reports an error if any output
+// nodes are in non-leave positions and as an output "main" to each
+// leaf that is not connected
+// - Report an error in any outputs are not located in the leaves.
+// - Add output operators to any leaves where they do not exist.
 func (d *dagen) checkOutputs(isLeaf bool, seq dag.Seq) dag.Seq {
 	if len(seq) == 0 {
 		return seq
 	}
-	// - Report an error in any outputs are not located in the leaves.
-	// - Add output operators to any leaves where they do not exist.
+
 	lastN := len(seq) - 1
 	for i, o := range seq {
 		isLast := lastN == i
@@ -458,8 +510,4 @@ func (d *dagen) checkOutputs(isLeaf bool, seq dag.Seq) dag.Seq {
 		}
 	}
 	return seq
-}
-
-func evalAtCompileTime(sctx *super.Context, e sem.Expr) (super.Value, error) {
-	panic("TBD")
 }

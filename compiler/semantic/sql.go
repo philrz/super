@@ -337,12 +337,14 @@ func (t *translator) semSelectValue(sel *ast.SQLSelect, sch schema, seq sem.Seq)
 func (t *translator) semValues(values *ast.SQLValues, seq sem.Seq) (sem.Seq, schema) {
 	var schema *super.TypeRecord
 	exprs := make([]sem.Expr, 0, len(values.Exprs))
-	sctx := super.NewContext()
+	//sctx := super.NewContext() XXX should do this with new context?
 	for _, astExpr := range values.Exprs {
 		e := t.semExpr(astExpr)
-		val, err := evalAtCompileTime(sctx, e)
+		val, err := t.eval(e)
 		if err != nil {
-			t.error(astExpr, errors.New("expressions in values clause must be constant"))
+			//XXX we will need to relax this for lateral joins, where values can have
+			// expressions and we should type check the values body with the type checker
+			t.error(astExpr, errors.New("expressions in SQL VALUES clause must be constant"))
 			return seq, badSchema()
 		}
 		// Parser requires tuples in SQLValues expressions so these should

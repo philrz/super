@@ -571,6 +571,11 @@ func (a *analyzer) semOp(o ast.Op, seq dag.Seq) dag.Seq {
 				return seq
 			}
 		}
+		if len(keys) == 1 && len(o.Aggs) == 0 {
+			if seq := a.singletonKey(o.Keys[0], seq); seq != nil {
+				return seq
+			}
+		}
 		aggs := a.semAssignments(o.Aggs)
 		a.checkStaticAssignment(o.Aggs, aggs)
 		// Note: InputSortDir is copied in here but it's not meaningful
@@ -626,6 +631,19 @@ func (a *analyzer) semOp(o ast.Op, seq dag.Seq) dag.Seq {
 			Cases: cases,
 		})
 	case *ast.Cut:
+		//XXX When cutting an lval with no LHS, promote the lval to the LHS so
+		// it is not auto-inferred.  We will change cut to use paths in a future PR.
+		// Currently there is work in optimizer and parallelizer to manage changing
+		// the tests that use cut to use values instead.  This work needed to be done
+		// anyway, but we don't want to change cut until we're ready to do that work.
+		for k, arg := range o.Args {
+			if arg.LHS == nil {
+				rhs := a.semExpr(arg.RHS)
+				if isLval(rhs) {
+					o.Args[k].LHS = arg.RHS
+				}
+			}
+		}
 		assignments := a.semAssignments(o.Args)
 		// Collect static paths so we can check on what is available.
 		var fields field.List
@@ -983,6 +1001,24 @@ func (a *analyzer) singletonAgg(agg ast.Assignment, seq dag.Seq) dag.Seq {
 		&dag.Aggregate{
 			Kind: "Aggregate",
 			Aggs: []dag.Assignment{out},
+		},
+		dag.NewValues(this),
+	)
+}
+
+func (a *analyzer) singletonKey(agg ast.Assignment, seq dag.Seq) dag.Seq {
+	if agg.LHS != nil {
+		return nil
+	}
+	out := a.semAssignment(agg)
+	this, ok := out.LHS.(*dag.This)
+	if !ok || len(this.Path) != 1 {
+		return nil
+	}
+	return append(seq,
+		&dag.Aggregate{
+			Kind: "Aggregate",
+			Keys: []dag.Assignment{out},
 		},
 		dag.NewValues(this),
 	)

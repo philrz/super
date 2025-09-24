@@ -154,3 +154,15 @@ func badOp() sem.Op {
 func (t *translator) error(n ast.Node, err error) {
 	t.files.AddError(err.Error(), n.Pos(), n.End())
 }
+
+func (t *translator) compileExpr(e sem.Expr) (dag.Expr, error) {
+	// We're in the middle of a semantic analysis but want to compile the
+	// translated expression.  But funcs haven't been resolved and we haven't
+	// done type checking... how does this work?!
+	// XXX this is too hard for generic expressions... for consts, we can compute
+	// a closure of everything we need (it's just funcdefs and ops?)
+	// and re-enter the semantic pass with the subset
+	// of stuff ensuring
+	// think about Ops... they get dethunked by the time they are sem.Op right?
+	panic("TBD")
+}

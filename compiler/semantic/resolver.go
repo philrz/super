@@ -399,8 +399,8 @@ func (r *resolver) resolveRecordElems(elems []sem.RecordElem) []sem.RecordElem {
 	return out
 }
 
-func (r *resolver) error(loc ast.Loc, err error) {
-	r.translator.error(loc, err)
+func (r *resolver) error(node ast.Node, err error) {
+	r.translator.error(node, err)
 }
 
 func (r *resolver) resolveCallParam(call *sem.CallParam) sem.Expr {

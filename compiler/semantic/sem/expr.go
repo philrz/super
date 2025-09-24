@@ -200,12 +200,8 @@ type CallParam struct {
 	Args  []Expr
 }
 
-func (*FuncRef) arrayElemNode()    {}
-func (*FuncRef) exprNode()         {}
-func (*FuncRef) recordElemNode()   {}
-func (*CallParam) arrayElemNode()  {}
-func (*CallParam) exprNode()       {}
-func (*CallParam) recordElemNode() {}
+func (*FuncRef) exprNode()   {}
+func (*CallParam) exprNode() {}
 
 func NewThis(e ast.Expr, path []string) *ThisExpr {
 	return &ThisExpr{AST: e, Path: path} //XXX AST? should have to include dummy message?

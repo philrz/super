@@ -12,14 +12,12 @@ type dagen struct {
 	//outputs map[*dag.Output]ast.Node // why point to Node?
 	outputs map[*dag.Output]any
 	funcs   map[string]*dag.FuncDef
-	t       *translator //XXX
 }
 
-func newDagen(t *translator) *dagen {
+func newDagen() *dagen {
 	return &dagen{
 		outputs: make(map[*dag.Output]any), //XXX any? sem.Any?
 		funcs:   make(map[string]*dag.FuncDef),
-		t:       t,
 	}
 }
 
@@ -35,6 +33,20 @@ func (d *dagen) assemble(seq sem.Seq, funcs []*sem.FuncDef) *dag.Main {
 		return strings.Compare(a.Tag, b.Tag)
 	})
 	return &dag.Main{Funcs: dagFuncs, Body: dagSeq}
+}
+
+func (d *dagen) assembleExpr(e sem.Expr, funcs []*sem.FuncDef) *dag.MainExpr {
+	dagExpr := d.expr(e)
+	//d.addMissingOutputs(true, dagSeq) //subqueries?  subqueries don't have outputs
+	dagFuncs := make([]*dag.FuncDef, 0, len(d.funcs))
+	for _, f := range funcs {
+		dagFuncs = append(dagFuncs, d.fn(f))
+	}
+	// Sort function entries so they are consistently ordered by integer tag strings.
+	slices.SortFunc(dagFuncs, func(a, b *dag.FuncDef) int {
+		return strings.Compare(a.Tag, b.Tag)
+	})
+	return &dag.MainExpr{Funcs: dagFuncs, Expr: dagExpr}
 }
 
 func (d *dagen) seq(seq sem.Seq) dag.Seq {

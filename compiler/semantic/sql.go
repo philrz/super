@@ -340,8 +340,8 @@ func (t *translator) semValues(values *ast.SQLValues, seq sem.Seq) (sem.Seq, sch
 	//sctx := super.NewContext() XXX should do this with new context?
 	for _, astExpr := range values.Exprs {
 		e := t.semExpr(astExpr)
-		val, err := t.eval(e)
-		if err != nil {
+		val, ok := t.mustEval(e)
+		if !ok {
 			//XXX we will need to relax this for lateral joins, where values can have
 			// expressions and we should type check the values body with the type checker
 			t.error(astExpr, errors.New("expressions in SQL VALUES clause must be constant"))
@@ -484,10 +484,10 @@ func (t *translator) semSQLOp(op ast.Op, seq sem.Seq) (sem.Seq, schema) {
 	case *ast.SQLLimitOffset:
 		out, schema := t.semSQLOp(op.Op, seq)
 		if op.Offset != nil {
-			out = append(out, &sem.SkipOp{AST: nil /*XXX*/, Count: t.evalPositiveInteger(op.Offset)})
+			out = append(out, &sem.SkipOp{AST: nil /*XXX*/, Count: t.mustEvalPositiveInteger(op.Offset)})
 		}
 		if op.Limit != nil {
-			out = append(out, &sem.HeadOp{AST: nil /*XXX*/, Count: t.evalPositiveInteger(op.Limit)})
+			out = append(out, &sem.HeadOp{AST: nil /*XXX*/, Count: t.mustEvalPositiveInteger(op.Limit)})
 		}
 		return out, schema
 	case *ast.SQLUnion:

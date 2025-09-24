@@ -33,33 +33,43 @@ import (
 // to DAG form, resolving syntax ambiguities, and performing constant propagation.
 // After semantic analysis, the DAG is ready for either optimization or compilation.
 func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput bool) (*dag.Main, error) {
-	reporter := reporter{p.Files()}
-	t := newTranslator(ctx, reporter, env)
+	r := reporter{p.Files()}
+	t := newTranslator(ctx, r, env)
 	astseq := p.Parsed()
 	if extInput {
 		astseq.Prepend(&ast.DefaultScan{Kind: "DefaultScan"})
 	}
-	semSeq := t.semSeq(astseq)
-	if !checkOutputOps(reporter, true, semSeq) {
-		return nil, reporter.Error()
+	seq := t.semSeq(astseq)
+	if !checkOutputOps(r, true, seq) {
+		return nil, r.Error()
 	}
-	if !HasSource(semSeq) {
+	if !HasSource(seq) {
 		if t.env.IsAttached() {
-			if len(semSeq) == 0 {
+			if len(seq) == 0 {
 				return nil, errors.New("query text is missing")
 			}
-			semSeq.Prepend(&sem.NullScan{})
+			seq.Prepend(&sem.NullScan{})
 		} else {
 			// This is a local query and there's no external input
 			// (i.e., no command-line file args)
-			semSeq.Prepend(&sem.NullScan{})
+			seq.Prepend(&sem.NullScan{})
 		}
 	}
-	r := newResolver(t) //XXX t is really error reporting... change
-	semSeq, funcs := r.resolve(semSeq)
-	d := newDagen(t)
-	main := d.assemble(semSeq, funcs)
-	return main, reporter.Error()
+	return resolveAndGen(r, seq, t.funcsByTag)
+}
+
+func resolveAndGen(reporter reporter, seq sem.Seq, funcs map[string]*sem.FuncDef) (*dag.Main, error) {
+	r := newResolver(reporter, funcs)
+	semSeq, dagFuncs := r.resolve(seq)
+	main := newDagen().assemble(semSeq, dagFuncs)
+	return main, r.Error()
+}
+
+func resolveAndGenExpr(reporter reporter, expr sem.Expr, funcs map[string]*sem.FuncDef) (*dag.MainExpr, error) {
+	r := newResolver(reporter, funcs)
+	semExpr, dagFuncs := r.resolveExpr(expr)
+	main := newDagen().assembleExpr(semExpr, dagFuncs)
+	return main, r.Error()
 }
 
 // Translate AST into semantic tree.  Resolve all bindings
@@ -130,6 +140,9 @@ func (t *translator) newFunc(body ast.Expr, name string, params []string, e sem.
 
 // checkOutputOps ensures that no output operator has a downsteam entity and
 // logs an error on any offending output operator.
+// XXX this needs to look for outputs in subqueries... (or we should detect in the
+// first, top-level pass where we know if we're inside a subquery or we can add
+// some state to know)
 func checkOutputOps(r reporter, isLeaf bool, seq sem.Seq) bool {
 	for i, o := range seq {
 		isLast := len(seq)-1 == i

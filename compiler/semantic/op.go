@@ -170,8 +170,8 @@ func (t *translator) fileScanColumns(op *sem.FileScan) ([]string, bool) {
 
 func (t *translator) semFromExpr(entity *ast.ExprEntity, args []ast.OpArg, seq sem.Seq) (sem.Seq, string) {
 	expr := t.semExpr(entity.Expr)
-	val, err := t.eval(expr)
-	if err == nil && !hasError(val) {
+	val, ok := t.maybeEval(expr)
+	if ok && !hasError(val) {
 		if bad := t.hasFromParent(entity, seq); bad != nil {
 			return bad, ""
 		}
@@ -296,10 +296,7 @@ func (t *translator) semFromURL(urlLoc ast.Node, u string, args []ast.OpArg) sem
 	body, _ := t.textArg(opArgs, "body")
 	var headers map[string][]string
 	if e, loc := t.exprArg(opArgs, "headers"); e != nil {
-		val, err := t.eval(e)
-		if err != nil {
-			t.error(loc, err)
-		} else {
+		if val, ok := t.mustEval(e); ok {
 			headers, err = unmarshalHeaders(val)
 			if err != nil {
 				t.error(loc, err)
@@ -652,7 +649,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 	case *ast.Head:
 		count := 1
 		if o.Count != nil {
-			count = t.evalPositiveInteger(o.Count)
+			count = t.mustEvalPositiveInteger(o.Count)
 		}
 		return append(seq, &sem.HeadOp{
 			AST:   o,
@@ -661,7 +658,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 	case *ast.Tail:
 		count := 1
 		if o.Count != nil {
-			count = t.evalPositiveInteger(o.Count)
+			count = t.mustEvalPositiveInteger(o.Count)
 		}
 		return append(seq, &sem.TailOp{
 			AST:   o,
@@ -670,7 +667,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 	case *ast.Skip:
 		return append(seq, &sem.SkipOp{
 			AST:   o,
-			Count: t.evalPositiveInteger(o.Count),
+			Count: t.mustEvalPositiveInteger(o.Count),
 		})
 	case *ast.Uniq:
 		return append(seq, &sem.UniqOp{
@@ -691,9 +688,8 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 		limit := 1
 		if o.Limit != nil {
 			l := t.semExpr(o.Limit)
-			val, err := t.eval(l)
-			if err != nil {
-				t.error(o.Limit, err)
+			val, ok := t.mustEval(l) //XXX loc needs to be passed down, should be gettable from sem expr
+			if !ok {
 				return append(seq, badOp())
 			}
 			if !super.IsSigned(val.Type().ID()) {
@@ -1305,43 +1301,43 @@ func (t *translator) exprArg(o opArgs, key string) (sem.Expr, ast.Loc) {
 	return nil, ast.Loc{}
 }
 
-func (t *translator) evalString(e sem.Expr) (field string, ok bool) {
-	val, err := t.eval(e)
-	if err == nil && !val.IsError() && super.TypeUnder(val.Type()) == super.TypeString {
+func (t *translator) mustEvalString(e sem.Expr) (field string, ok bool) {
+	val, ok := t.mustEval(e)
+	if ok && !val.IsError() && super.TypeUnder(val.Type()) == super.TypeString {
 		return string(val.Bytes()), true
 	}
 	return "", false
 }
 
-func (t *translator) evalPositiveInteger(e ast.Expr) int {
-	expr := t.semExpr(e)
-	val, err := t.eval(expr)
-	if err != nil {
-		t.error(e, err)
-		return -1
+func (t *translator) maybeEvalString(e sem.Expr) (field string, ok bool) {
+	val, ok := t.maybeEval(e)
+	if ok && !val.IsError() && super.TypeUnder(val.Type()) == super.TypeString {
+		return string(val.Bytes()), true
+	}
+	return "", false
+}
+
+func (t *translator) mustEvalPositiveInteger(ae ast.Expr) int {
+	e := t.semExpr(ae)
+	val, ok := t.mustEval(e)
+	if !ok {
+		return 0
 	}
 	if !super.IsInteger(val.Type().ID()) || val.IsNull() {
-		t.error(e, fmt.Errorf("expression value must be an integer value: %s", sup.FormatValue(val)))
+		t.error(ae, fmt.Errorf("expression value must be an integer value: %s", sup.FormatValue(val)))
 		return -1
 	}
 	v := int(val.AsInt())
 	if v < 0 {
-		t.error(e, errors.New("expression value must be a positive integer"))
+		t.error(ae, errors.New("expression value must be a positive integer"))
 	}
 	return v
 }
 
 func (t *translator) evalAndBindConst(name string, e sem.Expr) error {
-	val, err := t.eval(e)
-	if err != nil {
-		return err
-	}
-	if val.IsError() {
-		if val.IsMissing() { //XXX this should be detected by evaluator type
-			return fmt.Errorf("const %q: cannot have variable dependency", name)
-		} else {
-			return fmt.Errorf("const %q: %q", name, string(val.Bytes()))
-		}
+	val, ok := t.mustEval(e)
+	if !ok {
+		return nil
 	}
 	literal := &dag.Literal{
 		Kind:  "Literal",
@@ -1350,7 +1346,9 @@ func (t *translator) evalAndBindConst(name string, e sem.Expr) error {
 	return t.scope.BindSymbol(name, literal)
 }
 
-func (t *translator) eval(e sem.Expr) (super.Value, error) {
+// mustEval leaves errors on the reporter and returns a bool as to whether
+// the eval was successful
+func (t *translator) mustEval(e sem.Expr) (super.Value, bool) {
 	// We're in the middle of a semantic analysis but want to compile the
 	// translated expression.  Operator thunks have been unfolded but
 	// funcs haven't been resolved, but that's because we'll copy all the state
@@ -1358,5 +1356,11 @@ func (t *translator) eval(e sem.Expr) (super.Value, error) {
 	// and we'll compile this all the way to a DAG an rungen it.  This is pretty
 	// general because we need to handle things like subqueries that call
 	// operator sequences that result in a constant value.
-	panic("TBD")
+	return newEvaluator(t.reporter, t.funcsByTag).mustEval(e)
+}
+
+// maybeEVal leaves no errors behind and simply returns a value and bool
+// indicating if the eval was successful
+func (t *translator) maybeEval(e sem.Expr) (super.Value, bool) {
+	return newEvaluator(t.reporter, t.funcsByTag).maybeEval(e)
 }

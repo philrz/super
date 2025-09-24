@@ -4,31 +4,43 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/brimdata/super"
 	"github.com/brimdata/super/compiler/ast"
 	"github.com/brimdata/super/compiler/semantic/sem"
 	"github.com/brimdata/super/runtime/sam/expr/function"
 )
 
 type resolver struct {
-	translator *translator
-	in         map[string]*sem.FuncDef
-	fixed      map[string]*sem.FuncDef
-	variants   []*sem.FuncDef
-	params     []map[string]string
-	ntag       int
+	reporter
+	sctx     *super.Context //XXX just for func lookup... we need templates in expr/function
+	in       map[string]*sem.FuncDef
+	fixed    map[string]*sem.FuncDef
+	variants []*sem.FuncDef
+	params   []map[string]string
+	ntag     int
 }
 
-func newResolver(t *translator) *resolver {
-	r := &resolver{
-		translator: t,
-		in:         t.funcsByTag,
-		fixed:      make(map[string]*sem.FuncDef),
+// in = funcsByTag
+func newResolver(r reporter, funcs map[string]*sem.FuncDef) *resolver {
+	return &resolver{
+		reporter: r,
+		sctx:     super.NewContext(),
+		in:       funcs,
+		fixed:    make(map[string]*sem.FuncDef),
 	}
-	return r
 }
 
 func (r *resolver) resolve(seq sem.Seq) (sem.Seq, []*sem.FuncDef) {
 	out := r.seq(seq)
+	funcs := r.variants
+	for _, f := range r.fixed {
+		funcs = append(funcs, f)
+	}
+	return out, funcs
+}
+
+func (r *resolver) resolveExpr(e sem.Expr) (sem.Expr, []*sem.FuncDef) {
+	out := r.expr(e)
 	funcs := r.variants
 	for _, f := range r.fixed {
 		funcs = append(funcs, f)
@@ -370,8 +382,13 @@ func (r *resolver) arrayElems(elems []sem.ArrayElem) []sem.ArrayElem {
 				AST:  elem.AST,
 				Expr: r.expr(elem.Expr),
 			})
+		case *sem.ExprElem:
+			out = append(out, &sem.ExprElem{
+				AST:  elem.AST,
+				Expr: r.expr(elem.Expr),
+			})
 		default:
-			out = append(out, r.expr(elem.(sem.Expr)).(sem.ArrayElem))
+			panic(elem)
 		}
 	}
 	return out
@@ -399,10 +416,6 @@ func (r *resolver) recordElems(elems []sem.RecordElem) []sem.RecordElem {
 	return out
 }
 
-func (r *resolver) error(node ast.Node, err error) {
-	r.translator.error(node, err)
-}
-
 func (r *resolver) resolveCallParam(call *sem.CallParam) sem.Expr {
 	oldTag := r.lookupParam(call.Param)
 	if oldTag == "" {
@@ -414,7 +427,7 @@ func (r *resolver) resolveCallParam(call *sem.CallParam) sem.Expr {
 	}
 	if isBuiltin(oldTag) {
 		// Check argument count here for builtin functions.
-		if _, err := function.New(r.translator.sctx, oldTag, len(call.Args)); err != nil {
+		if _, err := function.New(r.sctx, oldTag, len(call.Args)); err != nil {
 			r.error(call.AST.Loc, fmt.Errorf("function %q called via parameter %q: %w", oldTag, call.Param, err))
 			return badExpr()
 		}

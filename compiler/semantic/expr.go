@@ -473,7 +473,7 @@ func (t *translator) semRegexp(b *ast.BinaryExpr) sem.Expr {
 	if b.Op != "~" {
 		return nil
 	}
-	s, ok := t.evalString(t.semExpr(b.RHS))
+	s, ok := t.mustEvalString(t.semExpr(b.RHS))
 	if !ok {
 		t.error(b, errors.New(`right-hand side of ~ expression must be a string literal`))
 		return badExpr()
@@ -534,7 +534,7 @@ func (t *translator) semBinary(e *ast.BinaryExpr) sem.Expr {
 	lhs := t.semExpr(e.LHS)
 	rhs := t.semExpr(e.RHS)
 	if op == "like" || op == "not like" {
-		s, ok := t.evalString(rhs)
+		s, ok := t.mustEvalString(rhs)
 		if !ok {
 			t.error(e.RHS, errors.New("non-constant pattern for LIKE not supported"))
 			return badExpr()
@@ -585,7 +585,7 @@ func (t *translator) semBinary(e *ast.BinaryExpr) sem.Expr {
 
 func (t *translator) isIndexOfThis(lhs, rhs sem.Expr) *sem.ThisExpr {
 	if this, ok := lhs.(*sem.ThisExpr); ok {
-		if s, ok := t.evalString(rhs); ok {
+		if s, ok := t.maybeEvalString(rhs); ok {
 			this.Path = append(this.Path, s)
 			return this
 		}
@@ -739,7 +739,7 @@ func (t *translator) semCallByName(call *ast.Call, name string, args []sem.Expr)
 			t.error(call, err)
 			return badExpr()
 		}
-		pattern, ok := t.evalString(args[0])
+		pattern, ok := t.maybeEvalString(args[0])
 		if !ok {
 			return sem.NewCall(call, "grep", args)
 		}

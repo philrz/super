@@ -2,6 +2,7 @@ package sem
 
 import (
 	"github.com/brimdata/super/compiler/ast"
+	"github.com/brimdata/super/sup"
 )
 
 type Expr interface {
@@ -16,13 +17,7 @@ type (
 		AST   *ast.ArrayExpr
 		Elems []ArrayElem
 	}
-	BadExpr     struct{}
-	BetweenExpr struct {
-		AST   *ast.Between
-		Expr  Expr
-		Lower Expr
-		Upper Expr
-	}
+	BadExpr    struct{}
 	BinaryExpr struct {
 		AST ast.Expr
 		Op  string // normalized Op string
@@ -35,22 +30,6 @@ type (
 		AST  ast.Expr
 		Tag  string
 		Args []Expr
-	}
-	CallExtract struct {
-		AST  *ast.CallExtract
-		Part Expr
-		Expr Expr
-	}
-	CaseExpr struct {
-		AST   *ast.CaseExpr
-		Expr  Expr
-		Whens []When
-		Else  Expr
-	}
-	CastExpr struct {
-		AST  *ast.Cast
-		Expr Expr
-		Type Expr
 	}
 	CondExpr struct {
 		AST  ast.Expr
@@ -69,16 +48,6 @@ type (
 		LHS Expr
 		RHS string
 	}
-	// XXX what is this?
-	Exists struct {
-		AST  *ast.Exists
-		Body Seq
-	}
-	// XXX we can probably get rid of this but keep for now
-	FStringExpr struct {
-		AST  *ast.FStringExpr
-		Expr Expr
-	}
 	IndexExpr struct {
 		AST   *ast.IndexExpr
 		Expr  Expr
@@ -86,10 +55,6 @@ type (
 	}
 	IsNullExpr struct {
 		AST  *ast.IsNullExpr // Not flag in here
-		Expr Expr
-	}
-	LambdaExpr struct {
-		AST  *ast.Lambda // Params here
 		Expr Expr
 	}
 	LiteralExpr struct {
@@ -135,26 +100,11 @@ type (
 		From Expr
 		To   Expr
 	}
-	StructuredError struct {
-		AST     ast.Expr
-		Message string
-		On      Expr
-	}
 	SubqueryExpr struct {
 		AST        ast.Expr
 		Correlated bool
 		Array      bool
 		Body       Seq
-	}
-	// XXX backward compat until better time data types
-	SQLTimeValue struct {
-		AST   *ast.SQLTimeValue // Type here (must be string?!)
-		Value string            // sup value
-	}
-	//Keep this for error reporting even though resolved? or error reporting is done
-	// after it's resolved? XXX we can look here as to what needs it
-	Text struct {
-		AST *ast.Text
 	}
 	ThisExpr struct {
 		AST  ast.Expr // ast.ID, ast.BinaryExpr (dot), etc, SQL col/table before schema-path resolution
@@ -173,13 +123,6 @@ type (
 type Entry struct {
 	Key   Expr
 	Value Expr
-}
-
-// When is used by CaseExpr
-type When struct {
-	AST  *ast.When
-	Cond Expr
-	Then Expr
 }
 
 // The sum type for array, set, and record elements.  There is not an easy way
@@ -217,17 +160,11 @@ func (*SpreadElem) recordElemNode() {}
 func (*ArrayExpr) exprNode()        {}
 func (*BadExpr) exprNode()          {}
 func (*BinaryExpr) exprNode()       {}
-func (*BetweenExpr) exprNode()      {}
 func (*CondExpr) exprNode()         {}
 func (*CallExpr) exprNode()         {}
-func (*CallExtract) exprNode()      {}
-func (*CaseExpr) exprNode()         {}
-func (*CastExpr) exprNode()         {}
 func (*DotExpr) exprNode()          {}
-func (*Exists) exprNode()           {}
 func (*IndexExpr) exprNode()        {}
 func (*IsNullExpr) exprNode()       {}
-func (*LambdaExpr) exprNode()       {}
 func (*LiteralExpr) exprNode()      {}
 func (*MapCallExpr) exprNode()      {}
 func (*MapExpr) exprNode()          {}
@@ -237,8 +174,6 @@ func (*RegexpSearchExpr) exprNode() {}
 func (*SearchTermExpr) exprNode()   {}
 func (*SetExpr) exprNode()          {}
 func (*SliceExpr) exprNode()        {}
-func (*SQLTimeValue) exprNode()     {}
-func (*StructuredError) exprNode()  {}
 func (*SubqueryExpr) exprNode()     {}
 func (*ThisExpr) exprNode()         {}
 func (*UnaryExpr) exprNode()        {}
@@ -298,6 +233,30 @@ func NewCall(e ast.Expr, tag string, args []Expr) *CallExpr {
 		AST:  e,
 		Tag:  tag,
 		Args: args,
+	}
+}
+
+// XXX change AST stuff to some sort of error/code ref interface
+// XXX is this used?
+
+func NewStructuredError(ref ast.Expr, message string, on Expr) Expr {
+	rec := &RecordExpr{
+		AST: ref,
+		Elems: []RecordElem{
+			&FieldElem{
+				Name:  "message",
+				Value: &LiteralExpr{AST: ref, Value: sup.String(message)},
+			},
+			&FieldElem{
+				Name:  "on",
+				Value: on,
+			},
+		},
+	}
+	return &CallExpr{
+		AST:  ref,
+		Tag:  "error",
+		Args: []Expr{rec},
 	}
 }
 

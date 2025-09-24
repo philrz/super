@@ -238,8 +238,151 @@ func (d *dagen) exprs(exprs []sem.Expr) []dag.Expr {
 	return out
 }
 
-func (d *dagen) expr(seq sem.Expr) dag.Expr {
-	panic("TBD")
+func (d *dagen) expr(e sem.Expr) dag.Expr {
+	switch e := e.(type) {
+	case *sem.ArrayExpr:
+		return &dag.ArrayExpr{
+			Kind:  "ArrayExpr",
+			Elems: d.arrayElems(e.Elems),
+		}
+	case *sem.BinaryExpr:
+		return &dag.BinaryExpr{
+			Kind: "BinaryExpr",
+			LHS:  d.expr(e.LHS),
+			RHS:  d.expr(e.RHS),
+		}
+	case *sem.CallExpr:
+		return d.call(e)
+	case *sem.CondExpr:
+		return &dag.Conditional{
+			Kind: "Conditional",
+			Cond: d.expr(e.Cond),
+			Then: d.expr(e.Then),
+			Else: d.expr(e.Else),
+		}
+	case *sem.DotExpr:
+		return &dag.Dot{
+			Kind: "Dot",
+			LHS:  d.expr(e.LHS),
+			RHS:  e.RHS,
+		}
+	case *sem.IndexExpr:
+		return &dag.IndexExpr{
+			Kind:  "IndexExpr",
+			Expr:  d.expr(e.Expr),
+			Index: d.expr(e.Index),
+		}
+	case *sem.IsNullExpr:
+		return &dag.IsNullExpr{
+			Kind: "IsNullExpr",
+			Expr: d.expr(e.Expr),
+		}
+	case *sem.LiteralExpr:
+		return &dag.Literal{ // XXX this should be called Primitive
+			Kind:  "Literal",
+			Value: e.Value,
+		}
+	case *sem.MapCallExpr:
+		return &dag.MapCall{
+			Kind:   "MapCall",
+			Expr:   d.expr(e.Expr),
+			Lambda: d.call(e.Lambda),
+		}
+	case *sem.MapExpr:
+		return &dag.MapExpr{
+			Kind:    "MapExpr",
+			Entries: d.entries(e.Entries),
+		}
+	case *sem.RecordExpr:
+		return &dag.RecordExpr{
+			Kind:  "RecordExpr",
+			Elems: d.recordElems(e.Elems),
+		}
+	case *sem.RegexpMatchExpr:
+		return &dag.RegexpMatch{
+			Kind:    "RegexpMatch",
+			Pattern: e.Pattern,
+			Expr:    d.expr(e.Expr),
+		}
+	case *sem.RegexpSearchExpr:
+		return &dag.RegexpSearch{
+			Kind:    "RegexpSearch",
+			Pattern: e.Pattern,
+			Expr:    d.expr(e.Expr),
+		}
+	case *sem.SearchTermExpr:
+		return &dag.Search{
+			Kind:  "Search",
+			Text:  e.Text,
+			Value: e.Value,
+			Expr:  d.expr(e.Expr),
+		}
+	case *sem.SetExpr:
+		return &dag.SetExpr{
+			Kind:  "SetExpr",
+			Elems: d.arrayElems(e.Elems),
+		}
+	case *sem.SliceExpr:
+		return &dag.SliceExpr{
+			Kind: "SliceExpr",
+			Expr: d.expr(e.Expr),
+			From: d.expr(e.From),
+			To:   d.expr(e.To),
+		}
+	case *sem.SubqueryExpr:
+		return d.subquery(e)
+	case *sem.ThisExpr:
+		return &dag.This{
+			Kind: "This",
+			Path: e.Path,
+		}
+	case *sem.UnaryExpr:
+		return &dag.UnaryExpr{
+			Kind:    "UnaryExpr",
+			Op:      e.Op,
+			Operand: d.expr(e.Operand),
+		}
+	}
+	panic(e)
+}
+
+func (d *dagen) subquery(e *sem.SubqueryExpr) *dag.Subquery {
+	subquery := &dag.Subquery{
+		Kind:       "Subquery",
+		Correlated: e.Correlated,
+		Body:       d.seq(e.Body),
+	}
+	if e.Array {
+		subquery.Body = collectThis(subquery.Body)
+	}
+	return subquery
+}
+
+// XXX move this back to translator?
+func collectThis(seq dag.Seq) dag.Seq {
+	collect := dag.Assignment{
+		Kind: "Assignment",
+		LHS:  pathOf("collect"),
+		RHS:  &dag.Agg{Kind: "Agg", Name: "collect", Expr: dag.NewThis(nil)},
+	}
+	aggOp := &dag.Aggregate{
+		Kind: "Aggregate",
+		Aggs: []dag.Assignment{collect},
+	}
+	emitOp := &dag.Values{
+		Kind:  "Values",
+		Exprs: []dag.Expr{pathOf("collect")},
+	}
+	seq = append(seq, aggOp)
+	return append(seq, emitOp)
+}
+
+func (d *dagen) call(c *sem.CallExpr) *dag.Call {
+	return &dag.Call{
+		Kind: "Call",
+		Tag:  c.Tag,
+		Args: d.exprs(c.Args),
+	}
 }
 
 func (d *dagen) fn(f *sem.FuncDef) *dag.FuncDef {

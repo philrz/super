@@ -20,6 +20,9 @@ import (
 	"github.com/shellyln/go-sql-like-expr/likeexpr"
 )
 
+// XXX We should have an sem/dag CastExpr node as it's a special case not really
+// a generic function?  or maybe we can leave it?
+
 func (t *translator) semExpr(e ast.Expr) sem.Expr {
 	switch e := e.(type) {
 	case *ast.Agg:
@@ -296,16 +299,12 @@ func (t *translator) semExpr(e ast.Expr) sem.Expr {
 				slice.To = sem.NewBinaryExpr(e, "+", to, &sem.LiteralExpr{AST: e, Value: "1"})
 			}
 		}
-		errRec := &sem.StructuredError{
-			AST:     e,
-			Message: "SUBSTRING: string value required",
-			On:      expr,
-		}
+		serr := sem.NewStructuredError(e, "SUBSTRING: string value required", expr)
 		return &sem.CondExpr{
 			AST:  e,
 			Cond: is,
 			Then: slice,
-			Else: sem.NewCall(e, "error", []sem.Expr{errRec}),
+			Else: serr,
 		}
 	case *ast.SQLTimeValue:
 		if e.Value.Type != "string" {

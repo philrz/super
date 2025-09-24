@@ -33,13 +33,16 @@ import (
 // to DAG form, resolving syntax ambiguities, and performing constant propagation.
 // After semantic analysis, the DAG is ready for either optimization or compilation.
 func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput bool) (*dag.Main, error) {
-	files := p.Files()
-	t := newTranslator(ctx, files, env)
+	reporter := reporter{p.Files()}
+	t := newTranslator(ctx, reporter, env)
 	astseq := p.Parsed()
 	if extInput {
 		astseq.Prepend(&ast.DefaultScan{Kind: "DefaultScan"})
 	}
 	semSeq := t.semSeq(astseq)
+	if !checkOutputOps(reporter, true, semSeq) {
+		return nil, reporter.Error()
+	}
 	if !HasSource(semSeq) {
 		if t.env.IsAttached() {
 			if len(semSeq) == 0 {
@@ -56,7 +59,7 @@ func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput
 	semSeq, funcs := r.resolve(semSeq)
 	d := newDagen(t)
 	main := d.assemble(semSeq, funcs)
-	return main, files.Error()
+	return main, reporter.Error()
 }
 
 // Translate AST into semantic tree.  Resolve all bindings
@@ -75,9 +78,9 @@ type translator struct {
 	funcsByDecl map[*ast.Decl]*sem.FuncDef
 }
 
-func newTranslator(ctx context.Context, files *srcfiles.List, env *exec.Environment) *translator {
+func newTranslator(ctx context.Context, r reporter, env *exec.Environment) *translator {
 	return &translator{
-		reporter:    reporter{files},
+		reporter:    r,
 		ctx:         ctx,
 		env:         env,
 		scope:       NewScope(nil),
@@ -123,6 +126,36 @@ func (t *translator) newFunc(body ast.Expr, name string, params []string, e sem.
 		Body:   e,
 	}
 	return tag
+}
+
+func checkOutputOps(r reporter, isLeaf bool, seq sem.Seq) bool {
+	for i, o := range seq {
+		isLast := len(seq)-1 == i
+		switch o := o.(type) {
+		case *sem.OutputOp:
+			if !isLast || !isLeaf {
+				r.error(o.AST, errors.New("output operator cannot have a downstream operator"))
+				return false
+			}
+		case *sem.ForkOp:
+			for k := range o.Paths {
+				if !checkOutputOps(r, isLast && isLeaf, o.Paths[k]) {
+					return false
+				}
+			}
+		case *sem.UnnestOp:
+			if !checkOutputOps(r, false, o.Body) {
+				return false
+			}
+		case *sem.SwitchOp:
+			for k := range o.Cases {
+				if !checkOutputOps(r, isLast && isLeaf, o.Cases[k].Path) {
+					return false
+				}
+			}
+		}
+	}
+	return true
 }
 
 type opDecl struct {

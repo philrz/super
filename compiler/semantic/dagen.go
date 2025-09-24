@@ -29,8 +29,8 @@ func (d *dagen) assemble(seq sem.Seq, funcs []*sem.FuncDef) *dag.Main {
 	dagSeq := d.seq(seq)
 	dagSeq = d.checkOutputs(true, dagSeq)
 	dagFuncs := make([]*dag.FuncDef, 0, len(d.funcs))
-	for _, f := range d.funcs {
-		dagFuncs = append(dagFuncs, f)
+	for _, f := range funcs {
+		dagFuncs = append(dagFuncs, d.fn(f))
 	}
 	// Sort function entries so they are consistently ordered by integer tag strings.
 	slices.SortFunc(dagFuncs, func(a, b *dag.FuncDef) int {
@@ -40,27 +40,231 @@ func (d *dagen) assemble(seq sem.Seq, funcs []*sem.FuncDef) *dag.Main {
 }
 
 func (d *dagen) seq(seq sem.Seq) dag.Seq {
-	panic("TBD")
+	var out dag.Seq
+	for k, op := range seq {
+		//XXX this doesn't seem right... why can't we just have
+		// a global entity that bypasses the puller protocol and
+		// exits on ctx.Done?
+		if debugOp, ok := op.(*sem.DebugOp); ok {
+			return d.debugOp(debugOp, seq[k+1:], out)
+		}
+		out = append(out, d.op(op))
+	}
+	return out
+}
+
+func (d *dagen) op(op sem.Op) dag.Op {
+	switch op := op.(type) {
+	case *sem.AggregateOp:
+		return &dag.Aggregate{
+			Kind:  "Aggregate",
+			Limit: op.Limit,
+			Keys:  d.assignments(op.Keys),
+			Aggs:  d.assignments(op.Aggs),
+		}
+	case *sem.CutOp:
+		return &dag.Cut{
+			Kind: "Cut",
+			Args: d.assignments(op.Args),
+		}
+	case *sem.DistinctOp:
+		return &dag.Distinct{
+			Kind: "Distinct",
+			Expr: d.expr(op.Expr),
+		}
+	case *sem.DropOp:
+		return &dag.Drop{
+			Kind: "Drop",
+			Args: d.exprs(op.Args),
+		}
+	case *sem.ExplodeOp:
+		return &dag.Explode{
+			Kind: "Explode",
+			Args: d.exprs(op.Args),
+			Type: op.Type,
+			As:   op.As,
+		}
+	case *sem.FilterOp:
+		return &dag.Filter{
+			Kind: "Filter",
+			Expr: d.expr(op.Expr),
+		}
+	case *sem.ForkOp:
+		return &dag.Fork{
+			Kind:  "Fork",
+			Paths: d.paths(op.Paths),
+		}
+	case *sem.FuseOp:
+		return &dag.Fuse{
+			Kind: "Fuse",
+		}
+	case *sem.HeadOp:
+		return &dag.Head{
+			Kind:  "Head",
+			Count: op.Count,
+		}
+	case *sem.JoinOp:
+		return &dag.Join{
+			Kind:       "Join",
+			Style:      op.Style,
+			LeftAlias:  op.LeftAlias,
+			RightAlias: op.RightAlias,
+			Cond:       d.expr(op.Cond),
+		}
+	case *sem.LoadOp:
+		return &dag.Load{
+			Kind:    "Load",
+			Pool:    op.Pool,
+			Branch:  op.Branch,
+			Author:  op.Author,
+			Message: op.Message,
+			Meta:    op.Meta,
+		}
+	case *sem.MergeOp:
+		return &dag.Merge{
+			Kind:  "Merge",
+			Exprs: d.sortExprs(op.Exprs),
+		}
+	case *sem.OutputOp:
+		return &dag.Output{
+			Kind: "Output",
+			Name: op.Name,
+		}
+	case *sem.PutOp:
+		return &dag.Put{
+			Kind: "Put",
+			Args: d.assignments(op.Args),
+		}
+	case *sem.RenameOp:
+		return &dag.Rename{
+			Kind: "Rename",
+			Args: d.assignments(op.Args),
+		}
+	case *sem.SkipOp:
+		return &dag.Skip{
+			Kind:  "Skeip",
+			Count: op.Count,
+		}
+	case *sem.SortOp:
+		return &dag.Sort{
+			Kind:    "Sort",
+			Exprs:   d.sortExprs(op.Exprs),
+			Reverse: op.Reverse,
+		}
+	case *sem.SwitchOp:
+		return &dag.Switch{
+			Kind:  "Switch",
+			Expr:  d.expr(op.Expr),
+			Cases: d.cases(op.Cases),
+		}
+	case *sem.TailOp:
+		return &dag.Tail{
+			Kind:  "Tail",
+			Count: op.Count,
+		}
+	case *sem.TopOp:
+		return &dag.Top{
+			Kind:    "Top",
+			Limit:   op.Limit,
+			Exprs:   d.sortExprs(op.Exprs),
+			Reverse: op.Reverse,
+		}
+	case *sem.UniqOp:
+		return &dag.Uniq{
+			Kind:  "Uniq",
+			Cflag: op.Cflag,
+		}
+	case *sem.UnnestOp:
+		return &dag.Unnest{
+			Kind: "Unnest",
+			Expr: d.expr(op.Expr),
+			Body: d.seq(op.Body),
+		}
+	case *sem.ValuesOp:
+		return &dag.Values{
+			Kind:  "Values",
+			Exprs: d.exprs(op.Exprs),
+		}
+	}
+	panic(op)
+}
+
+func (d *dagen) paths(paths []sem.Seq) []dag.Seq {
+	var out []dag.Seq
+	for _, path := range paths {
+		out = append(out, d.seq(path))
+	}
+	return out
+}
+
+func (d *dagen) cases(cases []sem.Case) []dag.Case {
+	var out []dag.Case
+	for _, c := range cases {
+		out = append(out, dag.Case{Expr: d.expr(c.Expr), Path: d.seq(c.Path)})
+	}
+	return out
+}
+
+func (d *dagen) assignments(assignments []sem.Assignment) []dag.Assignment {
+	var out []dag.Assignment
+	for _, e := range assignments {
+		out = append(out, dag.Assignment{
+			Kind: "Assignment",
+			LHS:  d.expr(e.LHS),
+			RHS:  d.expr(e.RHS),
+		})
+	}
+	return out
+}
+
+func (d *dagen) sortExprs(exprs []sem.SortExpr) []dag.SortExpr {
+	var out []dag.SortExpr
+	for _, e := range exprs {
+		sortExpr := dag.SortExpr{
+			Key:   d.expr(e.Expr),
+			Order: e.Order,
+			Nulls: e.Nulls,
+		}
+		out = append(out, sortExpr)
+	}
+	return out
+}
+
+func (d *dagen) exprs(exprs []sem.Expr) []dag.Expr {
+	var out []dag.Expr
+	for _, e := range exprs {
+		out = append(out, d.expr(e))
+	}
+	return out
 }
 
 func (d *dagen) expr(seq sem.Expr) dag.Expr {
 	panic("TBD")
 }
 
-// XXX
-func (d *dagen) debugOp(o *sem.DebugOp, mainSem sem.Seq, in dag.Seq) dag.Seq {
+func (d *dagen) fn(f *sem.FuncDef) *dag.FuncDef {
+	return &dag.FuncDef{
+		Kind:   "FuncDef",
+		Tag:    f.Tag,
+		Name:   f.Name,
+		Params: f.Params,
+		Expr:   d.expr(f.Body),
+	}
+}
+
+func (d *dagen) debugOp(o *sem.DebugOp, branch sem.Seq, seq dag.Seq) dag.Seq {
 	output := &dag.Output{Kind: "Output", Name: "debug"}
 	d.outputs[output] = o
 	e := d.expr(o.Expr)
 	y := &dag.Values{Kind: "Values", Exprs: []dag.Expr{e}}
-	main := d.seq(mainSem)
-	if len(main) == 0 {
+	mainBranch := d.seq(branch)
+	if len(mainBranch) == 0 {
 		//XXX do we need pass?
-		main.Append(&dag.Pass{Kind: "Pass"})
+		mainBranch.Append(&dag.Pass{Kind: "Pass"})
 	}
-	return append(in, &dag.Mirror{
+	return append(seq, &dag.Mirror{
 		Kind:   "Mirror",
-		Main:   main,
+		Main:   mainBranch,
 		Mirror: dag.Seq{y, output},
 	})
 }
@@ -111,10 +315,6 @@ func (d *dagen) checkOutputs(isLeaf bool, seq dag.Seq) dag.Seq {
 		}
 	}
 	return seq
-}
-
-func (d *dagen) exprNullable(e sem.Expr) dag.Expr {
-	panic("TBD")
 }
 
 func evalAtCompileTime(sctx *super.Context, e sem.Expr) (super.Value, error) {

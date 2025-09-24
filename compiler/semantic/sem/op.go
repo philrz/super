@@ -139,18 +139,7 @@ type (
 		Keys  []Assignment
 		Aggs  []Assignment
 	}
-	AssertOp struct {
-		AST  *ast.Assert
-		Kind string
-		Expr Expr
-		Text string
-	}
 	BadOp struct{}
-	//XXX might want to expand these in first pass to CallOpRefs (with expanded ast inside)...
-	CallOp struct {
-		AST  *ast.CallOp // Name here
-		Args []Expr      `json:"args"`
-	}
 	CutOp struct {
 		AST  *ast.Cut
 		Args []Assignment
@@ -189,7 +178,6 @@ type (
 	}
 	JoinOp struct {
 		AST        ast.Op // CrossJoin, SQL*Join, Join, etc (might not need this)
-		Kind       string
 		Style      string
 		LeftAlias  string
 		RightAlias string
@@ -218,14 +206,6 @@ type (
 	RenameOp struct {
 		AST  *ast.Rename
 		Args []Assignment
-	}
-	SearchOp struct {
-		AST  *ast.Search
-		Expr Expr
-	}
-	ShapesOp struct {
-		AST  *ast.Shapes
-		Expr Expr
 	}
 	SkipOp struct {
 		AST   *ast.Skip
@@ -287,9 +267,7 @@ type (
 )
 
 func (*AggregateOp) opNode() {}
-func (*AssertOp) opNode()    {}
 func (*BadOp) opNode()       {}
-func (*CallOp) opNode()      {}
 func (*CutOp) opNode()       {}
 func (*DebugOp) opNode()     {}
 func (*DistinctOp) opNode()  {}
@@ -305,8 +283,6 @@ func (*MergeOp) opNode()     {}
 func (*OutputOp) opNode()    {}
 func (*PutOp) opNode()       {}
 func (*RenameOp) opNode()    {}
-func (*SearchOp) opNode()    {}
-func (*ShapesOp) opNode()    {}
 func (*SkipOp) opNode()      {}
 func (*SortOp) opNode()      {}
 func (*SwitchOp) opNode()    {}

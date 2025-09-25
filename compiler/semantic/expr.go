@@ -776,15 +776,6 @@ func (t *translator) semCallByName(call *ast.Call, name string, args []sem.Expr)
 	return sem.NewCall(call, nameLower, args)
 }
 
-func (t *translator) maybeSubqueryCallByID(id *ast.ID) *sem.SubqueryExpr {
-	call := &ast.Call{
-		Kind: "Call",
-		Func: &ast.FuncName{Kind: "FuncName", Name: id.Name},
-		Loc:  id.Loc,
-	}
-	return t.maybeSubqueryCall(call, id.Name)
-}
-
 func (t *translator) maybeSubqueryCall(call *ast.Call, name string) *sem.SubqueryExpr {
 	decl, _ := t.scope.lookupOp(name)
 	if decl == nil || decl.bad {

@@ -141,7 +141,7 @@ func (s *subquerySchema) resolveTable(table string) (schema, field.Path, error) 
 	if sch != nil {
 		return nil, nil, errors.New("correlated subqueries not currently supported")
 	}
-	return nil, nil, err
+	return sch, path, err
 }
 
 func (*dynamicSchema) resolveColumn(col string) (field.Path, error) {

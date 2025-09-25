@@ -55,23 +55,12 @@ func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput
 			seq.Prepend(&sem.NullScan{})
 		}
 	}
-	return resolveAndGen(r, seq, t.funcsByTag)
-}
-
-func resolveAndGen(reporter reporter, seq sem.Seq, funcs map[string]*sem.FuncDef) (*dag.Main, error) {
-	r := newResolver(reporter, funcs)
-	semSeq, dagFuncs := r.resolve(seq)
-	if err := reporter.Error(); err != nil {
+	resolver := newResolver(r, t.funcsByTag)
+	semSeq, dagFuncs := resolver.resolve(seq)
+	if err := r.Error(); err != nil {
 		return nil, err
 	}
-	main := newDagen(reporter).assemble(semSeq, dagFuncs)
-	return main, r.Error()
-}
-
-func resolveAndGenExpr(reporter reporter, expr sem.Expr, funcs map[string]*sem.FuncDef) (*dag.MainExpr, error) {
-	r := newResolver(reporter, funcs)
-	semExpr, dagFuncs := r.resolveExpr(expr)
-	main := newDagen(reporter).assembleExpr(semExpr, dagFuncs)
+	main := newDagen(r).assemble(semSeq, dagFuncs)
 	return main, r.Error()
 }
 

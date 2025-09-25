@@ -1033,7 +1033,7 @@ func (t *translator) semArrayElems(elems []ast.VectorElem) []sem.ArrayElem {
 	for _, elem := range elems {
 		switch elem := elem.(type) {
 		case *ast.Spread:
-			out = append(out, &sem.SpreadElem{Node: elem, Expr: t.semExpr(elem)})
+			out = append(out, &sem.SpreadElem{Node: elem, Expr: t.semExpr(elem.Expr)})
 		case *ast.VectorValue:
 			out = append(out, &sem.ExprElem{Node: elem, Expr: t.semExpr(elem.Expr)})
 		default:

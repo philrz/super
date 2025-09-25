@@ -776,6 +776,9 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 		if o.RightInput == nil {
 			return append(seq, join)
 		}
+		if len(seq) == 0 {
+			seq = append(seq, &sem.PassOp{Node: join})
+		}
 		fork := &sem.ForkOp{
 			Paths: []sem.Seq{
 				seq,

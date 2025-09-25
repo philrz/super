@@ -26,15 +26,15 @@ func newEvaluator(r reporter, funcs map[string]*sem.FuncDef) *evaluator {
 	}
 }
 
-func (e *evaluator) mustEval(expr sem.Expr) (super.Value, bool) {
-	val, ok := e.maybeEval(expr)
+func (e *evaluator) mustEval(sctx *super.Context, expr sem.Expr) (super.Value, bool) {
+	val, ok := e.maybeEval(sctx, expr)
 	e.flushErrs()
 	return val, ok
 }
 
-func (e *evaluator) maybeEval(expr sem.Expr) (super.Value, bool) {
+func (e *evaluator) maybeEval(sctx *super.Context, expr sem.Expr) (super.Value, bool) {
 	if literal, ok := expr.(*sem.LiteralExpr); ok {
-		val, err := sup.ParseValue(super.NewContext(), literal.Value)
+		val, err := sup.ParseValue(sctx, literal.Value)
 		if err != nil {
 			e.error(literal.Node, err)
 			return val, false
@@ -61,7 +61,7 @@ func (e *evaluator) maybeEval(expr sem.Expr) (super.Value, bool) {
 		return super.Value{}, false
 	}
 	main := newDagen().assembleExpr(resolvedExpr, funcs)
-	val, err := rungen.EvalAtCompileTime(super.NewContext(), main)
+	val, err := rungen.EvalAtCompileTime(sctx, main)
 	if err != nil {
 		e.error(nil, err) //XXX fix nil
 		return val, false

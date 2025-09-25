@@ -1356,11 +1356,11 @@ func (t *translator) mustEval(e sem.Expr) (super.Value, bool) {
 	// and we'll compile this all the way to a DAG an rungen it.  This is pretty
 	// general because we need to handle things like subqueries that call
 	// operator sequences that result in a constant value.
-	return newEvaluator(t.reporter, t.funcsByTag).mustEval(e)
+	return newEvaluator(t.reporter, t.funcsByTag).mustEval(t.sctx, e)
 }
 
 // maybeEVal leaves no errors behind and simply returns a value and bool
 // indicating if the eval was successful
 func (t *translator) maybeEval(e sem.Expr) (super.Value, bool) {
-	return newEvaluator(t.reporter, t.funcsByTag).maybeEval(e)
+	return newEvaluator(t.reporter, t.funcsByTag).maybeEval(t.sctx, e)
 }

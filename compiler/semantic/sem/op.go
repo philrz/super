@@ -33,54 +33,58 @@ type Main struct {
 // Op is the interface implemented by all AST operator nodes.
 type Op interface {
 	opNode()
+	ast.Node
 }
 
 // Scanner ops implement both Scanner and Op
 type (
 	CommitMetaScan struct {
-		AST    ast.FromEntity
+		ast.Node
 		Pool   ksuid.KSUID
 		Commit ksuid.KSUID
 		Meta   string
 		Tap    bool
 	}
 	DBMetaScan struct {
-		AST  *ast.DBMeta
+		ast.Node
 		Meta string
 	}
-	DefaultScan struct{}
-	DeleteScan  struct {
-		AST    *ast.Delete
+	DefaultScan struct {
+		ast.Node
+	}
+	DeleteScan struct {
+		ast.Node
 		ID     ksuid.KSUID
 		Commit ksuid.KSUID
-		Where  Expr
 	}
 	FileScan struct {
-		AST    *ast.FromElem
+		ast.Node
 		Path   string
 		Format string
 	}
 	HTTPScan struct {
-		AST     *ast.FromElem
+		ast.Node
 		URL     string
 		Format  string
 		Method  string
 		Headers map[string][]string
 		Body    string
 	}
-	NullScan     struct{}
+	NullScan struct {
+		ast.Node
+	}
 	PoolMetaScan struct {
-		AST  ast.FromEntity
+		ast.Node
 		ID   ksuid.KSUID
 		Meta string
 	}
 	PoolScan struct {
-		AST    ast.FromEntity
+		ast.Node
 		ID     ksuid.KSUID
 		Commit ksuid.KSUID
 	}
 	RobotScan struct {
-		AST    *ast.ExprEntity
+		ast.Node
 		Expr   Expr
 		Format string
 	}
@@ -97,24 +101,12 @@ func (*PoolMetaScan) opNode()   {}
 func (*PoolScan) opNode()       {}
 func (*RobotScan) opNode()      {}
 
-type TableAlias struct { // this can probably go away
-	AST *ast.TableAlias
-}
-
 type FuncDef struct {
-	AST    ast.Expr // body of function or lambda value
+	ast.Node
 	Tag    string
 	Name   string
 	Params []string
 	Body   Expr
-}
-
-// XXX expand these but leave AST node for error reporting?,
-// if so, we can get rid of this and just have refs (OpResolved?).
-// then maybe get rid of them?
-type OpDecl struct {
-	AST  *ast.OpDecl // Name, Params
-	Body Seq
 }
 
 // ----------------------------------------------------------------------------
@@ -134,57 +126,60 @@ func (s *Seq) Prepend(front Op) { //XXX do we need this?
 // and produces values as output.
 type (
 	AggregateOp struct {
-		AST   ast.Op // ast.Aggregate or ast.OpExpr
+		ast.Node
 		Limit int
 		Keys  []Assignment
 		Aggs  []Assignment
 	}
-	BadOp struct{}
+	BadOp struct {
+		ast.Node
+	}
 	CutOp struct {
-		AST  *ast.Cut
+		ast.Node
 		Args []Assignment
 	}
 	DebugOp struct {
-		AST  *ast.Debug
+		ast.Node
 		Expr Expr
 	}
 	DistinctOp struct {
-		AST  *ast.Distinct
+		ast.Node
 		Expr Expr
 	}
 	DropOp struct {
-		AST  *ast.Drop
+		ast.Node
 		Args []Expr
 	}
 	ExplodeOp struct {
-		AST  *ast.Explode
+		ast.Node
 		Args []Expr
 		Type string
 		As   string
 	}
 	FilterOp struct {
-		AST  ast.Op // ast.Where, ast.OpExpr, ast.Search
+		ast.Node
 		Expr Expr
 	}
 	ForkOp struct {
+		ast.Node
 		Paths []Seq
 	}
 	FuseOp struct {
-		AST *ast.Fuse
+		ast.Node
 	}
 	HeadOp struct {
-		AST   *ast.Head
+		ast.Node
 		Count int
 	}
 	JoinOp struct {
-		AST        ast.Op // CrossJoin, SQL*Join, Join, etc (might not need this)
+		ast.Node
 		Style      string
 		LeftAlias  string
 		RightAlias string
 		Cond       Expr
 	}
 	LoadOp struct {
-		AST     *ast.Load
+		ast.Node
 		Pool    ksuid.KSUID
 		Branch  string
 		Author  string
@@ -192,56 +187,56 @@ type (
 		Meta    string
 	}
 	MergeOp struct {
-		AST   *ast.Merge
+		ast.Node
 		Exprs []SortExpr
 	}
 	OutputOp struct {
-		AST  ast.Op
+		ast.Node
 		Name string
 	}
 	PutOp struct {
-		AST  ast.Op
+		ast.Node
 		Args []Assignment
 	}
 	RenameOp struct {
-		AST  *ast.Rename
+		ast.Node
 		Args []Assignment
 	}
 	SkipOp struct {
-		AST   *ast.Skip
+		ast.Node
 		Count int
 	}
 	SortOp struct {
-		AST     *ast.Sort
+		ast.Node
 		Exprs   []SortExpr
 		Reverse bool
 	}
 	SwitchOp struct {
-		AST   *ast.Switch
+		ast.Node
 		Expr  Expr
 		Cases []Case
 	}
 	TailOp struct {
-		AST   *ast.Tail
+		ast.Node
 		Count int
 	}
 	TopOp struct {
-		AST     *ast.Top
+		ast.Node
 		Limit   int
 		Exprs   []SortExpr
 		Reverse bool
 	}
 	UniqOp struct {
-		AST   *ast.Uniq
+		ast.Node
 		Cflag bool
 	}
 	UnnestOp struct {
-		AST  *ast.Unnest
+		ast.Node
 		Expr Expr
 		Body Seq
 	}
 	ValuesOp struct {
-		AST   ast.Op // ast.Values or ast.OpExpr
+		ast.Node
 		Exprs []Expr
 	}
 )
@@ -249,7 +244,7 @@ type (
 // Suport structs for Ops
 type (
 	Assignment struct {
-		AST *ast.Assignment
+		ast.Node
 		LHS Expr
 		RHS Expr
 	}
@@ -259,7 +254,7 @@ type (
 		Path Seq
 	}
 	SortExpr struct {
-		AST   ast.SortExpr
+		ast.Node
 		Expr  Expr
 		Order order.Which
 		Nulls order.Nulls
@@ -293,17 +288,17 @@ func (*UniqOp) opNode()      {}
 func (*ValuesOp) opNode()    {}
 
 type AggFunc struct {
-	AST      ast.Expr
+	ast.Node
 	Name     string // convert to lower case
 	Distinct bool
 	Expr     Expr
 	Where    Expr
 }
 
-func NewValues(o ast.Op, expr ...Expr) *ValuesOp {
-	return &ValuesOp{AST: o, Exprs: expr}
+func NewValues(n ast.Node, expr ...Expr) *ValuesOp {
+	return &ValuesOp{Node: n, Exprs: expr}
 }
 
-func NewFilter(o ast.Op, expr Expr) *FilterOp {
-	return &FilterOp{AST: o, Expr: expr}
+func NewFilter(n ast.Node, expr Expr) *FilterOp {
+	return &FilterOp{Node: n, Expr: expr}
 }

@@ -36,7 +36,7 @@ func (e *evaluator) maybeEval(expr sem.Expr) (super.Value, bool) {
 	if literal, ok := expr.(*sem.LiteralExpr); ok {
 		val, err := sup.ParseValue(super.NewContext(), literal.Value)
 		if err != nil {
-			e.error(literal.AST, err)
+			e.error(literal.Node, err)
 			return val, false
 		}
 		return val, true

@@ -67,7 +67,7 @@ func (t *translator) semSelect(sel *ast.SQLSelect, seq sem.Seq) (sem.Seq, schema
 	}
 	seq = t.genValues(proj, where, sch, seq)
 	if sel.Distinct {
-		seq = t.genDistinct(pathOf(nil /*XXX*/, "out"), seq)
+		seq = t.genDistinct(sem.NewThis(sel, []string{"out"}), seq)
 	}
 	return seq, sch
 }
@@ -85,7 +85,7 @@ func (t *translator) genValues(proj projection, where sem.Expr, sch *selectSchem
 	}
 	seq = t.genColumns(proj, sch, seq)
 	if where != nil {
-		seq = append(seq, sem.NewFilter(nil /*XXX*/, where))
+		seq = append(seq, sem.NewFilter(where, where))
 	}
 	return seq
 }
@@ -99,8 +99,8 @@ func (t *translator) genColumns(proj projection, sch *selectSchema, seq sem.Seq)
 		var elems []sem.RecordElem
 		if notFirst {
 			elems = append(elems, &sem.SpreadElem{
-				AST:  nil, //XXX
-				Expr: sem.NewThis(nil /*XXX*/, []string{"out"}),
+				Node: col.loc,
+				Expr: sem.NewThis(col.expr, []string{"out"}),
 			})
 		} else {
 			notFirst = true
@@ -108,36 +108,36 @@ func (t *translator) genColumns(proj projection, sch *selectSchema, seq sem.Seq)
 		if col.isStar() {
 			for _, path := range unravel(sch, nil) {
 				elems = append(elems, &sem.SpreadElem{
-					AST:  nil, //XXX
-					Expr: sem.NewThis(nil /*XXX*/, path),
+					Node: col.loc,
+					Expr: sem.NewThis(col.loc, path),
 				})
 			}
 		} else {
 			elems = append(elems, &sem.FieldElem{
-				AST:   nil, /*XXX*/
+				Node:  col.loc,
 				Name:  col.name,
 				Value: col.expr,
 			})
 		}
 		e := &sem.RecordExpr{
-			AST: nil, //XXX
+			Node: col.loc,
 			Elems: []sem.RecordElem{
 				&sem.FieldElem{
-					AST:   nil, /*XXX*/
+					Node:  col.loc,
 					Name:  "in",
 					Value: sem.NewThis(nil /*XXX*/, field.Path{"in"}),
 				},
 				&sem.FieldElem{
-					AST:  nil, /*XXX*/
+					Node: col.loc,
 					Name: "out",
 					Value: &sem.RecordExpr{
-						AST:   nil, /*XXX*/
+						Node:  col.loc,
 						Elems: elems,
 					},
 				},
 			},
 		}
-		seq = append(seq, sem.NewValues(nil /*XXX*/, e))
+		seq = append(seq, sem.NewValues(col.loc, e))
 	}
 	return seq
 }
@@ -166,39 +166,39 @@ func (t *translator) genAggregate(loc ast.Loc, proj projection, where sem.Expr, 
 		seq = t.genValues(proj, nil, nil, seq)
 	}
 	if where != nil {
-		seq = append(seq, sem.NewFilter(nil /*XXX*/, where))
+		seq = append(seq, sem.NewFilter(loc, where))
 	}
 	var aggCols []sem.Assignment
 	for _, named := range funcs {
 		a := sem.Assignment{
-			AST: nil, /*XXX*/
-			LHS: sem.NewThis(nil /*XXX*/, []string{named.name}),
-			RHS: named.agg,
+			Node: named.agg.Node,
+			LHS:  sem.NewThis(named.agg.Node, []string{named.name}),
+			RHS:  named.agg,
 		}
 		aggCols = append(aggCols, a)
 	}
 	var keyCols []sem.Assignment
 	for k, e := range keyExprs {
 		keyCols = append(keyCols, sem.Assignment{
-			AST: nil, /*XXX*/
-			LHS: sem.NewThis(nil /*XXX*/, []string{fmt.Sprintf("k%d", k)}),
-			RHS: e.expr,
+			Node: e.loc,
+			LHS:  sem.NewThis(e.loc, []string{fmt.Sprintf("k%d", k)}),
+			RHS:  e.expr,
 		})
 	}
 	seq = append(seq, &sem.AggregateOp{
-		AST:  nil, /*XXX*/
+		Node: loc,
 		Aggs: aggCols,
 		Keys: keyCols,
 	})
 	seq = valuesExpr(wrapThis("in"), seq)
-	seq = t.genAggregateOutput(proj, keyExprs, seq)
+	seq = t.genAggregateOutput(loc, proj, keyExprs, seq)
 	if having != nil {
-		seq = append(seq, sem.NewFilter(nil /*XXX*/, having))
+		seq = append(seq, sem.NewFilter(having, having))
 	}
-	return valuesExpr(pathOf(nil /*XXX*/, "out"), seq)
+	return valuesExpr(sem.NewThis(loc, []string{"out"}), seq)
 }
 
-func (t *translator) genAggregateOutput(proj projection, keyExprs []exprloc, seq sem.Seq) sem.Seq {
+func (t *translator) genAggregateOutput(loc ast.Node, proj projection, keyExprs []exprloc, seq sem.Seq) sem.Seq {
 	notFirst := false
 	for _, col := range proj {
 		if col.isStar() {
@@ -208,8 +208,8 @@ func (t *translator) genAggregateOutput(proj projection, keyExprs []exprloc, seq
 		var elems []sem.RecordElem
 		if notFirst {
 			elems = append(elems, &sem.SpreadElem{
-				AST:  nil, //XXX
-				Expr: sem.NewThis(nil /*XXX*/, []string{"out"}),
+				Node: col.loc,
+				Expr: sem.NewThis(col.loc, []string{"out"}),
 			})
 		} else {
 			notFirst = true
@@ -231,7 +231,7 @@ func (t *translator) genAggregateOutput(proj projection, keyExprs []exprloc, seq
 				t.error(keyExprs[which].loc, fmt.Errorf("aggregate functions are not allowed in GROUP BY"))
 			}
 			elems = append(elems, &sem.FieldElem{
-				AST:   nil, //XXX
+				Node:  col.loc,
 				Name:  col.name,
 				Value: col.expr,
 			})
@@ -240,30 +240,30 @@ func (t *translator) genAggregateOutput(proj projection, keyExprs []exprloc, seq
 				t.error(col.loc, fmt.Errorf("no corresponding grouping element for non-aggregate %q", col.name))
 			}
 			elems = append(elems, &sem.FieldElem{
-				AST:   nil, //XXX
+				Node:  col.loc,
 				Name:  col.name,
-				Value: sem.NewThis(nil /*XXX*/, []string{"in", fmt.Sprintf("k%d", which)}),
+				Value: sem.NewThis(col.loc, []string{"in", fmt.Sprintf("k%d", which)}),
 			})
 		}
 		e := &sem.RecordExpr{
-			AST: nil, //XXX
+			Node: loc,
 			Elems: []sem.RecordElem{
 				&sem.FieldElem{
-					AST:   nil, //XXX
+					Node:  loc,
 					Name:  "in",
-					Value: sem.NewThis(nil /*XXX*/, field.Path{"in"}),
+					Value: sem.NewThis(loc, field.Path{"in"}),
 				},
 				&sem.FieldElem{
-					AST:  nil, //XXX
+					Node: loc,
 					Name: "out",
 					Value: &sem.RecordExpr{
-						AST:   nil, //XXX
+						Node:  loc,
 						Elems: elems,
 					},
 				},
 			},
 		}
-		seq = append(seq, sem.NewValues(nil /*XXX*/, e))
+		seq = append(seq, sem.NewValues(loc, e))
 	}
 	return seq
 }
@@ -318,18 +318,18 @@ func (t *translator) semSelectValue(sel *ast.SQLSelect, sch schema, seq sem.Seq)
 		}
 		var e sem.Expr
 		if as.Expr == nil {
-			e = sem.NewThis(nil /*XXX*/, nil)
+			e = sem.NewThis(as, nil)
 		} else {
 			e = t.semExprSchema(sch, as.Expr)
 		}
 		exprs = append(exprs, e)
 	}
 	if sel.Where != nil {
-		seq = append(seq, sem.NewFilter(nil /*XXX*/, t.semExprSchema(sch, sel.Where)))
+		seq = append(seq, sem.NewFilter(sel.Where, t.semExprSchema(sch, sel.Where)))
 	}
-	seq = append(seq, sem.NewValues(nil, exprs...))
+	seq = append(seq, sem.NewValues(sel, exprs...))
 	if sel.Distinct {
-		seq = t.genDistinct(pathOf(nil /*XXX*/, "this"), seq)
+		seq = t.genDistinct(sem.NewThis(sel, nil), seq)
 	}
 	return seq, &dynamicSchema{}
 }
@@ -371,7 +371,7 @@ func (t *translator) semValues(values *ast.SQLValues, seq sem.Seq) (sem.Seq, sch
 
 func (t *translator) genDistinct(e sem.Expr, seq sem.Seq) sem.Seq {
 	return append(seq, &sem.DistinctOp{
-		AST:  nil, //XXX
+		Node: e,
 		Expr: e,
 	})
 }
@@ -379,7 +379,7 @@ func (t *translator) genDistinct(e sem.Expr, seq sem.Seq) sem.Seq {
 func (t *translator) semSQLPipe(op *ast.SQLPipe, seq sem.Seq, alias *ast.TableAlias) (sem.Seq, schema) {
 	if len(op.Ops) == 1 && isSQLOp(op.Ops[0]) {
 		seq, sch := t.semSQLOp(op.Ops[0], seq)
-		outSeq, outSch, err := derefSchemaWithAlias(sch, alias, seq)
+		outSeq, outSch, err := derefSchemaWithAlias(op.Ops[0], sch, alias, seq)
 		if err != nil {
 			t.error(op.Ops[0], err)
 		}
@@ -398,24 +398,24 @@ func (t *translator) semSQLPipe(op *ast.SQLPipe, seq sem.Seq, alias *ast.TableAl
 	return t.semSeq(op.Ops), &dynamicSchema{name: name}
 }
 
-func derefSchemaAs(sch schema, table string, seq sem.Seq) (sem.Seq, schema) {
-	e, sch := sch.deref(table)
+func derefSchemaAs(n ast.Node, sch schema, table string, seq sem.Seq) (sem.Seq, schema) {
+	e, sch := sch.deref(n, table)
 	if e != nil {
 		seq = valuesExpr(e, seq)
 	}
 	return seq, sch
 }
 
-func derefSchema(sch schema, seq sem.Seq) (sem.Seq, schema) {
-	return derefSchemaAs(sch, "", seq)
+func derefSchema(n ast.Node, sch schema, seq sem.Seq) (sem.Seq, schema) {
+	return derefSchemaAs(n, sch, "", seq)
 }
 
-func derefSchemaWithAlias(insch schema, alias *ast.TableAlias, inseq sem.Seq) (sem.Seq, schema, error) {
+func derefSchemaWithAlias(n ast.Node, insch schema, alias *ast.TableAlias, inseq sem.Seq) (sem.Seq, schema, error) {
 	var table string
 	if alias != nil {
 		table = alias.Name
 	}
-	seq, sch := derefSchemaAs(insch, table, inseq)
+	seq, sch := derefSchemaAs(n, insch, table, inseq)
 	if alias == nil || len(alias.Columns) == 0 {
 		return seq, sch, nil
 	}
@@ -435,13 +435,13 @@ func mapColumns(in []string, alias *ast.TableAlias, seq sem.Seq) (sem.Seq, schem
 		elems := make([]sem.RecordElem, 0, len(in))
 		for k := range out {
 			elems = append(elems, &sem.FieldElem{
-				AST:   nil, //XXX
+				Node:  nil, //XXX
 				Name:  out[k],
 				Value: sem.NewThis(nil /*XXX*/, []string{in[k]}),
 			})
 		}
 		seq = valuesExpr(&sem.RecordExpr{
-			AST:   nil, //XXX
+			Node:  nil, //XXX
 			Elems: elems,
 		}, seq)
 	}
@@ -480,21 +480,21 @@ func (t *translator) semSQLOp(op ast.Op, seq sem.Seq) (sem.Seq, schema) {
 		for _, e := range op.Exprs {
 			exprs = append(exprs, t.semSortExpr(schema, e, false))
 		}
-		return append(out, &sem.SortOp{AST: nil /*XXX*/, Exprs: exprs}), schema
+		return append(out, &sem.SortOp{Node: op, Exprs: exprs}), schema
 	case *ast.SQLLimitOffset:
 		out, schema := t.semSQLOp(op.Op, seq)
 		if op.Offset != nil {
-			out = append(out, &sem.SkipOp{AST: nil /*XXX*/, Count: t.mustEvalPositiveInteger(op.Offset)})
+			out = append(out, &sem.SkipOp{Node: op.Offset, Count: t.mustEvalPositiveInteger(op.Offset)})
 		}
 		if op.Limit != nil {
-			out = append(out, &sem.HeadOp{AST: nil /*XXX*/, Count: t.mustEvalPositiveInteger(op.Limit)})
+			out = append(out, &sem.HeadOp{Node: op.Limit, Count: t.mustEvalPositiveInteger(op.Limit)})
 		}
 		return out, schema
 	case *ast.SQLUnion:
 		left, leftSch := t.semSQLOp(op.Left, seq)
-		left, _ = derefSchema(leftSch, left)
+		left, _ = derefSchema(op.Left, leftSch, left)
 		right, rightSch := t.semSQLOp(op.Right, seq)
-		right, _ = derefSchema(rightSch, right)
+		right, _ = derefSchema(op.Right, rightSch, right)
 		out := sem.Seq{&sem.ForkOp{Paths: []sem.Seq{left, right}}}
 		if op.Distinct {
 			out = t.genDistinct(sem.NewThis(nil /*XXX*/, nil), out)
@@ -533,7 +533,7 @@ func (t *translator) semCrossJoin(join *ast.SQLCrossJoin, seq sem.Seq) (sem.Seq,
 	sch := &joinSchema{left: leftSchema, right: rightSchema}
 	par := &sem.ForkOp{Paths: []sem.Seq{leftSeq, rightSeq}}
 	dagJoin := &sem.JoinOp{
-		AST:        nil, //XXX
+		Node:       join,
 		Style:      "cross",
 		LeftAlias:  "left",
 		RightAlias: "right",
@@ -562,7 +562,7 @@ func (t *translator) semSQLJoin(join *ast.SQLJoin, seq sem.Seq) (sem.Seq, schema
 	}
 	par := &sem.ForkOp{Paths: []sem.Seq{leftSeq, rightSeq}}
 	dagJoin := &sem.JoinOp{
-		AST:        nil, //XXX
+		Node:       join,
 		Style:      style,
 		LeftAlias:  "left",
 		RightAlias: "right",
@@ -632,7 +632,7 @@ func (t *translator) semGroupBy(sch *selectSchema, in []ast.Expr) []exprloc {
 		e := t.semExprSchema(sch, expr)
 		if which, ok := isOrdinal(t.sctx, e); ok {
 			var err error
-			if e, err = sch.resolveOrdinal(which); err != nil {
+			if e, err = sch.resolveOrdinal(e, which); err != nil {
 				t.error(in[k], err)
 			}
 		}
@@ -763,10 +763,10 @@ func wrapThis(field string) *sem.RecordExpr {
 
 func wrapField(field string, e sem.Expr) *sem.RecordExpr {
 	return &sem.RecordExpr{
-		AST: nil, //XXX
+		Node: e,
 		Elems: []sem.RecordElem{
 			&sem.FieldElem{
-				AST:   nil, //XXX
+				Node:  e,
 				Name:  field,
 				Value: e,
 			},

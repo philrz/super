@@ -129,7 +129,7 @@ func (t *translator) exitScope() {
 func (t *translator) newFunc(body ast.Expr, name string, params []string, e sem.Expr) string {
 	tag := strconv.Itoa(len(t.funcsByTag))
 	t.funcsByTag[tag] = &sem.FuncDef{
-		AST:    body,
+		Node:   body,
 		Tag:    tag,
 		Name:   name,
 		Params: params,
@@ -149,7 +149,7 @@ func checkOutputOps(r reporter, isLeaf bool, seq sem.Seq) bool {
 		switch o := o.(type) {
 		case *sem.OutputOp:
 			if !isLast || !isLeaf {
-				r.error(o.AST, errors.New("output operator cannot have a downstream operator"))
+				r.error(o.Node, errors.New("output operator cannot have a downstream operator"))
 				return false
 			}
 		case *sem.ForkOp:

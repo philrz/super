@@ -6,6 +6,7 @@ import (
 )
 
 type Expr interface {
+	ast.Node
 	exprNode()
 }
 
@@ -14,12 +15,14 @@ type Expr interface {
 // The type definitions of all entities that implement the Expr interface.
 type (
 	ArrayExpr struct {
-		AST   *ast.ArrayExpr
+		ast.Node
 		Elems []ArrayElem
 	}
-	BadExpr    struct{}
+	BadExpr struct {
+		ast.Node
+	}
 	BinaryExpr struct {
-		AST ast.Expr
+		ast.Node
 		Op  string // normalized Op string
 		LHS Expr
 		RHS Expr
@@ -27,92 +30,92 @@ type (
 	// An ast.Call that has been resolved to an actual function call in expression
 	// context... this now refers to the flattened function table (or a built-in) via tag
 	CallExpr struct {
-		AST  ast.Expr
+		ast.Node
 		Tag  string
 		Args []Expr
 	}
 	CondExpr struct {
-		AST  ast.Expr
+		ast.Node
 		Cond Expr
 		Then Expr
 		Else Expr
 	}
 	// A place to hold constants until we can eval them and check that they are constant.
 	ConstExpr struct {
-		AST  ast.Expr // pointer to const or type expression in AST
-		Name *ast.ID  // pointer to ID in const or type decl
-		Expr Expr     // this can be a type value too created from type foo=... compiled to <foo=...>
+		ast.Node
+		Name *ast.ID // pointer to ID in const or type decl
+		Expr Expr    // this can be a type value too created from type foo=... compiled to <foo=...>
 	}
 	DotExpr struct {
-		AST *ast.BinaryExpr
+		ast.Node
 		LHS Expr
 		RHS string
 	}
 	IndexExpr struct {
-		AST   *ast.IndexExpr
+		ast.Node
 		Expr  Expr
 		Index Expr
 	}
 	IsNullExpr struct {
-		AST  *ast.IsNullExpr // Not flag in here
+		ast.Node
 		Expr Expr
 	}
 	LiteralExpr struct {
-		AST   ast.Expr
+		ast.Node
 		Value string
 	}
 	MapCallExpr struct {
-		AST    *ast.Call
+		ast.Node
 		Expr   Expr
 		Lambda *CallExpr
 	}
 	MapExpr struct {
-		AST     *ast.MapExpr
+		ast.Node
 		Entries []Entry
 	}
 	RecordExpr struct {
-		AST   ast.Expr // ast.TupleExpr or ast.RecordExpr
+		ast.Node
 		Elems []RecordElem
 	}
 	RegexpMatchExpr struct {
-		AST     ast.Expr // ast.Glob or ast.Regexp
+		ast.Node
 		Pattern string
 		Expr    Expr
 	}
 	RegexpSearchExpr struct {
-		AST     ast.Expr // ast.Glob or ast.Regexp
+		ast.Node
 		Pattern string
 		Expr    Expr
 	}
 	SearchTermExpr struct {
-		AST   ast.Expr
+		ast.Node
 		Text  string
 		Value string
 		Expr  Expr
 	}
 	SetExpr struct {
-		AST   *ast.SetExpr
+		ast.Node
 		Elems []ArrayElem
 	}
 	SliceExpr struct {
-		AST  ast.Expr
+		ast.Node
 		Expr Expr
 		From Expr
 		To   Expr
 	}
 	SubqueryExpr struct {
-		AST        ast.Expr
+		ast.Node
 		Correlated bool
 		Array      bool
 		Body       Seq
 	}
 	ThisExpr struct {
-		AST  ast.Expr // ast.ID, ast.BinaryExpr (dot), etc, SQL col/table before schema-path resolution
+		ast.Node
 		Path []string
 	}
 	UnaryExpr struct {
-		AST     ast.Expr
-		Op      string // normalized Op (i.e., "not like" => "!")
+		ast.Node
+		Op      string
 		Operand Expr
 	}
 )
@@ -138,16 +141,16 @@ type RecordElem interface {
 
 type (
 	FieldElem struct {
-		AST   ast.Expr // Could be an inferred expr or ast.FieldExpr
+		ast.Node
 		Name  string
 		Value Expr
 	}
 	SpreadElem struct {
-		AST  *ast.Spread
+		ast.Node
 		Expr Expr
 	}
 	ExprElem struct {
-		AST  *ast.Spread
+		ast.Node
 		Expr Expr
 	}
 )
@@ -184,7 +187,7 @@ func (*UnaryExpr) exprNode()        {}
 // then in a second stage it unrolls them all into regular calls by creating a unique
 // new function for each combination of passed in lambdas.
 type FuncRef struct {
-	AST ast.Expr // can be lambda use or the function name reference
+	ast.Node
 	Tag string
 }
 
@@ -195,7 +198,7 @@ type FuncRef struct {
 // passed as parameters, then in a second stage it flattens them all into regular calls
 // by creating a unique new function for each combination of passed-in lambdas.
 type CallParam struct {
-	AST   *ast.Call
+	ast.Node
 	Param string
 	Args  []Expr
 }
@@ -203,45 +206,42 @@ type CallParam struct {
 func (*FuncRef) exprNode()   {}
 func (*CallParam) exprNode() {}
 
-func NewThis(e ast.Expr, path []string) *ThisExpr {
-	return &ThisExpr{AST: e, Path: path} //XXX AST? should have to include dummy message?
+func NewThis(n ast.Node, path []string) *ThisExpr {
+	return &ThisExpr{Node: n, Path: path}
 }
 
-func NewBinaryExpr(e ast.Expr, op string, lhs, rhs Expr) *BinaryExpr {
+func NewBinaryExpr(n ast.Node, op string, lhs, rhs Expr) *BinaryExpr {
 	return &BinaryExpr{
-		AST: e,
-		Op:  op,
-		LHS: lhs,
-		RHS: rhs,
+		Node: n,
+		Op:   op,
+		LHS:  lhs,
+		RHS:  rhs,
 	}
 }
 
-func NewUnaryExpr(e ast.Expr, op string, operand Expr) *UnaryExpr {
+func NewUnaryExpr(n ast.Node, op string, operand Expr) *UnaryExpr {
 	return &UnaryExpr{
-		AST:     e,
+		Node:    n,
 		Op:      op,
 		Operand: operand,
 	}
 }
 
-func NewCall(e ast.Expr, tag string, args []Expr) *CallExpr {
+func NewCall(n ast.Node, tag string, args []Expr) *CallExpr {
 	return &CallExpr{
-		AST:  e,
+		Node: n,
 		Tag:  tag,
 		Args: args,
 	}
 }
 
-// XXX change AST stuff to some sort of error/code ref interface
-// XXX is this used?
-
-func NewStructuredError(ref ast.Expr, message string, on Expr) Expr {
+func NewStructuredError(n ast.Node, message string, on Expr) Expr {
 	rec := &RecordExpr{
-		AST: ref,
+		Node: n,
 		Elems: []RecordElem{
 			&FieldElem{
 				Name:  "message",
-				Value: &LiteralExpr{AST: ref, Value: sup.String(message)},
+				Value: &LiteralExpr{Node: n, Value: sup.String(message)},
 			},
 			&FieldElem{
 				Name:  "on",
@@ -250,7 +250,7 @@ func NewStructuredError(ref ast.Expr, message string, on Expr) Expr {
 		},
 	}
 	return &CallExpr{
-		AST:  ref,
+		Node: n,
 		Tag:  "error",
 		Args: []Expr{rec},
 	}

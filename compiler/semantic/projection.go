@@ -164,13 +164,13 @@ func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 				if err != nil {
 					return nil, err
 				}
-				elems = append(elems, &sem.FieldElem{AST: elem.AST, Name: elem.Name, Value: sub})
+				elems = append(elems, &sem.FieldElem{Node: elem, Name: elem.Name, Value: sub})
 			case *sem.SpreadElem:
 				sub, err := a.subst(elem.Expr)
 				if err != nil {
 					return nil, err
 				}
-				elems = append(elems, &sem.SpreadElem{AST: elem.AST, Expr: sub})
+				elems = append(elems, &sem.SpreadElem{Node: elem, Expr: sub})
 			default:
 				panic(elem)
 			}
@@ -229,13 +229,13 @@ func (a *aggfuncs) substArrayElems(elems []sem.ArrayElem) ([]sem.ArrayElem, erro
 			if err != nil {
 				return nil, err
 			}
-			out = append(out, &sem.SpreadElem{AST: e.AST, Expr: sub})
+			out = append(out, &sem.SpreadElem{Node: e, Expr: sub})
 		case *sem.ExprElem:
 			sub, err := a.subst(e.Expr)
 			if err != nil {
 				return nil, err
 			}
-			out = append(out, &sem.ExprElem{AST: e.AST, Expr: sub})
+			out = append(out, &sem.ExprElem{Node: e, Expr: sub})
 		default:
 			panic(e)
 		}

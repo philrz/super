@@ -70,7 +70,7 @@ func (r *resolver) op(op sem.Op) sem.Op {
 	switch op := op.(type) {
 	case *sem.AggregateOp:
 		return &sem.AggregateOp{
-			AST:   op.AST,
+			Node:  op.Node,
 			Limit: op.Limit,
 			Keys:  r.assignments(op.Keys),
 			Aggs:  r.assignments(op.Aggs),
@@ -82,6 +82,7 @@ func (r *resolver) op(op sem.Op) sem.Op {
 			paths = append(paths, r.seq(seq))
 		}
 		return &sem.ForkOp{
+			Node:  op.Node,
 			Paths: paths,
 		}
 	case *sem.SwitchOp:
@@ -93,33 +94,33 @@ func (r *resolver) op(op sem.Op) sem.Op {
 			})
 		}
 		return &sem.SwitchOp{
-			AST:   op.AST,
+			Node:  op.Node,
 			Expr:  r.expr(op.Expr),
 			Cases: cases,
 		}
 	case *sem.SortOp:
 		return &sem.SortOp{
-			AST:   op.AST,
+			Node:  op.Node,
 			Exprs: r.sortExprs(op.Exprs),
 		}
 	case *sem.CutOp:
 		return &sem.CutOp{
-			AST:  op.AST,
+			Node: op.Node,
 			Args: r.assignments(op.Args),
 		}
 	case *sem.DebugOp:
 		return &sem.DebugOp{
-			AST:  op.AST,
+			Node: op.Node,
 			Expr: r.expr(op.Expr),
 		}
 	case *sem.DistinctOp:
 		return &sem.DistinctOp{
-			AST:  op.AST,
+			Node: op.Node,
 			Expr: r.expr(op.Expr),
 		}
 	case *sem.DropOp:
 		return &sem.DropOp{
-			AST:  op.AST,
+			Node: op.Node,
 			Args: r.exprs(op.Args),
 		}
 	case *sem.HeadOp:
@@ -127,30 +128,30 @@ func (r *resolver) op(op sem.Op) sem.Op {
 	case *sem.SkipOp:
 	case *sem.FilterOp:
 		return &sem.FilterOp{
-			AST:  op.AST,
+			Node: op.Node,
 			Expr: r.expr(op.Expr),
 		}
 	case *sem.UniqOp:
 	case *sem.TopOp:
 		return &sem.TopOp{
-			AST:   op.AST,
+			Node:  op.Node,
 			Limit: op.Limit,
 			Exprs: r.sortExprs(op.Exprs),
 		}
 	case *sem.PutOp:
 		return &sem.PutOp{
-			AST:  op.AST,
+			Node: op.Node,
 			Args: r.assignments(op.Args),
 		}
 	case *sem.RenameOp:
 		return &sem.RenameOp{
-			AST:  op.AST,
+			Node: op.Node,
 			Args: r.assignments(op.Args),
 		}
 	case *sem.FuseOp:
 	case *sem.JoinOp:
 		return &sem.JoinOp{
-			AST:        op.AST,
+			Node:       op.Node,
 			Style:      op.Style,
 			LeftAlias:  op.LeftAlias,
 			RightAlias: op.RightAlias,
@@ -158,25 +159,25 @@ func (r *resolver) op(op sem.Op) sem.Op {
 		}
 	case *sem.ExplodeOp:
 		return &sem.ExplodeOp{
-			AST:  op.AST,
+			Node: op.Node,
 			Args: r.exprs(op.Args),
 			Type: op.Type,
 			As:   op.As,
 		}
 	case *sem.UnnestOp:
 		return &sem.UnnestOp{
-			AST:  op.AST,
+			Node: op.Node,
 			Expr: r.expr(op.Expr),
 			Body: r.seq(op.Body),
 		}
 	case *sem.ValuesOp:
 		return &sem.ValuesOp{
-			AST:   op.AST,
+			Node:  op.Node,
 			Exprs: r.exprs(op.Exprs),
 		}
 	case *sem.MergeOp:
 		return &sem.MergeOp{
-			AST:   op.AST,
+			Node:  op.Node,
 			Exprs: r.sortExprs(op.Exprs),
 		}
 
@@ -188,7 +189,7 @@ func (r *resolver) op(op sem.Op) sem.Op {
 	case *sem.PoolScan:
 	case *sem.RobotScan:
 		return &sem.RobotScan{
-			AST:    op.AST,
+			Node:   op.Node,
 			Expr:   r.expr(op.Expr),
 			Format: op.Format,
 		}
@@ -197,10 +198,6 @@ func (r *resolver) op(op sem.Op) sem.Op {
 	case *sem.CommitMetaScan:
 	case *sem.NullScan:
 	case *sem.DeleteScan:
-		return &sem.DeleteScan{
-			AST:   op.AST,
-			Where: r.expr(op.Where),
-		}
 	default:
 		panic(op)
 	}
@@ -209,11 +206,11 @@ func (r *resolver) op(op sem.Op) sem.Op {
 
 func (r *resolver) assignments(assignments []sem.Assignment) []sem.Assignment {
 	var out []sem.Assignment
-	for _, ass := range assignments {
+	for _, a := range assignments {
 		out = append(out, sem.Assignment{
-			AST: ass.AST,
-			LHS: r.expr(ass.LHS),
-			RHS: r.expr(ass.RHS),
+			Node: a.Node,
+			LHS:  r.expr(a.LHS),
+			RHS:  r.expr(a.RHS),
 		})
 	}
 	return out
@@ -223,7 +220,7 @@ func (r *resolver) sortExprs(exprs []sem.SortExpr) []sem.SortExpr {
 	var out []sem.SortExpr
 	for _, e := range exprs {
 		out = append(out, sem.SortExpr{
-			AST:   e.AST,
+			Node:  e.Node,
 			Expr:  r.expr(e.Expr),
 			Order: e.Order,
 			Nulls: e.Nulls})
@@ -253,7 +250,7 @@ func (r *resolver) expr(e sem.Expr) sem.Expr {
 		return r.resolveCallParam(e)
 	case *sem.AggFunc:
 		return &sem.AggFunc{
-			AST:      e.AST,
+			Node:     e.Node,
 			Name:     e.Name,
 			Distinct: e.Distinct,
 			Expr:     r.expr(e.Expr),
@@ -261,46 +258,46 @@ func (r *resolver) expr(e sem.Expr) sem.Expr {
 		}
 	case *sem.ArrayExpr:
 		return &sem.ArrayExpr{
-			AST:   e.AST,
+			Node:  e.Node,
 			Elems: r.arrayElems(e.Elems),
 		}
 	case *sem.BadExpr:
 	case *sem.BinaryExpr:
-		return sem.NewBinaryExpr(e.AST, e.Op, r.expr(e.LHS), r.expr(e.RHS))
+		return sem.NewBinaryExpr(e.Node, e.Op, r.expr(e.LHS), r.expr(e.RHS))
 	case *sem.CallExpr:
-		return r.resolveCall(e.AST, e.Tag, e.Args)
+		return r.resolveCall(e.Node, e.Tag, e.Args)
 	case *sem.CondExpr:
 		return &sem.CondExpr{
-			AST:  e.AST,
+			Node: e.Node,
 			Cond: r.expr(e.Cond),
 			Then: r.expr(e.Then),
 			Else: r.expr(e.Else),
 		}
 	case *sem.DotExpr:
 		return &sem.DotExpr{
-			AST: e.AST,
-			LHS: r.expr(e.LHS),
-			RHS: e.RHS,
+			Node: e.Node,
+			LHS:  r.expr(e.LHS),
+			RHS:  e.RHS,
 		}
 	case *sem.IndexExpr:
 		return &sem.IndexExpr{
-			AST:   e.AST,
+			Node:  e.Node,
 			Expr:  r.expr(e.Expr),
 			Index: r.expr(e.Index),
 		}
 	case *sem.IsNullExpr:
 		return &sem.IsNullExpr{
-			AST:  e.AST,
+			Node: e.Node,
 			Expr: r.expr(e.Expr),
 		}
 	case *sem.LiteralExpr:
 	case *sem.MapCallExpr:
-		call, ok := r.resolveCall(e.AST, e.Lambda.Tag, e.Lambda.Args).(*sem.CallExpr)
+		call, ok := r.resolveCall(e.Node, e.Lambda.Tag, e.Lambda.Args).(*sem.CallExpr)
 		if !ok {
 			return badExpr()
 		}
 		return &sem.MapCallExpr{
-			AST:    e.AST,
+			Node:   e.Node,
 			Expr:   r.expr(e.Expr),
 			Lambda: call,
 		}
@@ -313,41 +310,41 @@ func (r *resolver) expr(e sem.Expr) sem.Expr {
 			})
 		}
 		return &sem.MapExpr{
-			AST:     e.AST,
+			Node:    e.Node,
 			Entries: entries,
 		}
 	case *sem.RecordExpr:
 		return &sem.RecordExpr{
-			AST:   e.AST,
+			Node:  e.Node,
 			Elems: r.recordElems(e.Elems),
 		}
 	case *sem.RegexpMatchExpr:
 		return &sem.RegexpMatchExpr{
-			AST:     e.AST,
+			Node:    e.Node,
 			Pattern: e.Pattern,
 			Expr:    r.expr(e.Expr),
 		}
 	case *sem.RegexpSearchExpr:
 		return &sem.RegexpSearchExpr{
-			AST:     e.AST,
+			Node:    e.Node,
 			Pattern: e.Pattern,
 			Expr:    r.expr(e.Expr),
 		}
 	case *sem.SearchTermExpr:
 		return &sem.SearchTermExpr{
-			AST:   e.AST,
+			Node:  e.Node,
 			Text:  e.Text,
 			Value: e.Value,
 			Expr:  r.expr(e.Expr),
 		}
 	case *sem.SetExpr:
 		return &sem.SetExpr{
-			AST:   e.AST,
+			Node:  e.Node,
 			Elems: r.arrayElems(e.Elems),
 		}
 	case *sem.SliceExpr:
 		return &sem.SliceExpr{
-			AST:  e.AST,
+			Node: e.Node,
 			Expr: r.expr(e.Expr),
 			From: r.expr(e.From),
 			To:   r.expr(e.To),
@@ -360,13 +357,13 @@ func (r *resolver) expr(e sem.Expr) sem.Expr {
 		r.pushParams(make(map[string]string))
 		defer r.popParams()
 		return &sem.SubqueryExpr{
-			AST:        e.AST,
+			Node:       e.Node,
 			Correlated: e.Correlated,
 			Body:       r.seq(e.Body),
 		}
 	case *sem.ThisExpr:
 	case *sem.UnaryExpr:
-		return sem.NewUnaryExpr(e.AST, e.Op, r.expr(e.Operand))
+		return sem.NewUnaryExpr(e.Node, e.Op, r.expr(e.Operand))
 	default:
 		panic(e)
 	}
@@ -379,12 +376,12 @@ func (r *resolver) arrayElems(elems []sem.ArrayElem) []sem.ArrayElem {
 		switch elem := elem.(type) {
 		case *sem.SpreadElem:
 			out = append(out, &sem.SpreadElem{
-				AST:  elem.AST,
+				Node: elem.Node,
 				Expr: r.expr(elem.Expr),
 			})
 		case *sem.ExprElem:
 			out = append(out, &sem.ExprElem{
-				AST:  elem.AST,
+				Node: elem.Node,
 				Expr: r.expr(elem.Expr),
 			})
 		default:
@@ -400,12 +397,12 @@ func (r *resolver) recordElems(elems []sem.RecordElem) []sem.RecordElem {
 		switch elem := elem.(type) {
 		case *sem.SpreadElem:
 			out = append(out, &sem.SpreadElem{
-				AST:  elem.AST,
+				Node: elem.Node,
 				Expr: r.expr(elem.Expr),
 			})
 		case *sem.FieldElem:
 			out = append(out, &sem.FieldElem{
-				AST:   elem.AST,
+				Node:  elem.Node,
 				Name:  elem.Name,
 				Value: r.expr(elem.Value),
 			})
@@ -422,23 +419,23 @@ func (r *resolver) resolveCallParam(call *sem.CallParam) sem.Expr {
 		// This can happen when we go to resolve a parameter that wasn't bound to
 		// an actual function because some other value was bound to it so it didn't
 		// get put in the parameter table.
-		r.error(call.AST.Loc, fmt.Errorf("function called via parameter %q is bound to a non-function", call.Param))
+		r.error(call.Node, fmt.Errorf("function called via parameter %q is bound to a non-function", call.Param))
 		return badExpr()
 	}
 	if isBuiltin(oldTag) {
 		// Check argument count here for builtin functions.
 		if _, err := function.New(r.sctx, oldTag, len(call.Args)); err != nil {
-			r.error(call.AST.Loc, fmt.Errorf("function %q called via parameter %q: %w", oldTag, call.Param, err))
+			r.error(call.Node, fmt.Errorf("function %q called via parameter %q: %w", oldTag, call.Param, err))
 			return badExpr()
 		}
 	}
-	return r.resolveCall(call.AST, oldTag, call.Args)
+	return r.resolveCall(call.Node, oldTag, call.Args)
 }
 
-func (r *resolver) resolveCall(callAST ast.Expr, oldTag string, args []sem.Expr) sem.Expr {
+func (r *resolver) resolveCall(n ast.Node, oldTag string, args []sem.Expr) sem.Expr {
 	if isBuiltin(oldTag) {
 		return &sem.CallExpr{
-			AST:  callAST,
+			Node: n,
 			Tag:  oldTag,
 			Args: r.exprs(args),
 		}
@@ -450,8 +447,7 @@ func (r *resolver) resolveCall(callAST ast.Expr, oldTag string, args []sem.Expr)
 	var exprs []sem.Expr
 	funcDef := r.in[oldTag]
 	if len(funcDef.Params) != len(args) {
-		loc, _ := callAST.(ast.Node)
-		r.error(loc, fmt.Errorf("%q: expected %d params but called with %d", funcDef.Name, len(funcDef.Params), len(args)))
+		r.error(n, fmt.Errorf("%q: expected %d params but called with %d", funcDef.Name, len(funcDef.Params), len(args)))
 		return badExpr()
 	}
 	bindings := make(map[string]string)
@@ -478,7 +474,7 @@ func (r *resolver) resolveCall(callAST ast.Expr, oldTag string, args []sem.Expr)
 		// No need to specialize this call since no function args are being passed.
 		newTag := r.lookupFixed(oldTag)
 		return &sem.CallExpr{
-			AST:  callAST,
+			Node: n,
 			Tag:  newTag,
 			Args: args,
 		}
@@ -489,7 +485,7 @@ func (r *resolver) resolveCall(callAST ast.Expr, oldTag string, args []sem.Expr)
 	defer r.popParams()
 	newTag := r.lookupVariant(oldTag, params)
 	return &sem.CallExpr{
-		AST:  callAST,
+		Node: n,
 		Tag:  newTag,
 		Args: exprs,
 	}
@@ -502,7 +498,7 @@ func (r *resolver) lookupFixed(oldTag string) string {
 	funcDef := r.in[oldTag]
 	newTag := r.nextTag()
 	newFuncDef := &sem.FuncDef{
-		AST:    funcDef.AST,
+		Node:   funcDef.Node,
 		Tag:    newTag,
 		Name:   funcDef.Name,
 		Params: funcDef.Params,
@@ -516,7 +512,7 @@ func (r *resolver) lookupVariant(oldTag string, params []string) string {
 	newTag := r.nextTag()
 	funcDef := r.in[oldTag]
 	r.variants = append(r.variants, &sem.FuncDef{
-		AST:    funcDef.AST,
+		Node:   funcDef.Node,
 		Tag:    newTag,
 		Name:   funcDef.Name,
 		Params: params,

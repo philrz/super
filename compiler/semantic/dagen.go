@@ -1,6 +1,7 @@
 package semantic
 
 import (
+	"errors"
 	"slices"
 	"strings"
 
@@ -9,21 +10,22 @@ import (
 )
 
 type dagen struct {
-	//outputs map[*dag.Output]ast.Node // why point to Node?
-	outputs map[*dag.Output]any
+	reporter
+	outputs map[*dag.Output]*sem.DebugOp
 	funcs   map[string]*dag.FuncDef
 }
 
-func newDagen() *dagen {
+func newDagen(r reporter) *dagen {
 	return &dagen{
-		outputs: make(map[*dag.Output]any), //XXX any? sem.Any?
-		funcs:   make(map[string]*dag.FuncDef),
+		reporter: r,
+		outputs:  make(map[*dag.Output]*sem.DebugOp),
+		funcs:    make(map[string]*dag.FuncDef),
 	}
 }
 
 func (d *dagen) assemble(seq sem.Seq, funcs []*sem.FuncDef) *dag.Main {
 	dagSeq := d.seq(seq)
-	dagSeq = d.addMissingOutputs(true, dagSeq)
+	dagSeq = d.checkOutputs(true, dagSeq)
 	dagFuncs := make([]*dag.FuncDef, 0, len(d.funcs))
 	for _, f := range funcs {
 		dagFuncs = append(dagFuncs, d.fn(f))
@@ -536,48 +538,58 @@ func (d *dagen) debugOp(o *sem.DebugOp, branch sem.Seq, seq dag.Seq) dag.Seq {
 	output := &dag.Output{Kind: "Output", Name: "debug"}
 	d.outputs[output] = o
 	e := d.expr(o.Expr)
+	if e == nil {
+		e = dag.NewThis(nil)
+	}
 	y := &dag.Values{Kind: "Values", Exprs: []dag.Expr{e}}
-	mainBranch := d.seq(branch)
-	if len(mainBranch) == 0 {
-		//XXX do we need pass?
-		mainBranch.Append(&dag.Pass{Kind: "Pass"})
+	main := d.seq(branch)
+	if len(main) == 0 {
+		main.Append(&dag.Pass{Kind: "Pass"})
 	}
 	return append(seq, &dag.Mirror{
 		Kind:   "Mirror",
-		Main:   mainBranch,
+		Main:   main,
 		Mirror: dag.Seq{y, output},
 	})
 }
 
-// addMissingOutputs traverses the DAG and adds a "main" output to any path
-// that otherwise terminates in a non-output leaf.
-// XXX this should be folded into rungen as the builder can simply do this
-// and accept DAGs that don't have these.
-func (d *dagen) addMissingOutputs(isLeaf bool, seq dag.Seq) dag.Seq {
+//XXX need to find outputs inside subqueries and don't allow
+
+func (d *dagen) checkOutputs(isLeaf bool, seq dag.Seq) dag.Seq {
 	if len(seq) == 0 {
 		return seq
 	}
+	// - Report an error in any outputs are not located in the leaves.
+	// - Add output operators to any leaves where they do not exist.
 	lastN := len(seq) - 1
 	for i, o := range seq {
 		isLast := lastN == i
 		switch o := o.(type) {
+		case *dag.Output:
+			if !isLast || !isLeaf {
+				n, ok := d.outputs[o]
+				if !ok {
+					panic("system error: untracked user output")
+				}
+				d.error(n, errors.New("output operator must be at flowgraph leaf"))
+			}
 		case *dag.Scatter:
 			for k := range o.Paths {
-				o.Paths[k] = d.addMissingOutputs(isLast && isLeaf, o.Paths[k])
+				o.Paths[k] = d.checkOutputs(isLast && isLeaf, o.Paths[k])
 			}
 		case *dag.Unnest:
-			o.Body = d.addMissingOutputs(false, o.Body)
+			o.Body = d.checkOutputs(false, o.Body)
 		case *dag.Fork:
 			for k := range o.Paths {
-				o.Paths[k] = d.addMissingOutputs(isLast && isLeaf, o.Paths[k])
+				o.Paths[k] = d.checkOutputs(isLast && isLeaf, o.Paths[k])
 			}
 		case *dag.Switch:
 			for k := range o.Cases {
-				o.Cases[k].Path = d.addMissingOutputs(isLast && isLeaf, o.Cases[k].Path)
+				o.Cases[k].Path = d.checkOutputs(isLast && isLeaf, o.Cases[k].Path)
 			}
 		case *dag.Mirror:
-			o.Main = d.addMissingOutputs(isLast && isLeaf, o.Main)
-			o.Mirror = d.addMissingOutputs(isLast && isLeaf, o.Mirror)
+			o.Main = d.checkOutputs(isLast && isLeaf, o.Main)
+			o.Mirror = d.checkOutputs(isLast && isLeaf, o.Mirror)
 		}
 	}
 	switch seq[lastN].(type) {

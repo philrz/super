@@ -30,10 +30,7 @@ import (
 
 func (t *translator) semSeq(seq ast.Seq) sem.Seq {
 	var converted sem.Seq
-	for k, op := range seq {
-		if d, ok := op.(*ast.Debug); ok {
-			return t.semDebugOp(d, seq[k+1:], converted)
-		}
+	for _, op := range seq {
 		converted = t.semOp(op, converted)
 	}
 	return converted
@@ -514,17 +511,6 @@ func (t *translator) semScope(op *ast.Scope) sem.Seq {
 	return t.semSeq(op.Body)
 }
 
-func (t *translator) semDebugOp(o *ast.Debug, mainAst ast.Seq, in sem.Seq) sem.Seq {
-	e := t.semExprNullable(o.Expr)
-	if e == nil {
-		e = sem.NewThis(o.Expr /*XXX nil*/, nil)
-	}
-	return append(in, &sem.DebugOp{
-		Node: o,
-		Expr: e,
-	})
-}
-
 // semOp does a semantic analysis on a flowgraph to an
 // intermediate representation that can be compiled into the runtime
 // object.  Currently, it only replaces the aggregate duration with
@@ -621,6 +607,15 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 		return append(seq, &sem.CutOp{
 			Node: o,
 			Args: assignments,
+		})
+	case *ast.Debug:
+		e := t.semExprNullable(o.Expr)
+		if e == nil {
+			e = sem.NewThis(o.Expr, nil)
+		}
+		return append(seq, &sem.DebugOp{
+			Node: o,
+			Expr: e,
 		})
 	case *ast.Distinct:
 		return append(seq, &sem.DistinctOp{

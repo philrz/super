@@ -60,7 +60,7 @@ func (e *evaluator) maybeEval(sctx *super.Context, expr sem.Expr) (super.Value, 
 	if len(e.errs) > 0 {
 		return super.Value{}, false
 	}
-	main := newDagen().assembleExpr(resolvedExpr, funcs)
+	main := newDagen(e.reporter).assembleExpr(resolvedExpr, funcs)
 	val, err := rungen.EvalAtCompileTime(sctx, main)
 	if err != nil {
 		e.error(nil, err) //XXX fix nil

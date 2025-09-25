@@ -43,9 +43,6 @@ func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput
 	if err := r.Error(); err != nil {
 		return nil, err
 	}
-	if !checkOutputOps(r, true, seq) {
-		return nil, r.Error()
-	}
 	if !HasSource(seq) {
 		if t.env.IsAttached() {
 			if len(seq) == 0 {
@@ -67,14 +64,14 @@ func resolveAndGen(reporter reporter, seq sem.Seq, funcs map[string]*sem.FuncDef
 	if err := reporter.Error(); err != nil {
 		return nil, err
 	}
-	main := newDagen().assemble(semSeq, dagFuncs)
+	main := newDagen(reporter).assemble(semSeq, dagFuncs)
 	return main, r.Error()
 }
 
 func resolveAndGenExpr(reporter reporter, expr sem.Expr, funcs map[string]*sem.FuncDef) (*dag.MainExpr, error) {
 	r := newResolver(reporter, funcs)
 	semExpr, dagFuncs := r.resolveExpr(expr)
-	main := newDagen().assembleExpr(semExpr, dagFuncs)
+	main := newDagen(reporter).assembleExpr(semExpr, dagFuncs)
 	return main, r.Error()
 }
 
@@ -142,41 +139,6 @@ func (t *translator) newFunc(body ast.Expr, name string, params []string, e sem.
 		Body:   e,
 	}
 	return tag
-}
-
-// checkOutputOps ensures that no output operator has a downsteam entity and
-// logs an error on any offending output operator.
-// XXX this needs to look for outputs in subqueries... (or we should detect in the
-// first, top-level pass where we know if we're inside a subquery or we can add
-// some state to know)
-func checkOutputOps(r reporter, isLeaf bool, seq sem.Seq) bool {
-	for i, o := range seq {
-		isLast := len(seq)-1 == i
-		switch o := o.(type) {
-		case *sem.OutputOp:
-			if !isLast || !isLeaf {
-				r.error(o.Node, errors.New("output operator cannot have a downstream operator"))
-				return false
-			}
-		case *sem.ForkOp:
-			for k := range o.Paths {
-				if !checkOutputOps(r, isLast && isLeaf, o.Paths[k]) {
-					return false
-				}
-			}
-		case *sem.UnnestOp:
-			if !checkOutputOps(r, false, o.Body) {
-				return false
-			}
-		case *sem.SwitchOp:
-			for k := range o.Cases {
-				if !checkOutputOps(r, isLast && isLeaf, o.Cases[k].Path) {
-					return false
-				}
-			}
-		}
-	}
-	return true
 }
 
 type opDecl struct {

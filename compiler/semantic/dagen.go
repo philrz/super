@@ -69,8 +69,7 @@ func (d *dagen) seq(seq sem.Seq) dag.Seq {
 func (d *dagen) op(op sem.Op) dag.Op {
 	switch op := op.(type) {
 	//
-	// First, alphabetized scanners.
-	// Then below, alphabetized non-scanner ops.
+	/// Scanners in alphabetical order
 	//
 	case *sem.CommitMetaScan:
 		return &dag.CommitMetaScan{
@@ -133,7 +132,7 @@ func (d *dagen) op(op sem.Op) dag.Op {
 			Format: op.Format,
 		}
 	//
-	// Now, the alphabetized non-scanner ops.
+	// Ops in alphabetical order
 	//
 	case *sem.AggregateOp:
 		return &dag.Aggregate{

@@ -78,58 +78,11 @@ func (e *evaluator) seq(seq sem.Seq) {
 }
 
 func (e *evaluator) op(op sem.Op) {
-	//XXX ALPHABETIZE
+
 	switch op := op.(type) {
-	case *sem.AggregateOp:
-		e.assignments(op.Keys)
-		e.assignments(op.Aggs)
-	case *sem.BadOp:
-	case *sem.ForkOp:
-		for _, seq := range op.Paths {
-			e.seq(seq)
-		}
-	case *sem.SwitchOp:
-		e.expr(op.Expr)
-		for _, c := range op.Cases {
-			e.expr(c.Expr)
-			e.seq(c.Path)
-		}
-	case *sem.SortOp:
-		e.sortExprs(op.Exprs)
-	case *sem.CutOp:
-		e.assignments(op.Args)
-	case *sem.DebugOp:
-		e.expr(op.Expr)
-	case *sem.DistinctOp:
-		e.expr(op.Expr)
-	case *sem.DropOp:
-		e.exprs(op.Args)
-	case *sem.HeadOp:
-	case *sem.TailOp:
-	case *sem.SkipOp:
-	case *sem.FilterOp:
-		e.expr(op.Expr)
-	case *sem.UniqOp:
-	case *sem.TopOp:
-		e.sortExprs(op.Exprs)
-	case *sem.PutOp:
-		e.assignments(op.Args)
-	case *sem.RenameOp:
-		e.assignments(op.Args)
-	case *sem.FuseOp:
-	case *sem.JoinOp:
-		e.expr(op.Cond)
-	case *sem.ExplodeOp:
-		e.exprs(op.Args)
-	case *sem.UnnestOp:
-		e.expr(op.Expr)
-		e.seq(op.Body)
-	case *sem.ValuesOp:
-		e.exprs(op.Exprs)
-	case *sem.MergeOp:
-		e.sortExprs(op.Exprs)
-	case *sem.LoadOp:
-	case *sem.OutputOp:
+	//
+	// Scanners first
+	//
 	case *sem.DefaultScan:
 	case *sem.FileScan,
 		*sem.HTTPScan,
@@ -141,6 +94,59 @@ func (e *evaluator) op(op sem.Op) {
 		*sem.DeleteScan:
 		e.error(op, errors.New("cannot read data inside of constant expression"))
 	case *sem.NullScan:
+	//
+	// Ops in alphabetical oder
+	//
+	case *sem.AggregateOp:
+		e.assignments(op.Keys)
+		e.assignments(op.Aggs)
+	case *sem.BadOp:
+	case *sem.CutOp:
+		e.assignments(op.Args)
+	case *sem.DebugOp:
+		e.expr(op.Expr)
+	case *sem.DistinctOp:
+		e.expr(op.Expr)
+	case *sem.DropOp:
+		e.exprs(op.Args)
+	case *sem.ExplodeOp:
+		e.exprs(op.Args)
+	case *sem.FilterOp:
+		e.expr(op.Expr)
+	case *sem.ForkOp:
+		for _, seq := range op.Paths {
+			e.seq(seq)
+		}
+	case *sem.FuseOp:
+	case *sem.HeadOp:
+	case *sem.JoinOp:
+		e.expr(op.Cond)
+	case *sem.LoadOp:
+	case *sem.MergeOp:
+		e.sortExprs(op.Exprs)
+	case *sem.OutputOp:
+	case *sem.PutOp:
+		e.assignments(op.Args)
+	case *sem.RenameOp:
+		e.assignments(op.Args)
+	case *sem.SkipOp:
+	case *sem.SortOp:
+		e.sortExprs(op.Exprs)
+	case *sem.SwitchOp:
+		e.expr(op.Expr)
+		for _, c := range op.Cases {
+			e.expr(c.Expr)
+			e.seq(c.Path)
+		}
+	case *sem.TailOp:
+	case *sem.TopOp:
+		e.sortExprs(op.Exprs)
+	case *sem.UniqOp:
+	case *sem.UnnestOp:
+		e.expr(op.Expr)
+		e.seq(op.Body)
+	case *sem.ValuesOp:
+		e.exprs(op.Exprs)
 	}
 }
 
@@ -176,8 +182,7 @@ func (e *evaluator) expr(expr sem.Expr) {
 		e.expr(expr.LHS)
 		e.expr(expr.RHS)
 	case *sem.CallExpr:
-		//XXX need to look at call to see if it has side effects?
-		// like now()?  or is now() ok?
+		// XXX should calls with side-effects not be const?
 		e.exprs(expr.Args)
 	case *sem.CondExpr:
 		e.expr(expr.Cond)

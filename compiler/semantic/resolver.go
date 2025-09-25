@@ -64,8 +64,28 @@ func (r *resolver) seq(seq sem.Seq) sem.Seq {
 }
 
 func (r *resolver) op(op sem.Op) sem.Op {
-	//XXX ALPHABETIZE
 	switch op := op.(type) {
+	//
+	// Scanners first
+	//
+	case *sem.CommitMetaScan:
+	case *sem.DBMetaScan:
+	case *sem.DefaultScan:
+	case *sem.DeleteScan:
+	case *sem.FileScan:
+	case *sem.HTTPScan:
+	case *sem.NullScan:
+	case *sem.PoolMetaScan:
+	case *sem.PoolScan:
+	case *sem.RobotScan:
+		return &sem.RobotScan{
+			Node:   op.Node,
+			Expr:   r.expr(op.Expr),
+			Format: op.Format,
+		}
+	//
+	// Ops in alphabetic order
+	//
 	case *sem.AggregateOp:
 		return &sem.AggregateOp{
 			Node:  op.Node,
@@ -74,34 +94,6 @@ func (r *resolver) op(op sem.Op) sem.Op {
 			Aggs:  r.assignments(op.Aggs),
 		}
 	case *sem.BadOp:
-	case *sem.ForkOp:
-		var paths []sem.Seq
-		for _, seq := range op.Paths {
-			paths = append(paths, r.seq(seq))
-		}
-		return &sem.ForkOp{
-			Node:  op.Node,
-			Paths: paths,
-		}
-	case *sem.SwitchOp:
-		var cases []sem.Case
-		for _, c := range op.Cases {
-			cases = append(cases, sem.Case{
-				Expr: r.expr(c.Expr),
-				Path: r.seq(c.Path),
-			})
-		}
-		return &sem.SwitchOp{
-			Node:  op.Node,
-			Expr:  r.expr(op.Expr),
-			Cases: cases,
-		}
-	case *sem.SortOp:
-		return &sem.SortOp{
-			Node:    op.Node,
-			Exprs:   r.sortExprs(op.Exprs),
-			Reverse: op.Reverse,
-		}
 	case *sem.CutOp:
 		return &sem.CutOp{
 			Node: op.Node,
@@ -122,21 +114,44 @@ func (r *resolver) op(op sem.Op) sem.Op {
 			Node: op.Node,
 			Args: r.exprs(op.Args),
 		}
-	case *sem.HeadOp:
-	case *sem.TailOp:
-	case *sem.SkipOp:
+	case *sem.ExplodeOp:
+		return &sem.ExplodeOp{
+			Node: op.Node,
+			Args: r.exprs(op.Args),
+			Type: op.Type,
+			As:   op.As,
+		}
 	case *sem.FilterOp:
 		return &sem.FilterOp{
 			Node: op.Node,
 			Expr: r.expr(op.Expr),
 		}
-	case *sem.UniqOp:
-	case *sem.TopOp:
-		return &sem.TopOp{
+	case *sem.ForkOp:
+		var paths []sem.Seq
+		for _, seq := range op.Paths {
+			paths = append(paths, r.seq(seq))
+		}
+		return &sem.ForkOp{
 			Node:  op.Node,
-			Limit: op.Limit,
+			Paths: paths,
+		}
+	case *sem.FuseOp:
+	case *sem.HeadOp:
+	case *sem.JoinOp:
+		return &sem.JoinOp{
+			Node:       op.Node,
+			Style:      op.Style,
+			LeftAlias:  op.LeftAlias,
+			RightAlias: op.RightAlias,
+			Cond:       r.expr(op.Cond),
+		}
+	case *sem.LoadOp:
+	case *sem.MergeOp:
+		return &sem.MergeOp{
+			Node:  op.Node,
 			Exprs: r.sortExprs(op.Exprs),
 		}
+	case *sem.OutputOp:
 	case *sem.PassOp:
 	case *sem.PutOp:
 		return &sem.PutOp{
@@ -148,22 +163,34 @@ func (r *resolver) op(op sem.Op) sem.Op {
 			Node: op.Node,
 			Args: r.assignments(op.Args),
 		}
-	case *sem.FuseOp:
-	case *sem.JoinOp:
-		return &sem.JoinOp{
-			Node:       op.Node,
-			Style:      op.Style,
-			LeftAlias:  op.LeftAlias,
-			RightAlias: op.RightAlias,
-			Cond:       r.expr(op.Cond),
+	case *sem.SkipOp:
+	case *sem.SortOp:
+		return &sem.SortOp{
+			Node:    op.Node,
+			Exprs:   r.sortExprs(op.Exprs),
+			Reverse: op.Reverse,
 		}
-	case *sem.ExplodeOp:
-		return &sem.ExplodeOp{
-			Node: op.Node,
-			Args: r.exprs(op.Args),
-			Type: op.Type,
-			As:   op.As,
+	case *sem.SwitchOp:
+		var cases []sem.Case
+		for _, c := range op.Cases {
+			cases = append(cases, sem.Case{
+				Expr: r.expr(c.Expr),
+				Path: r.seq(c.Path),
+			})
 		}
+		return &sem.SwitchOp{
+			Node:  op.Node,
+			Expr:  r.expr(op.Expr),
+			Cases: cases,
+		}
+	case *sem.TailOp:
+	case *sem.TopOp:
+		return &sem.TopOp{
+			Node:  op.Node,
+			Limit: op.Limit,
+			Exprs: r.sortExprs(op.Exprs),
+		}
+	case *sem.UniqOp:
 	case *sem.UnnestOp:
 		return &sem.UnnestOp{
 			Node: op.Node,
@@ -175,29 +202,7 @@ func (r *resolver) op(op sem.Op) sem.Op {
 			Node:  op.Node,
 			Exprs: r.exprs(op.Exprs),
 		}
-	case *sem.MergeOp:
-		return &sem.MergeOp{
-			Node:  op.Node,
-			Exprs: r.sortExprs(op.Exprs),
-		}
 
-	case *sem.LoadOp:
-	case *sem.OutputOp:
-	case *sem.DefaultScan:
-	case *sem.FileScan:
-	case *sem.HTTPScan:
-	case *sem.PoolScan:
-	case *sem.RobotScan:
-		return &sem.RobotScan{
-			Node:   op.Node,
-			Expr:   r.expr(op.Expr),
-			Format: op.Format,
-		}
-	case *sem.DBMetaScan:
-	case *sem.PoolMetaScan:
-	case *sem.CommitMetaScan:
-	case *sem.NullScan:
-	case *sem.DeleteScan:
 	default:
 		panic(op)
 	}
@@ -240,14 +245,6 @@ func (r *resolver) expr(e sem.Expr) sem.Expr {
 	switch e := e.(type) {
 	case nil:
 		return nil
-	case *sem.FuncRef:
-		// This needs to be in an argument list and can't be anywhere else... bad DAG
-		panic(e)
-	case *sem.CallParam:
-		// This is a call to a parameter.  It must only appear enclosed in a FuncDef
-		// with params containing the name in the e.Param.  The function being referenced
-		// or passed in can be lazily created.
-		return r.resolveCallParam(e)
 	case *sem.AggFunc:
 		return &sem.AggFunc{
 			Node:     e.Node,
@@ -266,6 +263,11 @@ func (r *resolver) expr(e sem.Expr) sem.Expr {
 		return sem.NewBinaryExpr(e.Node, e.Op, r.expr(e.LHS), r.expr(e.RHS))
 	case *sem.CallExpr:
 		return r.resolveCall(e.Node, e.Tag, e.Args)
+	case *sem.CallParam:
+		// This is a call to a parameter.  It must only appear enclosed in a FuncDef
+		// with params containing the name in the e.Param.  The function being referenced
+		// or passed in can be lazily created.
+		return r.resolveCallParam(e)
 	case *sem.CondExpr:
 		return &sem.CondExpr{
 			Node: e.Node,
@@ -279,6 +281,9 @@ func (r *resolver) expr(e sem.Expr) sem.Expr {
 			LHS:  r.expr(e.LHS),
 			RHS:  e.RHS,
 		}
+	case *sem.FuncRef:
+		// This needs to be in an argument list and can't be anywhere else... bad DAG
+		panic(e)
 	case *sem.IndexExpr:
 		return &sem.IndexExpr{
 			Node:  e.Node,

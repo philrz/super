@@ -18,12 +18,68 @@ func eqSeq(a, b sem.Seq) bool {
 
 func eqOp(aop, bop sem.Op) bool {
 	switch a := aop.(type) {
-	//XXX ALPHABETIZE
+	//
+	// Scans in alphabetical order
+	//
+	case *sem.CommitMetaScan:
+		b, ok := bop.(*sem.CommitMetaScan)
+		if !ok {
+			return false
+		}
+		return ok && a.Pool == b.Pool && a.Commit == b.Commit && a.Meta == b.Meta && a.Tap == b.Tap
+	case *sem.DeleteScan:
+		b, ok := bop.(*sem.DeleteScan)
+		return ok && a.ID == b.ID && a.Commit == b.Commit
+	case *sem.DBMetaScan:
+		b, ok := bop.(*sem.DBMetaScan)
+		return ok && a.Meta == b.Meta
+	case *sem.DefaultScan:
+		_, ok := bop.(*sem.DefaultScan)
+		return ok
+	case *sem.FileScan:
+		b, ok := bop.(*sem.FileScan)
+		return ok && a.Path == b.Path && a.Format == b.Format
+	case *sem.HTTPScan:
+		b, ok := bop.(*sem.HTTPScan)
+		return ok && a.URL == b.URL && a.Format == b.Format && a.Method == b.Method && a.Body == b.Body && eqHeaders(a.Headers, b.Headers)
+	case *sem.NullScan:
+		_, ok := bop.(*sem.NullScan)
+		return ok
+	case *sem.PoolMetaScan:
+		b, ok := bop.(*sem.PoolMetaScan)
+		return ok && a.ID == b.ID && a.Meta == b.Meta
+	case *sem.PoolScan:
+		b, ok := bop.(*sem.PoolScan)
+		return ok && a.ID == b.ID && a.Commit == b.Commit
+	case *sem.RobotScan:
+		b, ok := bop.(*sem.RobotScan)
+		return ok && a.Format == b.Format && eqExpr(a.Expr, b.Expr)
+	//
+	// Ops in alphabetical order
+	//
 	case *sem.AggregateOp:
 		b, ok := bop.(*sem.AggregateOp)
 		return ok && eqAssignments(a.Keys, b.Keys) && eqAssignments(a.Aggs, b.Aggs)
 	case *sem.BadOp:
 		return false
+	case *sem.CutOp:
+		b, ok := bop.(*sem.CutOp)
+		return ok && eqAssignments(a.Args, b.Args)
+	case *sem.DebugOp:
+		b, ok := bop.(*sem.DebugOp)
+		return ok && eqExpr(a.Expr, b.Expr)
+	case *sem.DistinctOp:
+		b, ok := bop.(*sem.DistinctOp)
+		return ok && eqExpr(a.Expr, b.Expr)
+	case *sem.DropOp:
+		b, ok := bop.(*sem.DropOp)
+		return ok && eqExprs(a.Args, b.Args)
+	case *sem.ExplodeOp:
+		b, ok := bop.(*sem.ExplodeOp)
+		return ok && a.Type == b.Type && a.As == b.As && eqExprs(a.Args, b.Args)
+	case *sem.FilterOp:
+		b, ok := bop.(*sem.FilterOp)
+		return ok && eqExpr(a.Expr, b.Expr)
 	case *sem.ForkOp:
 		b, ok := bop.(*sem.ForkOp)
 		if !ok || len(a.Paths) != len(b.Paths) {
@@ -34,6 +90,37 @@ func eqOp(aop, bop sem.Op) bool {
 				return false
 			}
 		}
+		return true
+	case *sem.FuseOp:
+		_, ok := bop.(*sem.FuseOp)
+		return ok
+	case *sem.HeadOp:
+		b, ok := bop.(*sem.HeadOp)
+		return ok && a.Count == b.Count
+	case *sem.JoinOp:
+		b, ok := bop.(*sem.JoinOp)
+		return ok && a.Style == b.Style && a.LeftAlias == b.LeftAlias && a.RightAlias == b.RightAlias && eqExpr(a.Cond, b.Cond)
+	case *sem.LoadOp:
+		b, ok := bop.(*sem.LoadOp)
+		return ok && a.Pool == b.Pool && a.Branch == b.Branch && a.Author == b.Author && a.Message == b.Message && a.Meta == b.Meta
+	case *sem.MergeOp:
+		b, ok := bop.(*sem.MergeOp)
+		return ok && eqSortExprs(a.Exprs, b.Exprs)
+	case *sem.OutputOp:
+		b, ok := bop.(*sem.OutputOp)
+		return ok && a.Name == b.Name
+	case *sem.PutOp:
+		b, ok := bop.(*sem.PutOp)
+		return ok && eqAssignments(a.Args, b.Args)
+	case *sem.RenameOp:
+		b, ok := bop.(*sem.RenameOp)
+		return ok && eqAssignments(a.Args, b.Args)
+	case *sem.SkipOp:
+		b, ok := bop.(*sem.SkipOp)
+		return ok && a.Count == b.Count
+	case *sem.SortOp:
+		b, ok := bop.(*sem.SortOp)
+		return ok && a.Reverse == b.Reverse && eqSortExprs(a.Exprs, b.Exprs)
 	case *sem.SwitchOp:
 		b, ok := bop.(*sem.SwitchOp)
 		if !ok || len(a.Cases) != len(b.Cases) || !eqExpr(a.Expr, b.Expr) {
@@ -47,106 +134,25 @@ func eqOp(aop, bop sem.Op) bool {
 				return false
 			}
 		}
-	case *sem.SortOp:
-		b, ok := bop.(*sem.SortOp)
-		return ok && a.Reverse == b.Reverse && eqSortExprs(a.Exprs, b.Exprs)
-	case *sem.CutOp:
-		b, ok := bop.(*sem.CutOp)
-		return ok && eqAssignments(a.Args, b.Args)
-	case *sem.DebugOp:
-		b, ok := bop.(*sem.DebugOp)
-		return ok && eqExpr(a.Expr, b.Expr)
-	case *sem.DistinctOp:
-		b, ok := bop.(*sem.DistinctOp)
-		return ok && eqExpr(a.Expr, b.Expr)
-	case *sem.DropOp:
-		b, ok := bop.(*sem.DropOp)
-		return ok && eqExprs(a.Args, b.Args)
-	case *sem.HeadOp:
-		b, ok := bop.(*sem.HeadOp)
-		return ok && a.Count == b.Count
+		return true
 	case *sem.TailOp:
 		b, ok := bop.(*sem.TailOp)
 		return ok && a.Count == b.Count
-	case *sem.SkipOp:
-		b, ok := bop.(*sem.SkipOp)
-		return ok && a.Count == b.Count
-	case *sem.FilterOp:
-		b, ok := bop.(*sem.FilterOp)
-		return ok && eqExpr(a.Expr, b.Expr)
-	case *sem.UniqOp:
-		b, ok := bop.(*sem.UniqOp)
-		return ok && a.Cflag == b.Cflag
 	case *sem.TopOp:
 		b, ok := bop.(*sem.TopOp)
 		return ok && a.Limit == b.Limit && eqSortExprs(a.Exprs, b.Exprs)
-	case *sem.PutOp:
-		b, ok := bop.(*sem.PutOp)
-		return ok && eqAssignments(a.Args, b.Args)
-	case *sem.RenameOp:
-		b, ok := bop.(*sem.RenameOp)
-		return ok && eqAssignments(a.Args, b.Args)
-	case *sem.FuseOp:
-		_, ok := bop.(*sem.FuseOp)
-		return ok
-	case *sem.JoinOp:
-		b, ok := bop.(*sem.JoinOp)
-		return ok && a.Style == b.Style && a.LeftAlias == b.LeftAlias && a.RightAlias == b.RightAlias && eqExpr(a.Cond, b.Cond)
-	case *sem.ExplodeOp:
-		b, ok := bop.(*sem.ExplodeOp)
-		return ok && a.Type == b.Type && a.As == b.As && eqExprs(a.Args, b.Args)
+	case *sem.UniqOp:
+		b, ok := bop.(*sem.UniqOp)
+		return ok && a.Cflag == b.Cflag
 	case *sem.UnnestOp:
 		b, ok := bop.(*sem.UnnestOp)
 		return ok && eqExpr(a.Expr, b.Expr) && eqSeq(a.Body, b.Body)
 	case *sem.ValuesOp:
 		b, ok := bop.(*sem.ValuesOp)
 		return ok && eqExprs(a.Exprs, b.Exprs)
-	case *sem.MergeOp:
-		b, ok := bop.(*sem.MergeOp)
-		return ok && eqSortExprs(a.Exprs, b.Exprs)
-	case *sem.LoadOp:
-		b, ok := bop.(*sem.LoadOp)
-		return ok && a.Pool == b.Pool && a.Branch == b.Branch && a.Author == b.Author && a.Message == b.Message && a.Meta == b.Meta
-	case *sem.OutputOp:
-		b, ok := bop.(*sem.OutputOp)
-		return ok && a.Name == b.Name
-	case *sem.DefaultScan:
-		_, ok := bop.(*sem.DefaultScan)
-		return ok
-	case *sem.FileScan:
-		b, ok := bop.(*sem.FileScan)
-		return ok && a.Path == b.Path && a.Format == b.Format
-	case *sem.HTTPScan:
-		b, ok := bop.(*sem.HTTPScan)
-		return ok && a.URL == b.URL && a.Format == b.Format && a.Method == b.Method && a.Body == b.Body && eqHeaders(a.Headers, b.Headers)
-	case *sem.PoolScan:
-		b, ok := bop.(*sem.PoolScan)
-		return ok && a.ID == b.ID && a.Commit == b.Commit
-	case *sem.RobotScan:
-		b, ok := bop.(*sem.RobotScan)
-		return ok && a.Format == b.Format && eqExpr(a.Expr, b.Expr)
-	case *sem.DBMetaScan:
-		b, ok := bop.(*sem.DBMetaScan)
-		return ok && a.Meta == b.Meta
-	case *sem.PoolMetaScan:
-		b, ok := bop.(*sem.PoolMetaScan)
-		return ok && a.ID == b.ID && a.Meta == b.Meta
-	case *sem.CommitMetaScan:
-		b, ok := bop.(*sem.CommitMetaScan)
-		if !ok {
-			return false
-		}
-		return ok && a.Pool == b.Pool && a.Commit == b.Commit && a.Meta == b.Meta && a.Tap == b.Tap
-	case *sem.DeleteScan:
-		b, ok := bop.(*sem.DeleteScan)
-		return ok && a.ID == b.ID && a.Commit == b.Commit
-	case *sem.NullScan:
-		_, ok := bop.(*sem.NullScan)
-		return ok
 	default:
 		panic(a)
 	}
-	return true
 }
 
 func eqAssignments(a, b []sem.Assignment) bool {
@@ -207,7 +213,7 @@ func eqExpr(aexpr, bexpr sem.Expr) bool {
 		b, ok := bexpr.(*sem.BinaryExpr)
 		return ok && a.Op == b.Op && eqExpr(a.LHS, b.LHS) && eqExpr(a.RHS, b.RHS)
 	case *sem.CallExpr:
-		// XXX calls with side-effects not equal?
+		// XXX should calls with side-effects not be equal?
 		b, ok := bexpr.(*sem.CallExpr)
 		return ok && a.Tag == b.Tag && eqExprs(a.Args, b.Args)
 	case *sem.CondExpr:

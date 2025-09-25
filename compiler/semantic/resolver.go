@@ -138,6 +138,7 @@ func (r *resolver) op(op sem.Op) sem.Op {
 			Limit: op.Limit,
 			Exprs: r.sortExprs(op.Exprs),
 		}
+	case *sem.PassOp:
 	case *sem.PutOp:
 		return &sem.PutOp{
 			Node: op.Node,
@@ -359,6 +360,7 @@ func (r *resolver) expr(e sem.Expr) sem.Expr {
 		return &sem.SubqueryExpr{
 			Node:       e.Node,
 			Correlated: e.Correlated,
+			Array:      e.Array,
 			Body:       r.seq(e.Body),
 		}
 	case *sem.ThisExpr:

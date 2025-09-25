@@ -207,6 +207,10 @@ func (d *dagen) op(op sem.Op) dag.Op {
 			Kind: "Output",
 			Name: op.Name,
 		}
+	case *sem.PassOp:
+		return &dag.Pass{
+			Kind: "Pass",
+		}
 	case *sem.PutOp:
 		return &dag.Put{
 			Kind: "Put",
@@ -317,6 +321,16 @@ func (d *dagen) exprs(exprs []sem.Expr) []dag.Expr {
 
 func (d *dagen) expr(e sem.Expr) dag.Expr {
 	switch e := e.(type) {
+	case nil:
+		return nil
+	case *sem.AggFunc:
+		return &dag.Agg{
+			Kind:     "Agg",
+			Name:     e.Name,
+			Distinct: e.Distinct,
+			Expr:     d.expr(e.Expr),
+			Where:    d.expr(e.Where),
+		}
 	case *sem.ArrayExpr:
 		return &dag.ArrayExpr{
 			Kind:  "ArrayExpr",

@@ -423,7 +423,11 @@ func (t *translator) semID(id *ast.ID, lval bool) sem.Expr {
 	if ref := t.scope.lookupExpr(id.Name); ref != nil {
 		return ref
 	}
-	return sem.NewThis(id, []string{id.Name})
+	var path []string
+	if id.Name != "this" {
+		path = []string{id.Name}
+	}
+	return sem.NewThis(id, path)
 }
 
 func (t *translator) semDoubleQuote(d *ast.DoubleQuote) sem.Expr {

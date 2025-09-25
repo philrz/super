@@ -675,7 +675,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 			Cflag: o.Cflag,
 		})
 	case *ast.Pass:
-		// drop these
+		return append(seq, &sem.PassOp{Node: o})
 	case *ast.OpExpr:
 		return t.semOpExpr(o.Expr, seq)
 	case *ast.CallOp:
@@ -1339,9 +1339,9 @@ func (t *translator) evalAndBindConst(name string, e sem.Expr) error {
 	if !ok {
 		return nil
 	}
-	literal := &dag.Literal{
-		Kind:  "Literal",
-		Value: sup.FormatValue(val), //XXX so Literal can be any sup value not jsut a primitive
+	literal := &sem.LiteralExpr{
+		Node:  e,
+		Value: sup.FormatValue(val),
 	}
 	return t.scope.BindSymbol(name, literal)
 }

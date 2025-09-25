@@ -194,6 +194,9 @@ type (
 		ast.Node
 		Name string
 	}
+	PassOp struct {
+		ast.Node
+	}
 	PutOp struct {
 		ast.Node
 		Args []Assignment
@@ -276,6 +279,7 @@ func (*JoinOp) opNode()      {}
 func (*LoadOp) opNode()      {}
 func (*MergeOp) opNode()     {}
 func (*OutputOp) opNode()    {}
+func (*PassOp) opNode()      {}
 func (*PutOp) opNode()       {}
 func (*RenameOp) opNode()    {}
 func (*SkipOp) opNode()      {}

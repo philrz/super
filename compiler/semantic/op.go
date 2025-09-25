@@ -685,7 +685,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 		limit := 1
 		if o.Limit != nil {
 			l := t.semExpr(o.Limit)
-			val, ok := t.mustEval(l) //XXX loc needs to be passed down, should be gettable from sem expr
+			val, ok := t.mustEval(l)
 			if !ok {
 				return append(seq, badOp())
 			}
@@ -872,34 +872,34 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 			},
 		})
 		return append(seq, sem.NewValues(o, sem.NewThis(o, []string{"sample"})))
-	case *ast.Assert: // move this to stdlib (need expr fmt thunk to replace assert.Text)
+	case *ast.Assert:
 		cond := t.semExpr(o.Expr)
 		// 'assert EXPR' is equivalent to
 		// 'values EXPR ? this : error({message: "assertion failed", "expr": EXPR_text, "on": this}'
 		// where EXPR_text is the literal text of EXPR.
 		return append(seq, sem.NewValues(o,
 			&sem.CondExpr{
-				Node: o,
+				Node: o.Expr,
 				Cond: cond,
 				Then: sem.NewThis(o, nil),
 				Else: sem.NewCall(
-					nil, //XXX
+					o.Expr,
 					"error",
 					[]sem.Expr{&sem.RecordExpr{
-						Node: o,
+						Node: o.Expr,
 						Elems: []sem.RecordElem{
 							&sem.FieldElem{
-								Node:  o,
+								Node:  o.Expr,
 								Name:  "message",
 								Value: &sem.LiteralExpr{Node: o, Value: `"assertion failed"`},
 							},
 							&sem.FieldElem{
-								Node:  o,
+								Node:  o.Expr,
 								Name:  "expr",
 								Value: &sem.LiteralExpr{Node: o, Value: sup.QuotedString(o.Text)},
 							},
 							&sem.FieldElem{
-								Node:  o,
+								Node:  o.Expr,
 								Name:  "on",
 								Value: sem.NewThis(nil /*XXX*/, nil),
 							},

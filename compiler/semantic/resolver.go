@@ -12,7 +12,6 @@ import (
 
 type resolver struct {
 	reporter
-	sctx     *super.Context //XXX just for func lookup... we need templates in expr/function
 	in       map[string]*sem.FuncDef
 	fixed    map[string]*sem.FuncDef
 	variants []*sem.FuncDef
@@ -20,11 +19,9 @@ type resolver struct {
 	ntag     int
 }
 
-// in = funcsByTag
 func newResolver(r reporter, funcs map[string]*sem.FuncDef) *resolver {
 	return &resolver{
 		reporter: r,
-		sctx:     super.NewContext(),
 		in:       funcs,
 		fixed:    make(map[string]*sem.FuncDef),
 	}
@@ -428,7 +425,7 @@ func (r *resolver) resolveCallParam(call *sem.CallParam) sem.Expr {
 	}
 	if isBuiltin(oldTag) {
 		// Check argument count here for builtin functions.
-		if _, err := function.New(r.sctx, oldTag, len(call.Args)); err != nil {
+		if _, err := function.New(super.NewContext(), oldTag, len(call.Args)); err != nil {
 			r.error(call.Node, fmt.Errorf("function %q called via parameter %q: %w", oldTag, call.Param, err))
 			return badExpr()
 		}

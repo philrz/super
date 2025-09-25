@@ -88,7 +88,7 @@ func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 		// the generated aggregate operator.
 		tmp := a.tmp()
 		*a = append(*a, namedAgg{name: tmp, agg: e})
-		return sem.NewThis(nil /*XXX*/, []string{"in", tmp}), nil
+		return sem.NewThis(e, []string{"in", tmp}), nil
 	case *sem.ArrayExpr:
 		elems, err := a.substArrayElems(e.Elems)
 		if err != nil {
@@ -124,7 +124,7 @@ func (a *aggfuncs) subst(e sem.Expr) (sem.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-	case *sem.DotExpr: //XXX no such thing... just This.  hmmm
+	case *sem.DotExpr:
 		e.LHS, err = a.subst(e.LHS)
 		if err != nil {
 			return nil, err

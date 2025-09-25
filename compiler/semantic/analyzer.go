@@ -40,6 +40,9 @@ func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput
 		astseq.Prepend(&ast.DefaultScan{Kind: "DefaultScan"})
 	}
 	seq := t.semSeq(astseq)
+	if err := r.Error(); err != nil {
+		return nil, err
+	}
 	if !checkOutputOps(r, true, seq) {
 		return nil, r.Error()
 	}
@@ -61,6 +64,9 @@ func Analyze(ctx context.Context, p *parser.AST, env *exec.Environment, extInput
 func resolveAndGen(reporter reporter, seq sem.Seq, funcs map[string]*sem.FuncDef) (*dag.Main, error) {
 	r := newResolver(reporter, funcs)
 	semSeq, dagFuncs := r.resolve(seq)
+	if err := reporter.Error(); err != nil {
+		return nil, err
+	}
 	main := newDagen().assemble(semSeq, dagFuncs)
 	return main, r.Error()
 }

@@ -78,6 +78,7 @@ func (e *evaluator) seq(seq sem.Seq) {
 }
 
 func (e *evaluator) op(op sem.Op) {
+	//XXX ALPHABETIZE
 	switch op := op.(type) {
 	case *sem.AggregateOp:
 		e.assignments(op.Keys)
@@ -88,6 +89,7 @@ func (e *evaluator) op(op sem.Op) {
 			e.seq(seq)
 		}
 	case *sem.SwitchOp:
+		e.expr(op.Expr)
 		for _, c := range op.Cases {
 			e.expr(c.Expr)
 			e.seq(c.Path)

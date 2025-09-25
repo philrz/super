@@ -217,13 +217,13 @@ func (t *translator) genAggregateOutput(loc ast.Node, proj projection, keyExprs 
 		// First, try to match the column expression to one of the grouping
 		// expressions.  If that doesn't work, see if the aliased column
 		// name is one of the grouping expressions.
-		which := exprMatch(col.loc, keyExprs)
+		which := exprMatch(col.expr, keyExprs)
 		if which < 0 {
 			// Look for an exact-match of a column alias which would
 			// convert to path out.<id> in the name resolution of the
 			// grouping expression.
 			// XXX using ast is probably fussier but should be ok because sql
-			alias := &ast.ID{Name: col.name} //XXX not using dag anymore so just plain col alias
+			alias := sem.NewThis(col.expr, []string{"out", col.name})
 			which = exprMatch(alias, keyExprs)
 		}
 		if col.isAgg {
@@ -268,11 +268,9 @@ func (t *translator) genAggregateOutput(loc ast.Node, proj projection, keyExprs 
 	return seq
 }
 
-// XXX use ast matching instead of DAG now... need to test this
-func exprMatch(e ast.Expr, exprs []exprloc) int {
-	target := sfmt.ASTExpr(e)
+func exprMatch(target sem.Expr, exprs []exprloc) int {
 	for which, e := range exprs {
-		if target == sfmt.ASTExpr(e.loc) {
+		if eqExpr(target, e.expr) {
 			return which
 		}
 	}

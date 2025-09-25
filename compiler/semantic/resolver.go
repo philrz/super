@@ -67,6 +67,7 @@ func (r *resolver) seq(seq sem.Seq) sem.Seq {
 }
 
 func (r *resolver) op(op sem.Op) sem.Op {
+	//XXX ALPHABETIZE
 	switch op := op.(type) {
 	case *sem.AggregateOp:
 		return &sem.AggregateOp{

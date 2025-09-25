@@ -78,6 +78,7 @@ func (d *dagen) op(op sem.Op) dag.Op {
 			Pool:   op.Pool,
 			Commit: op.Commit,
 			Meta:   op.Meta,
+			Tap:    op.Tap,
 		}
 	case *sem.DBMetaScan:
 		return &dag.DBMetaScan{

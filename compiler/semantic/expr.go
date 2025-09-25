@@ -1103,18 +1103,15 @@ func (t *translator) semSubquery(astExpr ast.Expr, array bool, body ast.Seq) *se
 		// value.  Or we should be descoping.
 		// XXX subquery runtime should return the error and user needs to wrap []
 		// if they expect multiple values
-		/*
-			e.Body.Append(&sem.ValuesOp{
-				AST: in,
-				Exprs: []sem.Expr{
-					&sem.IndexExpr{
-
-						Kind:  "IndexExpr",
-						Expr:  sem.NewThis(nil),
-						Index: &sem.Literal{Kind: "Literal", Value: "1"},
-					}},
-			})
-		*/
+		e.Body.Append(&sem.ValuesOp{
+			Node: astExpr,
+			Exprs: []sem.Expr{
+				&sem.IndexExpr{
+					Node:  astExpr,
+					Expr:  sem.NewThis(astExpr, nil),
+					Index: &sem.LiteralExpr{Node: astExpr, Value: "1"},
+				}},
+		})
 	}
 	return e
 }

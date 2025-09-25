@@ -528,7 +528,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 		seq, _ := t.semFrom(o, seq)
 		return seq
 	case *ast.DefaultScan:
-		return append(seq, &sem.DefaultScan{})
+		return append(seq, &sem.DefaultScan{Node: o})
 	case *ast.Delete:
 		if len(seq) > 0 {
 			panic("analyzer.SemOp: delete scan cannot have parent in AST")

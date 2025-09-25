@@ -118,8 +118,12 @@ type FuncDef struct {
 // previous operator.
 type Seq []Op
 
-func (s *Seq) Prepend(front Op) { //XXX do we need this?
+func (s *Seq) Prepend(front Op) {
 	*s = append([]Op{front}, *s...)
+}
+
+func (seq *Seq) Append(op Op) {
+	*seq = append(*seq, op)
 }
 
 // An Op is a node in the flowgraph that takes values in, operates upon them,

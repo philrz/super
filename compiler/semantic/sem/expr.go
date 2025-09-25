@@ -1,6 +1,7 @@
 package sem
 
 import (
+	"github.com/brimdata/super"
 	"github.com/brimdata/super/compiler/ast"
 	"github.com/brimdata/super/sup"
 )
@@ -241,7 +242,7 @@ func NewStructuredError(n ast.Node, message string, on Expr) Expr {
 		Elems: []RecordElem{
 			&FieldElem{
 				Name:  "message",
-				Value: &LiteralExpr{Node: n, Value: sup.String(message)},
+				Value: &LiteralExpr{Node: n, Value: sup.FormatValue(super.NewString(message))},
 			},
 			&FieldElem{
 				Name:  "on",

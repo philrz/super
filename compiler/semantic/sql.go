@@ -495,7 +495,14 @@ func (t *translator) semSQLOp(op ast.Op, seq sem.Seq) (sem.Seq, schema) {
 		left, _ = derefSchema(op.Left, leftSch, left)
 		right, rightSch := t.semSQLOp(op.Right, seq)
 		right, _ = derefSchema(op.Right, rightSch, right)
-		out := sem.Seq{&sem.ForkOp{Paths: []sem.Seq{left, right}}}
+		out := sem.Seq{
+			&sem.ForkOp{Node: op, Paths: []sem.Seq{left, right}},
+			// This used to be dag.Combine but we don't have combine in the sem tree,
+			// so we use a merge here.  If we don't put this in, then the optimizer
+			// mysteriously removes the output/main from the end of the DAG.
+			// The optimizer is too fussy/buggy in this way and we should clean it up.
+			&sem.MergeOp{Node: op},
+		}
 		if op.Distinct {
 			out = t.genDistinct(sem.NewThis(nil /*XXX*/, nil), out)
 		}

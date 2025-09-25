@@ -201,6 +201,9 @@ func (d *dagen) op(op sem.Op) dag.Op {
 			Meta:    op.Meta,
 		}
 	case *sem.MergeOp:
+		if len(op.Exprs) == 0 {
+			return &dag.Combine{Kind: "Combine"}
+		}
 		return &dag.Merge{
 			Kind:  "Merge",
 			Exprs: d.sortExprs(op.Exprs),

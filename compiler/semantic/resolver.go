@@ -101,8 +101,9 @@ func (r *resolver) op(op sem.Op) sem.Op {
 		}
 	case *sem.SortOp:
 		return &sem.SortOp{
-			Node:  op.Node,
-			Exprs: r.sortExprs(op.Exprs),
+			Node:    op.Node,
+			Exprs:   r.sortExprs(op.Exprs),
+			Reverse: op.Reverse,
 		}
 	case *sem.CutOp:
 		return &sem.CutOp{

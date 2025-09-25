@@ -13,23 +13,17 @@ import (
 type Scope struct {
 	parent  *Scope
 	symbols map[string]*entry
-	ctes    map[string]*cte
+	ctes    map[string]*ast.SQLCTE
 	schema  schema
 }
 
 func NewScope(parent *Scope) *Scope {
-	return &Scope{parent: parent, symbols: make(map[string]*entry), ctes: make(map[string]*cte)}
+	return &Scope{parent: parent, symbols: make(map[string]*entry), ctes: make(map[string]*ast.SQLCTE)}
 }
 
 type entry struct {
 	ref   any
 	order int
-}
-
-type cte struct {
-	ast    *ast.SQLCTE
-	body   dag.Seq
-	schema schema
 }
 
 type param struct{}

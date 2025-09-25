@@ -72,7 +72,7 @@ type translator struct {
 	reporter
 	ctx         context.Context
 	opStack     []*ast.OpDecl
-	cteStack    []*cte
+	cteStack    []*ast.SQLCTE
 	env         *exec.Environment
 	scope       *Scope
 	sctx        *super.Context

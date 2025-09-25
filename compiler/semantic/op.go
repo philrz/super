@@ -130,13 +130,13 @@ func (t *translator) semFromEntity(entity ast.FromEntity, alias *ast.TableAlias,
 	}
 }
 
-func (t *translator) fromCTE(entity ast.FromEntity, c *cte, alias *ast.TableAlias) (sem.Seq, schema) {
+func (t *translator) fromCTE(entity ast.FromEntity, c *ast.SQLCTE, alias *ast.TableAlias) (sem.Seq, schema) {
 	if slices.Contains(t.cteStack, c) {
 		t.error(entity, errors.New("recursive WITH relations not currently supported"))
 		return sem.Seq{badOp()}, badSchema()
 	}
 	t.cteStack = append(t.cteStack, c)
-	body, schema := t.semSQLPipe(c.ast.Body, nil, &ast.TableAlias{Name: c.ast.Name.Name})
+	body, schema := t.semSQLPipe(c.Body, nil, &ast.TableAlias{Name: c.Name.Name})
 	t.cteStack = t.cteStack[:len(t.cteStack)-1]
 	seq, schema, err := derefSchemaWithAlias(entity, schema, alias, body)
 	if err != nil {

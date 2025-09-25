@@ -515,13 +515,13 @@ func (t *translator) semSQLOp(op ast.Op, seq sem.Seq) (sem.Seq, schema) {
 		old := t.scope.ctes
 		t.scope.ctes = maps.Clone(t.scope.ctes)
 		defer func() { t.scope.ctes = old }()
-		for _, c := range op.CTEs {
+		for k, c := range op.CTEs {
 			// XXX Materialized option not currently supported.
 			name := strings.ToLower(c.Name.Name)
 			if _, ok := t.scope.ctes[name]; ok {
 				t.error(c.Name, errors.New("duplicate WITH clause name"))
 			}
-			t.scope.ctes[name] = &cte{ast: &c}
+			t.scope.ctes[name] = &op.CTEs[k]
 		}
 		return t.semSQLOp(op.Body, seq)
 	default:

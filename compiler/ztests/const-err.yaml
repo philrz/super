@@ -7,4 +7,4 @@ input: |
 error: |
   cannot reference "this" within constant expression at line 1, column 9:
   const t=a put x:=t
-  ~~~~~~~~~
+          ~

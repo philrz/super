@@ -56,10 +56,10 @@ func (t *translator) semSelect(sel *ast.SQLSelect, seq sem.Seq) (sem.Seq, schema
 		t.error(sel.Having, err)
 		return seq, badSchema()
 	}
-	// Now that all the pieces have been converted to DAG fragments,
+	// Now that all the pieces have been converted to sem tree fragments,
 	// we stitch together the fragments into pipeline operators depending
 	// on whether its an aggregation or a selection of scalar expressions.
-	seq = valuesExpr(wrapThis("in"), seq)
+	seq = valuesExpr(wrapThis(sel, "in"), seq)
 	if len(funcs) != 0 || len(keyExprs) != 0 {
 		seq = t.genAggregate(sel.Loc, proj, where, keyExprs, funcs, having, seq)
 		return seq, sch.out
@@ -192,7 +192,7 @@ func (t *translator) genAggregate(loc ast.Loc, proj projection, where sem.Expr, 
 		Aggs: aggCols,
 		Keys: keyCols,
 	})
-	seq = valuesExpr(wrapThis("in"), seq)
+	seq = valuesExpr(wrapThis(loc, "in"), seq)
 	seq = t.genAggregateOutput(loc, proj, keyExprs, seq)
 	if having != nil {
 		seq = append(seq, sem.NewFilter(having, having))
@@ -335,38 +335,38 @@ func (t *translator) semSelectValue(sel *ast.SQLSelect, sch schema, seq sem.Seq)
 }
 
 func (t *translator) semValues(values *ast.SQLValues, seq sem.Seq) (sem.Seq, schema) {
-	var schema *super.TypeRecord
 	exprs := make([]sem.Expr, 0, len(values.Exprs))
 	//sctx := super.NewContext() XXX should do this with new context?
 	for _, astExpr := range values.Exprs {
 		e := t.semExpr(astExpr)
-		val, ok := t.mustEval(e)
-		if !ok {
-			//XXX we will need to relax this for lateral joins, where values can have
-			// expressions and we should type check the values body with the type checker
-			t.error(astExpr, errors.New("expressions in SQL VALUES clause must be constant"))
-			return seq, badSchema()
-		}
-		// Parser requires tuples in SQLValues expressions so these should
-		// always record values.
-		recType := super.TypeUnder(val.Type()).(*super.TypeRecord)
-		if schema == nil {
-			schema = recType
-		} else if schema != recType {
-			t.error(astExpr, errors.New("values clause must contain uniformly typed values"))
-		}
 		exprs = append(exprs, e)
 	}
-	if schema == nil {
-		t.error(values, errors.New("values clause must contain uniformly typed values"))
-		return seq, badSchema()
+	seq = append(seq, sem.NewValues(values, exprs...))
+	_, sch := t.inferSchema(exprs)
+	return seq, sch
+}
+
+func (t *translator) inferSchema(exprs []sem.Expr) (super.Type, schema) {
+	var typ super.Type
+	for _, e := range exprs {
+		val, ok := t.maybeEval(e)
+		if !ok {
+			return nil, &dynamicSchema{}
+		}
+		if typ == nil {
+			typ = val.Type()
+			continue
+		}
 	}
-	columns := make([]string, 0, len(schema.Fields))
-	for _, f := range schema.Fields {
+	recType, ok := super.TypeUnder(typ).(*super.TypeRecord)
+	if !ok {
+		return nil, &dynamicSchema{}
+	}
+	columns := make([]string, 0, len(recType.Fields))
+	for _, f := range recType.Fields {
 		columns = append(columns, f.Name)
 	}
-	seq = append(seq, sem.NewValues(nil /*XXX*/, exprs...))
-	return seq, &staticSchema{columns: columns}
+	return typ, &staticSchema{columns: columns}
 }
 
 func (t *translator) genDistinct(e sem.Expr, seq sem.Seq) sem.Seq {
@@ -435,13 +435,13 @@ func mapColumns(in []string, alias *ast.TableAlias, seq sem.Seq) (sem.Seq, schem
 		elems := make([]sem.RecordElem, 0, len(in))
 		for k := range out {
 			elems = append(elems, &sem.FieldElem{
-				Node:  nil, //XXX
+				Node:  alias.Columns[k],
 				Name:  out[k],
-				Value: sem.NewThis(nil /*XXX*/, []string{in[k]}),
+				Value: sem.NewThis(alias.Columns[k], []string{in[k]}),
 			})
 		}
 		seq = valuesExpr(&sem.RecordExpr{
-			Node:  nil, //XXX
+			Node:  alias,
 			Elems: elems,
 		}, seq)
 	}
@@ -758,11 +758,11 @@ func inferColumnName(e sem.Expr, ae ast.Expr) string {
 }
 
 func valuesExpr(e sem.Expr, seq sem.Seq) sem.Seq {
-	return append(seq, sem.NewValues(nil /*XXX*/, e))
+	return append(seq, sem.NewValues(e, e))
 }
 
-func wrapThis(field string) *sem.RecordExpr {
-	return wrapField(field, sem.NewThis(nil /*XXX*/, nil))
+func wrapThis(n ast.Node, field string) *sem.RecordExpr {
+	return wrapField(field, sem.NewThis(n, nil))
 }
 
 func wrapField(field string, e sem.Expr) *sem.RecordExpr {

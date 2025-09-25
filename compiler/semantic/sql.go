@@ -127,7 +127,7 @@ func (t *translator) genColumns(proj projection, sch *selectSchema, seq sem.Seq)
 				&sem.FieldElem{
 					Node:  col.loc,
 					Name:  "in",
-					Value: sem.NewThis(nil /*XXX*/, field.Path{"in"}),
+					Value: sem.NewThis(col.loc, field.Path{"in"}),
 				},
 				&sem.FieldElem{
 					Node: col.loc,
@@ -504,7 +504,7 @@ func (t *translator) semSQLOp(op ast.Op, seq sem.Seq) (sem.Seq, schema) {
 			&sem.MergeOp{Node: op},
 		}
 		if op.Distinct {
-			out = t.genDistinct(sem.NewThis(nil /*XXX*/, nil), out)
+			out = t.genDistinct(sem.NewThis(op, nil), out)
 		}
 		return out, &dynamicSchema{}
 
@@ -605,9 +605,9 @@ func (t *translator) semJoinCond(cond ast.JoinCond, leftAlias, rightAlias string
 			switch ee := e.(type) {
 			case *sem.BadExpr:
 			case *sem.ThisExpr:
-				lhs := sem.NewThis(nil /*XXX*/, append([]string{leftAlias}, ee.Path...))
-				rhs := sem.NewThis(nil /*XXX*/, append([]string{rightAlias}, ee.Path...))
-				e = sem.NewBinaryExpr(nil /*XXX*/, "==", lhs, rhs)
+				lhs := sem.NewThis(ee, append([]string{leftAlias}, ee.Path...))
+				rhs := sem.NewThis(ee, append([]string{rightAlias}, ee.Path...))
+				e = sem.NewBinaryExpr(ee, "==", lhs, rhs)
 			default:
 				panic(ee)
 			}
@@ -616,7 +616,7 @@ func (t *translator) semJoinCond(cond ast.JoinCond, leftAlias, rightAlias string
 		n := len(exprs)
 		e := exprs[n-1]
 		for i := n - 2; i >= 0; i-- {
-			e = sem.NewBinaryExpr(nil /*XXX*/, "and", exprs[i], e)
+			e = sem.NewBinaryExpr(cond, "and", exprs[i], e)
 		}
 		return e
 	default:

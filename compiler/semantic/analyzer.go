@@ -176,12 +176,6 @@ func (r reporter) error(n ast.Node, err error) {
 	r.AddError(err.Error(), n.Pos(), n.End())
 }
 
-// We should get rid of this and make sure tracking refs follow
-// everything that needs to report errors.
-func (r reporter) errorNoLoc(err error) {
-	r.AddError(err.Error(), -1, -1)
-}
-
 func isURL(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }

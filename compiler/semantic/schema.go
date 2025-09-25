@@ -258,10 +258,10 @@ func (s *subquerySchema) resolveOrdinal(ast.Node, int) (sem.Expr, error) {
 func appendExprToPath(path string, e sem.Expr) sem.Expr {
 	switch e := e.(type) {
 	case *sem.ThisExpr:
-		return sem.NewThis(nil /*XXX*/, append([]string{path}, e.Path...))
+		return sem.NewThis(e, append([]string{path}, e.Path...))
 	case *sem.IndexExpr:
 		return &sem.IndexExpr{
-			//AST:XXX
+			Node:  e,
 			Expr:  appendExprToPath(path, e.Expr),
 			Index: e.Index,
 		}

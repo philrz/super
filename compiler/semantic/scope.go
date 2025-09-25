@@ -96,7 +96,7 @@ func (s *Scope) lookupFunc(name string) (string, error) {
 	switch ref := entry.ref.(type) {
 	case *sem.FuncDef:
 		return ref.Tag, nil
-	case *sem.FuncRef: //XXX
+	case *sem.FuncRef:
 		return ref.Tag, nil
 	}
 	return "", fmt.Errorf("%q is not bound to a function", name)

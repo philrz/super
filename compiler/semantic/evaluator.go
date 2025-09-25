@@ -254,9 +254,6 @@ func (e *evaluator) error(loc ast.Node, err error) {
 
 func (e *evaluator) flushErrs() {
 	for _, info := range e.errs {
-		if info.loc == nil { //XXX
-			e.reporter.errorNoLoc(info.err)
-		}
 		e.reporter.error(info.loc, info.err)
 	}
 }

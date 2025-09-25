@@ -325,6 +325,7 @@ func (d *dagen) expr(e sem.Expr) dag.Expr {
 	case *sem.BinaryExpr:
 		return &dag.BinaryExpr{
 			Kind: "BinaryExpr",
+			Op:   e.Op,
 			LHS:  d.expr(e.LHS),
 			RHS:  d.expr(e.RHS),
 		}
@@ -569,7 +570,7 @@ func (d *dagen) addMissingOutputs(isLeaf bool, seq dag.Seq) dag.Seq {
 	case *dag.Output, *dag.Scatter, *dag.Fork, *dag.Switch, *dag.Mirror:
 	default:
 		if isLeaf {
-			return append(seq, &dag.Output{Name: "main"})
+			return append(seq, &dag.Output{Kind: "Output", Name: "main"})
 		}
 	}
 	return seq

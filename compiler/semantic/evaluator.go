@@ -1,6 +1,8 @@
 package semantic
 
 import (
+	"errors"
+
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/compiler/ast"
 	"github.com/brimdata/super/compiler/rungen"
@@ -127,23 +129,16 @@ func (e *evaluator) op(op sem.Op) {
 	case *sem.LoadOp:
 	case *sem.OutputOp:
 	case *sem.DefaultScan:
-	case *sem.FileScan:
-		//XXX error here
-	case *sem.HTTPScan:
-		//XXX error here
-	case *sem.PoolScan:
-		//XXX error here
-	case *sem.RobotScan:
-		//XXX error here
-	case *sem.DBMetaScan:
-		//XXX error here
-	case *sem.PoolMetaScan:
-		//XXX error here
-	case *sem.CommitMetaScan:
-		//XXX error here
+	case *sem.FileScan,
+		*sem.HTTPScan,
+		*sem.PoolScan,
+		*sem.RobotScan,
+		*sem.DBMetaScan,
+		*sem.PoolMetaScan,
+		*sem.CommitMetaScan,
+		*sem.DeleteScan:
+		e.error(op, errors.New("cannot read data inside of constant expression"))
 	case *sem.NullScan:
-	case *sem.DeleteScan:
-		//XXX error here
 	}
 }
 
@@ -219,7 +214,7 @@ func (e *evaluator) expr(expr sem.Expr) {
 	case *sem.SubqueryExpr:
 		e.seq(expr.Body)
 	case *sem.ThisExpr:
-		//XXX error here
+		e.error(expr, errors.New("cannot reference \"this\" within constant expression"))
 	case *sem.UnaryExpr:
 		e.expr(expr.Operand)
 	}

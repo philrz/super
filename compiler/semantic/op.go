@@ -239,7 +239,7 @@ func (t *translator) semFromName(entity ast.FromEntity, name string, args []ast.
 	if t.env.IsAttached() {
 		return t.semPool(entity, name, args), prefix
 	}
-	return t.semFile(name, args), prefix
+	return t.semFile(entity, name, args), prefix
 }
 
 func (t *translator) asFormatArg(args []ast.OpArg) string {
@@ -248,12 +248,13 @@ func (t *translator) asFormatArg(args []ast.OpArg) string {
 	return s
 }
 
-func (t *translator) semFile(name string, args []ast.OpArg) sem.Op {
+func (t *translator) semFile(n ast.Node, name string, args []ast.OpArg) sem.Op {
 	format := t.asFormatArg(args)
 	if format == "" {
 		format = sio.FormatFromPath(name)
 	}
 	return &sem.FileScan{
+		Node:   n,
 		Path:   name,
 		Format: format,
 	}
@@ -270,11 +271,11 @@ func (t *translator) semFromFileGlob(globLoc ast.Node, pattern string, args []as
 		return badOp()
 	}
 	if len(names) == 1 {
-		return t.semFile(names[0], args)
+		return t.semFile(globLoc, names[0], args)
 	}
 	paths := make([]sem.Seq, 0, len(names))
 	for _, name := range names {
-		paths = append(paths, sem.Seq{t.semFile(name, args)})
+		paths = append(paths, sem.Seq{t.semFile(globLoc, name, args)})
 	}
 	return &sem.ForkOp{
 		Paths: paths,
@@ -304,6 +305,7 @@ func (t *translator) semFromURL(urlLoc ast.Node, u string, args []ast.OpArg) sem
 		format = sio.FormatFromPath(u)
 	}
 	return &sem.HTTPScan{
+		Node:    urlLoc,
 		URL:     u,
 		Format:  format,
 		Method:  method,

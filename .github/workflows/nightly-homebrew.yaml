@@ -33,7 +33,12 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
+      - uses: goreleaser/goreleaser-action@v5
+        with:
+          args: release --snapshot --clean
+        env:
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
       - run: |
-          goreleaser release --snapshot --clean
           sha_hash=${{ steps.checkout-ref.outputs.ref }}
           short_hash=${sha_hash:0:9}
+          for artifact in dist/super-${short_hash}*; do aws s3 cp $artifact s3://super-prereleases/${short_hash}/ ; done

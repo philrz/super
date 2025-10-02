@@ -1,0 +1,39 @@
+name: "Nightly update of Homewbrew Cask "
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch name, tag, or commit SHA to build'
+        required: true
+        default: 'main'
+        type: string
+
+jobs:
+  build-and-update:
+    runs-on: ubuntu-22.04
+    steps:
+      - id: checkout-ref
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "ref=${{ github.event.inputs.ref }}" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{ github.event.pull_request.merge_commit_sha }}" >> $GITHUB_OUTPUT
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.checkout-ref.outputs.ref }}
+          fetch-depth: 0    
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - run: |
+          goreleaser release --snapshot --clean
+          sha_hash=${{ steps.checkout-ref.outputs.ref }}
+          short_hash=${sha_hash:0:9}

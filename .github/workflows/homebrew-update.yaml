@@ -1,10 +1,10 @@
-name: "Nightly update of Homewbrew Cask "
+name: "Update of Homewbrew Cask"
 
 on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Branch name, tag, or commit SHA to build'
+        description: 'Commit SHA to build'
         required: true
         default: 'main'
         type: string
@@ -30,7 +30,7 @@ jobs:
       - uses: goreleaser/goreleaser-action@v6
         with:
           args: release --snapshot --clean
-      - uses: aws-actions/configure-aws-credentials@v1-node16
+      - uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

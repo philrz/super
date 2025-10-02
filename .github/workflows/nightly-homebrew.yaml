@@ -36,8 +36,6 @@ jobs:
       - uses: goreleaser/goreleaser-action@v5
         with:
           args: release --snapshot --clean
-        env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
       - run: |
           sha_hash=${{ steps.checkout-ref.outputs.ref }}
           short_hash=${sha_hash:0:9}

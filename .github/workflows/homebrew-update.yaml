@@ -1,6 +1,10 @@
 name: "Update of Homewbrew Cask"
 
 on:
+  pull_request:
+    branches:
+      - main
+    types: closed
   workflow_dispatch:
     inputs:
       ref:
@@ -11,6 +15,7 @@ on:
 
 jobs:
   build-and-update:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-22.04
     steps:
       - id: checkout-ref

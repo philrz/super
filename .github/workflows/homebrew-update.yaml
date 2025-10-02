@@ -1,4 +1,4 @@
-name: "Update of Homewbrew Cask"
+name: "Update Homewbrew Cask"
 
 on:
   pull_request:

@@ -1,6 +1,7 @@
 spq: |
   fn foo(f,x):f(x)
-  values foo(nosuchfunction, 1)
+  values {nosuchfunction:0}
+  | values foo(nosuchfunction, 1)
   | values foo(&nosuchfunction, 2)
 
 error: |

@@ -7,7 +7,7 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -X github.com/brimdata/super/cli.version={{ .ShortCommit }}
+      - -s -X github.com/brimdata/super/cli.version={{ .Tag }}
     goarch:
       - amd64
       - arm64
@@ -16,7 +16,7 @@ builds:
       - windows
       - darwin
 archives:
-  - name_template: "{{ .ProjectName }}-{{ .ShortCommit }}.{{ .Os }}-{{ .Arch }}"
+  - name_template: "{{ .ProjectName }}-{{ .Tag }}.{{ .Os }}-{{ .Arch }}"
     format_overrides:
       - goos: windows
         formats: [ "zip" ]
@@ -28,19 +28,17 @@ release:
     View [change log](CHANGELOG.md#{{ replace .Tag "." "" }}).
 homebrew_casks:
   - repository:
-      owner: philrz
+      owner: brimdata
       name: homebrew-tap
     commit_author:
-      name: philrz
+      name: brim-bot
       email: bot@brimdata.io
     homepage: https://github.com/brimdata/super
     description: |
       An analytics database that fuses structured and semi-structured data
-    url:
-      template: "https://super-prereleases.s3.us-east-2.amazonaws.com/{{ .ShortCommit }}/{{ .ArtifactName }}"
 checksum:
   name_template: 'super-checksums.txt'
 snapshot:
-  version_template: "{{ .ShortCommit }}"
+  version_template: "{{ incpatch .Version }}-{{ .ShortCommit }}"
 changelog:
   disable: true

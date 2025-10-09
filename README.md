@@ -134,4 +134,3 @@ Join our [public Slack](https://www.brimdata.io/join-slack/) workspace for annou
 [tests]: https://github.com/brimdata/super/actions?query=workflow%3ATests
 [gopkg-img]: https://pkg.go.dev/badge/github.com/brimdata/super
 [gopkg]: https://pkg.go.dev/github.com/brimdata/super
-...

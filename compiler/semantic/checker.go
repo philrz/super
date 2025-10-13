@@ -15,6 +15,7 @@ import (
 type checker struct {
 	t       *translator
 	checked map[super.Type]super.Type
+	cache   map[any]super.Type
 	unknown *super.TypeError
 	estack  []errlist
 }
@@ -24,6 +25,7 @@ func newChecker(t *translator) *checker {
 		t:       t,
 		unknown: t.sctx.LookupTypeError(t.sctx.MustLookupTypeRecord(nil)),
 		checked: make(map[super.Type]super.Type),
+		cache:   make(map[any]super.Type),
 	}
 }
 
@@ -57,6 +59,15 @@ func (c *checker) seq(typ super.Type, seq sem.Seq) super.Type {
 }
 
 func (c *checker) op(typ super.Type, op sem.Op) super.Type {
+	if typ, ok := c.cache[op]; ok {
+		return typ
+	}
+	typ = c.checkOp(typ, op)
+	c.cache[op] = typ
+	return typ
+}
+
+func (c *checker) checkOp(typ super.Type, op sem.Op) super.Type {
 	switch op := op.(type) {
 	//
 	// Scanners first
@@ -273,6 +284,15 @@ func (c *checker) exprs(typ super.Type, exprs []sem.Expr) []super.Type {
 }
 
 func (c *checker) expr(typ super.Type, e sem.Expr) super.Type {
+	if typ, ok := c.cache[e]; ok {
+		return typ
+	}
+	typ = c.checkExpr(typ, e)
+	c.cache[e] = typ
+	return typ
+}
+
+func (c *checker) checkExpr(typ super.Type, e sem.Expr) super.Type {
 	switch e := e.(type) {
 	case nil:
 		return c.unknown

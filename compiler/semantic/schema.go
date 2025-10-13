@@ -15,14 +15,14 @@ import (
 )
 
 type schema interface {
-	//Name() string
+	Name() string
 	resolveColumn(col string) (field.Path, bool, error)
 	resolveOrdinal(n ast.Node, colno int) (sem.Expr, error)
 	resolveTable(table string) (schema, field.Path, error)
 	deref(n ast.Node, name string) (sem.Expr, schema)
 	this(n ast.Node, path []string) sem.Expr
 	tableOnly(n ast.Node, table string, path []string) (sem.Expr, error)
-	//String() string
+	String() string
 }
 
 type staticSchema struct {
@@ -72,6 +72,7 @@ func (d *dynamicSchema) Name() string { return d.name }
 func (*selectSchema) Name() string    { return "" }
 func (*joinSchema) Name() string      { return "" }
 func (*subquerySchema) Name() string  { return "" }
+func (p *pipeSchema) Name() string    { return p.name }
 
 func badSchema() schema {
 	return &dynamicSchema{}

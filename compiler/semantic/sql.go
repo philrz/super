@@ -159,6 +159,20 @@ func unravel(n ast.Node, elems []sem.RecordElem, schema schema, prefix field.Pat
 	case *joinSchema:
 		elems = unravel(n, elems, schema.left, append(prefix, "left"))
 		return unravel(n, elems, schema.right, append(prefix, "right"))
+	case *pipeSchema:
+		if schema.record == nil {
+			return append(elems, &sem.SpreadElem{
+				Node: n,
+				Expr: sem.NewThis(n, prefix),
+			})
+		}
+		for _, f := range schema.record.Fields {
+			elems = append(elems, &sem.FieldElem{
+				Name:  f.Name,
+				Value: sem.NewThis(n, slices.Clone(append(prefix, f.Name))),
+			})
+		}
+		return elems
 	default:
 		panic(schema)
 	}
@@ -398,7 +412,12 @@ func (t *translator) sqlPipe(op *ast.SQLPipe, seq sem.Seq, alias *ast.TableAlias
 			t.error(alias, errors.New("cannot apply column aliases to dynamically typed data"))
 		}
 	}
-	return t.seq(op.Ops), &dynamicSchema{name: name}
+	seq = t.seq(op.Ops)
+	typ := t.checker.seq(super.TypeNull, seq) //XXX is type null always gonna work?
+	if isUnknown(typ) {
+		return seq, &dynamicSchema{name: name}
+	}
+	return seq, newPipeSchema(name, typ)
 }
 
 func derefSchemaAs(n ast.Node, sch schema, table string, seq sem.Seq) (sem.Seq, schema) {

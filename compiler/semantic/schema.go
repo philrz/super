@@ -59,6 +59,14 @@ type pipeSchema struct {
 	record *super.TypeRecord
 }
 
+func newPipeSchema(name string, typ super.Type) *pipeSchema {
+	return &pipeSchema{
+		name:   name,
+		typ:    typ,
+		record: recordOf(typ),
+	}
+}
+
 func (s *staticSchema) Name() string  { return s.name }
 func (d *dynamicSchema) Name() string { return d.name }
 func (*selectSchema) Name() string    { return "" }
@@ -139,6 +147,13 @@ func (s *subquerySchema) resolveTable(table string) (schema, field.Path, error) 
 		return nil, nil, errors.New("correlated subqueries not currently supported")
 	}
 	return sch, path, err
+}
+
+func (p *pipeSchema) resolveTable(table string) (schema, field.Path, error) {
+	if strings.EqualFold(p.name, table) {
+		return p, nil, nil
+	}
+	return nil, nil, nil
 }
 
 func (d *dynamicSchema) resolveColumn(col string) (field.Path, bool, error) {
@@ -234,6 +249,15 @@ func (s *subquerySchema) resolveColumn(col string) (field.Path, bool, error) {
 		return nil, true, errors.New("correlated subqueries not currently supported")
 	}
 	return nil, false, fmt.Errorf("column %q not found", col)
+}
+
+func (p *pipeSchema) resolveColumn(col string) (field.Path, bool, error) {
+	if p.record != nil && slices.ContainsFunc(p.record.Fields, func(f super.Field) bool {
+		return f.Name == col
+	}) {
+		return field.Path{col}, false, nil
+	}
+	return nil, false, fmt.Errorf("column %q: does not exist", col)
 }
 
 func (*dynamicSchema) resolveOrdinal(n ast.Node, col int) (sem.Expr, error) {

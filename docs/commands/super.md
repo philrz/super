@@ -814,6 +814,94 @@ We then created a Parquet file called `gha.parquet` with this command:
 ```
 duckdb gha.db -c "COPY (from gha) TO 'gha.parquet'"
 ```
+
+---
+
+## Summary
+
+The only permutation that didn't experience an OOM failures was the combo of older DuckDB v1.1.3 on the 32 GB EC2
+instance, and indeed, that's what worked when I originally ran these benchmarks myself.
+
+### 32 GB EC2, DuckDB v1.4.1
+
+OOM failure with the defaults that worked with DuckDB v1.1.3, but it works if I use the extra settings.
+
+```
+$ duckdb-v1.4.1 $HOME/gha-v1.4.1.db -c "COPY (from gha) TO '$HOME/gha-v1.4.1.parquet'"
+ 99% ▕█████████████████████████████████████▌▏ (<1 second remaining)     Out of Memory Error:
+failed to pin block of size 256.0 KiB (24.6 GiB/24.6 GiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/stable/guides/performance/how_to_tune_workloads
+
+$ duckdb-v1.4.1 $HOME/gha-v1.4.1.db -c "set preserve_insertion_order=false; COPY (from gha) TO '$HOME/gha-v1.4.1.parquet' (row_group_size 32768)"
+100% ▕██████████████████████████████████████▏ (00:01:32.35 elapsed)
+
+$ ls -l $HOME/gha-v1.4.1.parquet
+-rw-rw-r-- 1 ubuntu ubuntu 4584860056 Oct 14 23:58 /home/ubuntu/gha-v1.4.1.parquet
+```
+
+### 32 GB EC2, DuckDB v1.1.3
+
+This one works without needing special settings, which is what I saw in the past when I first ran these benchmarks.
+
+```
+$ duckdb-v1.1.3 $HOME/gha-v1.1.3.db -c "COPY (from gha) TO '$HOME/gha-v1.1.3.parquet'"
+100% ▕████████████████████████████████████████████████████████████▏ 
+
+$ ls -l $HOME/gha-v1.1.3.parquet
+-rw-rw-r-- 1 ubuntu ubuntu 4945311124 Oct 14 23:55 /home/ubuntu/gha-v1.1.3.parquet
+```
+
+### 16 GB Macbook, DuckDB v1.4.1
+
+OOM failure, even with the extra settings. I guess 16 GB RAM just isn't enough.
+
+```
+$ duckdb-v1.4.1 gha-v1.4.1.db -c "COPY (from gha) TO 'gha-v1.4.1.parquet'"
+ 99% ▕█████████████████████████████████████▌▏ (<1 second remaining)     Out of Memory Error:
+failed to allocate data of size 1.0 MiB (12.8 GiB/12.7 GiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/stable/guides/performance/how_to_tune_workloads
+
+$ duckdb-v1.4.1 gha-v1.4.1.db -c "set preserve_insertion_order=false; COPY (from gha) TO 'gha-v1.4.1.parquet' (row_group_size 32768)"
+Out of Memory Error:
+failed to allocate data of size 32.0 KiB (12.7 GiB/12.7 GiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/stable/guides/performance/how_to_tune_workloads
+```
+
+### 16 GB Macbook, DuckDB v1.1.3
+
+OOM failure with the defaults, though it worked with the extra settings.
+
+```
+$ duckdb-v1.1.3 gha-v1.1.3.db -c "COPY (from gha) TO 'gha-v1.1.3.parquet'"
+ 99% ▕███████████████████████████████████████████████████████████▍▏ Out of Memory Error: could not allocate block of size 256.0 KiB (12.7 GiB/12.7 GiB used)
+
+$ duckdb-v1.1.3 gha-v1.1.3.db -c "set preserve_insertion_order=false; COPY (from gha) TO 'gha-v1.1.3.parquet' (row_group_size 32768)"
+100% ▕████████████████████████████████████████████████████████████▏ 
+
+$ ls -l gha-v1.1.3.parquet
+-rw-r--r--  1 phil  staff  5682086818 Oct 14 17:03 gha-v1.1.3.parquet
+```
+
+---
+
 To create a ClickHouse table using their beta JSON type, after starting
 a ClickHouse server we defined the single-column schema before loading the
 data using this command:
@@ -1103,6 +1191,49 @@ which fails with
 Invalid Input Error: JSON transform error in file "gharchive_gz/2023-02-08-10.json.gz", in line 4903: Object {"url":"https://api.github.com/repos/aws/aws-sam-c... has unknown key "reactions"
 Try increasing 'sample_size', reducing 'maximum_depth', specifying 'columns', 'format' or 'records' manually, setting 'ignore_errors' to true, or setting 'union_by_name' to true when reading multiple files with a different structure.
 ```
+
+---
+
+## Summary
+
+All permutations fail, with DuckDB producing an error on a different object in `v1.4.1` vs. `v1.1.3`.
+
+### 32 GB EC2, DuckDB v1.4.1
+
+```
+$ duckdb-v1.4.1 $HOME/gha-v1.4.1.db -c "CREATE TABLE gha AS FROM '$HOME/benchdata/gha/*.json.gz'"
+Invalid Input Error:
+JSON transform error in file "/home/ubuntu/benchdata/gha/2023-02-08-14.json.gz", in line 49745: Object {"issues":"write","metadata":"read","pull_requests... has unknown key "repository_hooks"
+Try increasing 'sample_size', reducing 'maximum_depth', specifying 'columns', 'format' or 'records' manually, setting 'ignore_errors' to true, or setting 'union_by_name' to true when reading multiple files with a different structure.
+```
+
+### 32 GB EC2, DuckDB v1.1.3
+
+```
+$ duckdb-v1.1.3 $HOME/gha-v1.1.3.db -c "CREATE TABLE gha AS FROM '$HOME/benchdata/gha/*.json.gz'"
+Invalid Input Error: JSON transform error in file "/home/ubuntu/benchdata/gha/2023-02-08-10.json.gz", in line 4903: Object {"url":"https://api.github.com/repos/aws/aws-sam-c... has unknown key "reactions"
+Try increasing 'sample_size', reducing 'maximum_depth', specifying 'columns', 'format' or 'records' manually, setting 'ignore_errors' to true, or setting 'union_by_name' to true when reading multiple files with a different structure.
+```
+
+### 16 GB Macbook, DuckDB v1.4.1
+
+```
+$ duckdb-v1.4.1 gha-v1.4.1.db -c "CREATE TABLE gha AS FROM '*.json.gz'"
+Invalid Input Error:
+JSON transform error in file "2023-02-08-14.json.gz", in line 49745: Object {"issues":"write","metadata":"read","pull_requests... has unknown key "repository_hooks"
+Try increasing 'sample_size', reducing 'maximum_depth', specifying 'columns', 'format' or 'records' manually, setting 'ignore_errors' to true, or setting 'union_by_name' to true when reading multiple files with a different structure.
+```
+
+### 16 GB Macbook, DuckDB v1.1.3
+
+```
+$ duckdb-v1.1.3 gha-v1.1.3.db -c "CREATE TABLE gha AS FROM '*.json.gz'"
+Invalid Input Error: JSON transform error in file "2023-02-08-10.json.gz", in line 4903: Object {"url":"https://api.github.com/repos/aws/aws-sam-c... has unknown key "reactions"
+Try increasing 'sample_size', reducing 'maximum_depth', specifying 'columns', 'format' or 'records' manually, setting 'ignore_errors' to true, or setting 'union_by_name' to true when reading multiple files with a different structure.
+```
+
+---
+
 Clearly the schema inference algorithm relies upon sampling and the sample doesn't
 cover enough data to capture all of its variations.
 
@@ -1119,6 +1250,33 @@ FROM (
 ```
 Unfortunately, if you use the resulting structure to create the `columns` argument
 then `duckdb` fails also because the first 2048 records don't have enough coverage.
+
+---
+
+## Summary
+
+I skipped this one because coming up with the right synax for `columns` to repro the original failure seemed
+very complicated, since it was huge and I can see in https://duckdb.org/2023/03/03/json.html that they use
+"STRUCT" for all the nestred records.
+
+```
+$ duckdb-v1.1.3 -c "SELECT json_group_structure(json)
+FROM (
+  SELECT *
+  FROM read_ndjson_objects('$HOME/benchdata/gha/*.json.gz')
+  LIMIT 2048
+);"
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                     json_group_structure("json")                                                                      │
+│                                                                                 json                                                                                  │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ {"id":"VARCHAR","type":"VARCHAR","actor":{"id":"UBIGINT","login":"VARCHAR","display_login":"VARCHAR","gravatar_id":"VARCHAR","url":"VARCHAR","avatar_url":"VARCHAR"…  │
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+
 So let's try removing the `LIMIT` clause:
 ```
 SELECT json_group_structure(json)
@@ -1128,6 +1286,80 @@ FROM (
 );
 ```
 Hmm, now `duckdb` runs out of memory.
+
+---
+
+## Summary
+
+It does indeed seem to OOM in all permutations, with one of them being a particularly disruptive hanging OOM on my EC2 instance.
+
+### 32 GB EC2, DuckDB v1.4.1
+
+```
+$ duckdb-v1.4.1 -c "
+SELECT json_group_structure(json)
+FROM (
+  SELECT *
+  FROM read_ndjson_objects('$HOME/benchdata/gha/*.json.gz')
+);"
+ 13% ▕████▉                                 ▏ (~43 seconds remaining)   Out of Memory Error:
+failed to allocate data of size 2.0 GiB (22.8 GiB/24.6 GiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/stable/guides/performance/how_to_tune_workloads
+```
+
+### 32 GB EC2, DuckDB v1.1.3
+
+This hung my instance, so I assume it OOM'ed.
+
+```
+$ duckdb-v1.1.3 -c "
+SELECT json_group_structure(json)
+FROM (
+  SELECT *
+  FROM read_ndjson_objects('$HOME/benchdata/gha/*.json.gz')
+);"
+  0% ▕                                                            ▏ 
+```
+
+### 16 GB Macbook, DuckDB v1.4.1
+
+```
+$ duckdb-v1.4.1 -c "
+SELECT json_group_structure(json)
+FROM (
+  SELECT *
+  FROM read_ndjson_objects('*.json.gz')
+);"
+Out of Memory Error:
+failed to allocate data of size 512.0 MiB (12.3 GiB/12.7 GiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/stable/guides/performance/how_to_tune_workloads
+```
+
+### 16 GB Macbook, DuckDB v1.1.3
+
+```
+$ duckdb-v1.1.3 -c "
+SELECT json_group_structure(json)
+FROM (
+  SELECT *
+  FROM read_ndjson_objects('*.json.gz')
+);"
+  0% ▕                                                            ▏ Out of Memory Error: failed to allocate data of size 16.0 MiB (12.8 GiB/12.7 GiB used)
+```
+
+---
 
 We then thought we'd see if the sampling algorithm of `read_json` is more efficient,
 so we tried this command with successively larger sample sizes:
@@ -1139,11 +1371,101 @@ Even with a million rows as the sample, `duckdb` fails with
 Invalid Input Error: JSON transform error in file "gharchive_gz/2023-02-08-14.json.gz", in line 49745: Object {"issues":"write","metadata":"read","pull_requests... has unknown key "repository_hooks"
 Try increasing 'sample_size', reducing 'maximum_depth', specifying 'columns', 'format' or 'records' manually, setting 'ignore_errors' to true, or setting 'union_by_name' to true when reading multiple files with a different structure.
 ```
+
+---
+
+## Summary
+
+This doesn't fail in DuckDB v1.4.1 the way it did in v1.1.3.
+
+### 32 GB EC2, DuckDB v1.4.1
+
+Worked ok.
+
+```
+$ duckdb-v1.4.1 $HOME/scratch -c "CREATE TABLE gha AS FROM read_json('$HOME/benchdata/gha/*.json.gz', sample_size=1000000)"
+100% ▕██████████████████████████████████████▏ (00:01:17.56 elapsed)     
+```
+
+### 32 GB EC2, DuckDB v1.1.3
+
+Failed with a JSON transform error.
+
+```
+$ duckdb-v1.1.3 $HOME/scratch -c "CREATE TABLE gha AS FROM read_json('$HOME/benchdata/gha/*.json.gz', sample_size=1000000)"
+Invalid Input Error: JSON transform error in file "/home/ubuntu/benchdata/gha/2023-02-08-14.json.gz", in line 49745: Object {"issues":"write","metadata":"read","pull_requests... has unknown key "repository_hooks"
+Try increasing 'sample_size', reducing 'maximum_depth', specifying 'columns', 'format' or 'records' manually, setting 'ignore_errors' to true, or setting 'union_by_name' to true when reading multiple files with a different structure.
+```
+
+### 16 GB Macbook, DuckDB v1.4.1
+
+Worked ok, but it took a long time!
+
+```
+$ duckdb-v1.4.1 scratch -c "CREATE TABLE gha AS FROM read_json('*.json.gz', sample_size=1000000)"
+100% ▕██████████████████████████████████████▏ (00:04:06.89 elapsed)     
+```
+
+### 16 GB Macbook, DuckDB v1.1.3
+
+Failed with a JSON transform error.
+
+```
+$ duckdb-v1.1.3 scratch -c "CREATE TABLE gha AS FROM read_json('*.json.gz', sample_size=1000000)"
+Invalid Input Error: JSON transform error in file "2023-02-08-13.json.gz", in line 92666: Object {"actions":"read","checks":"read","codespaces":"re... has unknown key "codespaces"
+Try increasing 'sample_size', reducing 'maximum_depth', specifying 'columns', 'format' or 'records' manually, setting 'ignore_errors' to true, or setting 'union_by_name' to true when reading multiple files with a different structure.
+```
+
+---
+
 Ok, there 4,434,953 JSON objects in the input so let's try this:
 ```
 duckdb gha.db -c "CREATE TABLE gha AS FROM read_json('gharchive_gz/*.json.gz', sample_size=4434953)"
 ```
 and again `duckdb` runs out of memory.
+
+---
+
+## Summary
+
+Worked with current DuckDB v1.4.1 on both the EC2 instance and my Macbook, whereas it failed in the past on DuckDB v1.1.3
+on my Macbook and took forever on the EC2 instance.
+
+### 32 GB EC2, DuckDB v1.4.1
+
+Worked ok.
+
+```
+$ duckdb-v1.4.1 $HOME/scratch -c "CREATE TABLE gha AS FROM read_json('$HOME/benchdata/gha/*.json.gz', sample_size=4434953)"
+100% ▕██████████████████████████████████████▏ (00:01:15.66 elapsed)     
+```
+
+### 32 GB EC2, DuckDB v1.1.3
+
+Worked in the end, but took over an hour.
+
+```
+$ duckdb-v1.1.3 $HOME/scratch -c "CREATE TABLE gha AS FROM read_json('$HOME/benchdata/gha/*.json.gz', sample_size=4434953)"
+100% ▕████████████████████████████████████████████████████████████▏ 
+```
+
+### 16 GB Macbook, DuckDB v1.4.1
+
+Worked ok.
+
+```
+$ duckdb-v1.4.1 scratch -c "CREATE TABLE gha AS FROM read_json('*.json.gz', sample_size=4434953)"
+100% ▕██████████████████████████████████████▏ (00:04:37.00 elapsed)     
+```
+
+### 16 GB Macbook, DuckDB v1.1.3
+
+```
+$ duckdb-v1.1.3 scratch -c "CREATE TABLE gha AS FROM read_json('*.json.gz', sample_size=4434953)"
+Out of Memory Error: failed to allocate data of size 31.9 MiB (12.7 GiB/12.7 GiB used)
+```
+
+---
 
 So we looked at the other options suggested by the error message and
 `union_by_name` appeared promising.  Enabling this option causes DuckDB
@@ -1154,6 +1476,63 @@ Sure enough, this works:
 ```
 duckdb gha.db -c "CREATE TABLE gha AS FROM read_json('gharchive_gz/*.json.gz', union_by_name=true)"
 ```
+
+---
+
+## Summary
+
+This works as it did before, but runs quicker, and generates a DB file that's much larger.
+
+### 32 GB EC2, DuckDB v1.4.1
+
+Worked ok, but notice the size of the DB file is much larger than with v1.1.3.
+
+```
+$ duckdb-v1.4.1 $HOME/gha-v1.4.1.db -c "CREATE TABLE gha AS FROM read_json('$HOME/benchdata/gha/*.json.gz', union_by_name=true)"
+100% ▕██████████████████████████████████████▏ (00:01:20.06 elapsed)     
+
+$ ls -l $HOME/gha-v1.4.1.db
+-rw-rw-r-- 1 ubuntu ubuntu 14483730432 Oct 14 22:43 /home/ubuntu/gha-v1.4.1.db
+```
+
+### 32 GB EC2, DuckDB v1.1.3
+
+Worked ok, but it took over an hour, and notice the size of the DB file is much smaller than with v1.4.1.
+
+```
+$ duckdb-v1.1.3 $HOME/gha-v1.1.3.db -c "CREATE TABLE gha AS FROM read_json('$HOME/benchdata/gha/*.json.gz', union_by_name=true)"
+100% ▕████████████████████████████████████████████████████████████▏ 
+
+$ ls -l $HOME/gha-v1.1.3.db
+-rw-rw-r-- 1 ubuntu ubuntu 10003427328 Oct 14 23:06 /home/ubuntu/gha-v1.1.3.db
+```
+
+### 16 GB Macbook, DuckDB v1.4.1
+
+Worked ok, but notice the size of the DB file is much larger than with v1.1.3.
+
+```
+$ duckdb-v1.4.1 gha-v1.4.1.db -c "CREATE TABLE gha AS FROM read_json('*.json.gz', union_by_name=true)"
+100% ▕██████████████████████████████████████▏ (00:04:57.26 elapsed)     
+
+$ ls -l gha-v1.4.1.db
+-rw-r--r--  1 phil  staff  14485827584 Oct 14 15:50 gha-v1.4.1.db
+```
+
+### 16 GB Macbook, DuckDB v1.1.3
+
+Worked ok, but it took over an hour, and notice the size of the DB file is much smaller than with v1.4.1.
+
+```
+$ duckdb-v1.1.3 gha-v1.1.3.db -c "CREATE TABLE gha AS FROM read_json('*.json.gz', union_by_name=true)"
+100% ▕████████████████████████████████████████████████████████████▏ 
+
+$ ls -l gha-v1.1.3.db
+-rw-r--r--  1 phil  staff  10000281600 Oct 14 16:05 gha-v1.1.3.db
+```
+
+---
+
 We now have the DuckDB database file for our GitHub Archive data called `gha.db`
 containing a single table called `gha` embedded in that database.
 What about the super-structured

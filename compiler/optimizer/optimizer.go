@@ -139,11 +139,12 @@ func walkEntries(seq dag.Seq, post func(dag.Seq) (dag.Seq, error)) (dag.Seq, err
 // TBD: we need to do pushdown for search/cut to optimize columnar extraction.
 func (o *Optimizer) Optimize(main *dag.Main) error {
 	seq := main.Body
-	replaceJoinWithHashJoin(seq)
 	seq = liftFilterOps(seq)
 	seq = mergeFilters(seq)
 	seq = mergeValuesOps(seq)
 	inlineRecordExprSpreads(seq)
+	seq = liftFiltersIntoJoins(seq)
+	replaceJoinWithHashJoin(seq)
 	seq = joinFilterPullup(seq)
 	seq = removePassOps(seq)
 	seq = replaceSortAndHeadOrTailWithTop(seq)
@@ -535,11 +536,7 @@ func joinFilterPullup(seq dag.Seq) dag.Seq {
 			// Filter has been fully pulled up and can be removed.
 			seq.Delete(i+2, i+3)
 		} else {
-			out := remaining[0]
-			for _, e := range remaining[1:] {
-				out = dag.NewBinaryExpr("and", e, out)
-			}
-			seq[i+2] = dag.NewFilterOp(out)
+			seq[i+2] = dag.NewFilterOp(buildConjunction(remaining))
 		}
 		fork.Paths[0] = joinFilterPullup(fork.Paths[0])
 		fork.Paths[1] = joinFilterPullup(fork.Paths[1])
@@ -556,6 +553,14 @@ func isJoin(op dag.Op) (string, string, bool) {
 	default:
 		return "", "", false
 	}
+}
+
+func buildConjunction(exprs []dag.Expr) dag.Expr {
+	out := exprs[0]
+	for _, e := range exprs[1:] {
+		out = dag.NewBinaryExpr("and", e, out)
+	}
+	return out
 }
 
 func splitPredicate(e dag.Expr) []dag.Expr {

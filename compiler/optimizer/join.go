@@ -6,6 +6,77 @@ import (
 	"github.com/brimdata/super/compiler/dag"
 )
 
+func liftFiltersIntoJoins(seq dag.Seq) dag.Seq {
+	var filter *dag.FilterOp
+	var i int
+	for i = range len(seq) - 3 {
+		_, isfork := seq[i].(*dag.ForkOp)
+		_, isjoin := seq[i+1].(*dag.JoinOp)
+		var isfilter bool
+		filter, isfilter = seq[i+2].(*dag.FilterOp)
+		if isfork && isjoin && isfilter {
+			break
+		}
+	}
+	if filter == nil {
+		return seq
+	}
+	in := splitPredicate(filter.Expr)
+	var exprs []dag.Expr
+	for _, e := range in {
+		if b, ok := e.(*dag.BinaryExpr); ok && b.Op == "==" && liftFilterIntoJoin(seq[i:], b.LHS, b.RHS) {
+			continue
+		}
+		exprs = append(exprs, e)
+	}
+	if len(exprs) == 0 {
+		seq.Delete(i+2, i+3)
+	} else if len(exprs) != len(in) {
+		seq[i+2] = dag.NewFilterOp(buildConjunction(exprs))
+	}
+	return seq
+}
+
+func liftFilterIntoJoin(seq dag.Seq, lhs, rhs dag.Expr) bool {
+	fork, isfork := seq[0].(*dag.ForkOp)
+	join, isjoin := seq[1].(*dag.JoinOp)
+	if !isfork || !isjoin {
+		return false
+	}
+	if len(fork.Paths) != 2 {
+		panic(fork)
+	}
+	lhsFirst, lok := firstThisPathComponent(lhs)
+	rhsFirst, rok := firstThisPathComponent(rhs)
+	if !lok || !rok {
+		return false
+	}
+	if lhsFirst == rhsFirst {
+		lhs, rhs = dag.CopyExpr(lhs), dag.CopyExpr(rhs)
+		stripFirstThisPathComponent(lhs)
+		stripFirstThisPathComponent(rhs)
+		if lhsFirst == join.LeftAlias {
+			return liftFilterIntoJoin(fork.Paths[0], lhs, rhs)
+		}
+		if lhsFirst == join.RightAlias {
+			return liftFilterIntoJoin(fork.Paths[1], lhs, rhs)
+		}
+		return false
+	}
+	if join.Cond != nil {
+		return false
+	}
+	if lhsFirst != join.LeftAlias {
+		lhsFirst, rhsFirst = rhsFirst, lhsFirst
+		lhs, rhs = rhs, lhs
+	}
+	if lhsFirst != join.LeftAlias || rhsFirst != join.RightAlias {
+		return false
+	}
+	join.Cond = dag.NewBinaryExpr("==", lhs, rhs)
+	return true
+}
+
 func replaceJoinWithHashJoin(seq dag.Seq) {
 	walkT(reflect.ValueOf(seq), func(op dag.Op) dag.Op {
 		j, ok := op.(*dag.JoinOp)
@@ -16,9 +87,13 @@ func replaceJoinWithHashJoin(seq dag.Seq) {
 		if !ok {
 			return op
 		}
+		style := j.Style
+		if style == "cross" {
+			style = "inner"
+		}
 		return &dag.HashJoinOp{
 			Kind:       "HashJoinOp",
-			Style:      j.Style,
+			Style:      style,
 			LeftAlias:  j.LeftAlias,
 			RightAlias: j.RightAlias,
 			LeftKey:    left,

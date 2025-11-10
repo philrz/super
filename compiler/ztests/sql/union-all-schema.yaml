@@ -1,0 +1,36 @@
+script: |
+  super -s -c "
+    select * from (
+      select 1 as x
+      union all
+      select 2 as x
+    )
+    join (
+      select 1 as y
+      union all
+      select 3 as y
+    ) on x=y"
+  ! super -s -c "
+    select * from (
+      select 1 as x
+      union all
+      select 2 as y
+    )
+    join (
+      select 1 as y
+      union all
+      select 3 as z
+    ) on x=y"
+
+outputs:
+  - name: stdout
+    data: |
+      {x:1,y:1}
+  - name: stderr
+    data: |
+      "x": ambiguous column reference at line 11, column 8:
+        ) on x=y
+             ~
+      "y": ambiguous column reference at line 11, column 10:
+        ) on x=y
+               ~

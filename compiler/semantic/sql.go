@@ -513,9 +513,9 @@ func (t *translator) sqlQueryBody(query ast.SQLQueryBody, seq sem.Seq) (sem.Seq,
 		return seq, sch
 	case *ast.SQLUnion:
 		left, leftSch := t.sqlQueryBody(query.Left, seq)
-		left, _ = endScope(query.Left.(ast.Node), leftSch, left)
+		left, leftSch = endScope(query.Left.(ast.Node), leftSch, left)
 		right, rightSch := t.sqlQueryBody(query.Right, seq)
-		right, _ = endScope(query.Right.(ast.Node), rightSch, right)
+		right, rightSch = endScope(query.Right.(ast.Node), rightSch, right)
 		out := sem.Seq{
 			&sem.ForkOp{Node: query, Paths: []sem.Seq{left, right}},
 			// This used to be dag.Combine but we don't have combine in the sem tree,
@@ -527,10 +527,19 @@ func (t *translator) sqlQueryBody(query ast.SQLQueryBody, seq sem.Seq) (sem.Seq,
 		if query.Distinct {
 			out = t.genDistinct(sem.NewThis(query, nil), out)
 		}
-		return out, &dynamicSchema{}
+		return out, unionSchema(leftSch, rightSch)
 	default:
 		panic(query)
 	}
+}
+
+func unionSchema(a, b schema) schema {
+	asch, aok := a.(*staticSchema)
+	bsch, bok := b.(*staticSchema)
+	if !aok || !bok || !slices.Equal(asch.columns, bsch.columns) {
+		return &dynamicSchema{}
+	}
+	return &staticSchema{slices.Clone(asch.columns)}
 }
 
 func (t *translator) sqlWith(with *ast.SQLWith) map[string]*ast.SQLCTE {

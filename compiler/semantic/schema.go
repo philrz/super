@@ -21,6 +21,7 @@ type schema interface {
 	endScope(n ast.Node) (sem.Expr, schema)
 	this(n ast.Node, path []string) sem.Expr
 	tableOnly(n ast.Node, table string, path []string) (sem.Expr, error)
+	outColumns() ([]string, bool)
 	String() string
 }
 
@@ -458,6 +459,47 @@ func (j *joinSchema) tableOnly(n ast.Node, name string, path []string) (sem.Expr
 
 func (s *subquerySchema) tableOnly(n ast.Node, name string, path []string) (sem.Expr, error) {
 	return nil, fmt.Errorf("no such table %q", name) //XXX
+}
+
+func (a *aliasSchema) outColumns() ([]string, bool) {
+	return a.sch.outColumns()
+}
+
+func (d *dynamicSchema) outColumns() ([]string, bool) {
+	return nil, false
+}
+
+func (s *staticSchema) outColumns() ([]string, bool) {
+	return s.columns, true
+}
+
+func (s *selectSchema) outColumns() ([]string, bool) {
+	return s.out.outColumns()
+}
+
+func (j *joinSchema) outColumns() ([]string, bool) {
+	left, lok := j.left.outColumns()
+	right, rok := j.right.outColumns()
+	if !lok || !rok {
+		return nil, false
+	}
+	// Include all columns from the left except for those appearing on
+	// the right since that's what {...left,...right} does.
+	m := make(map[string]struct{})
+	for _, col := range right {
+		m[col] = struct{}{}
+	}
+	var out []string
+	for _, col := range left {
+		if _, ok := m[col]; !ok {
+			out = append(out, col)
+		}
+	}
+	return append(out, right...), true
+}
+
+func (s *subquerySchema) outColumns() ([]string, bool) {
+	return s.outer.outColumns()
 }
 
 func (a *aliasSchema) String() string {

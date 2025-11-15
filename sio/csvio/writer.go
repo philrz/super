@@ -92,6 +92,8 @@ func (w *Writer) Write(rec super.Value) error {
 					s = strings.TrimSuffix(s, ".")
 				}
 			}
+		} else {
+			s = "NULL"
 		}
 		w.strings = append(w.strings, s)
 	}

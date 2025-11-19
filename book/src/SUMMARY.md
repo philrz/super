@@ -220,3 +220,4 @@
             - [Logs](dev/integrations/zeek/logs.md)
             - [Types](dev/integrations/zeek/types.md)
             - [Shaping](dev/integrations/zeek/shaping.md)
+- [Demo](demo.md)

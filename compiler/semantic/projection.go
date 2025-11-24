@@ -83,7 +83,7 @@ func (a *aggfuncs) subst(e sem.Expr) sem.Expr {
 		// the generated aggregate operator.
 		tmp := a.tmp()
 		*a = append(*a, namedAgg{name: tmp, agg: e})
-		return sem.NewThis(e, []string{"in", tmp})
+		return sem.NewThis(e.Node, []string{"in", tmp})
 	case *sem.ArrayExpr:
 		e.Elems = a.substArrayElems(e.Elems)
 	case *sem.BinaryExpr:

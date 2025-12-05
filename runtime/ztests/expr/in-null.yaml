@@ -1,0 +1,9 @@
+spq: |
+  values null in (null), 1 in (null), 1 in (1,null)
+
+vector: true
+
+output: |
+  null::bool
+  null::bool
+  true

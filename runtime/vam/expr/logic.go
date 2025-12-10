@@ -3,6 +3,7 @@ package expr
 import (
 	"slices"
 
+	"github.com/RoaringBitmap/roaring/v2"
 	"github.com/brimdata/super"
 	"github.com/brimdata/super/vector"
 	"github.com/brimdata/super/vector/bitvec"
@@ -210,6 +211,19 @@ func (i *In) eval(vecs ...vector.Any) vector.Any {
 		return lhs
 	}
 	if rhs.Type().Kind() == super.ErrorKind {
+		if nulls := vector.NullsOf(lhs); !nulls.IsZero() {
+			// Nulls in LHS should still be null.
+			var nullTags []uint32
+			for i := range rhs.Len() {
+				if nulls.IsSetDirect(i) {
+					nullTags = append(nullTags, i)
+				}
+			}
+			length := uint32(len(nullTags))
+			out := vector.NewConst(super.NullBool, length, bitvec.NewTrue(length))
+			rhs = vector.ReversePick(rhs, nullTags)
+			return vector.Combine(rhs, nullTags, out)
+		}
 		return rhs
 	}
 	return i.pw.Eval(lhs, rhs)
@@ -266,6 +280,7 @@ func (p *PredicateWalk) Eval(vecs ...vector.Any) vector.Any {
 
 func (p *PredicateWalk) evalForList(lhs, rhs vector.Any, offsets, index []uint32) *vector.Bool {
 	out := vector.NewFalse(lhs.Len())
+	nulls := roaring.New()
 	var lhsIndex, rhsIndex []uint32
 	for j := range lhs.Len() {
 		idx := j
@@ -285,9 +300,15 @@ func (p *PredicateWalk) evalForList(lhs, rhs vector.Any, offsets, index []uint32
 		}
 		lhsView := vector.Pick(lhs, lhsIndex)
 		rhsView := vector.Pick(rhs, rhsIndex)
-		if toBool(p.Eval(lhsView, rhsView)).Bits.TrueCount() > 0 {
+		b := toBool(p.Eval(lhsView, rhsView))
+		if b.Bits.TrueCount() > 0 {
 			out.Set(j)
+		} else if b.Nulls.TrueCount() > 0 {
+			nulls.Add(j)
 		}
+	}
+	if nulls.GetCardinality() > 0 {
+		out.Nulls = bitvec.New(nulls.ToDense(), lhs.Len())
 	}
 	return out
 }

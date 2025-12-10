@@ -1,12 +1,14 @@
 spq: |
-  values [1 in this, 9 in this]
+  values [1 in this, 9 in this, null in this]
 
 vector: true
 
 input: |
   1
   {a:1}
+  {c0:null,c1:9}
   [0,1,2]
+  [0,null,1]
   |[0,1,2]|
   |{1:null}|
   |{null:1}|
@@ -16,13 +18,15 @@ input: |
   error(0)
 
 output: |
-  [true,false]
-  [true,false]
-  [true,false]
-  [true,false]
-  [true,false]
-  [true,false]
-  [true,false]
-  [true,false]
-  [true,false]
-  [error(0),error(0)]
+  [true,false,null::bool]
+  [true,false,null::bool]
+  [null::bool,true,null::bool]
+  [true,false,null::bool]
+  [true,null::bool,null::bool]
+  [true,false,null::bool]
+  [true,null::bool,null::bool]
+  [true,null::bool,null::bool]
+  [true,false,null::bool]
+  [true,false,null::bool]
+  [true,false,null::bool]
+  [error(0),error(0),null]::[bool|error(int64)]

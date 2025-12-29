@@ -44,7 +44,7 @@ func IPValue(val Any, slot uint32) (netip.Addr, bool) {
 			return netip.Addr{}, true
 		}
 		b, _ := val.AsBytes()
-		return super.DecodeIP(b), false
+		return super.DecodeIP(b), val.val.IsNull()
 	case *Dict:
 		if val.Nulls.IsSet(slot) {
 			return netip.Addr{}, true

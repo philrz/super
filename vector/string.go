@@ -61,7 +61,7 @@ func StringValue(val Any, slot uint32) (string, bool) {
 			return "", true
 		}
 		s, _ := val.AsString()
-		return s, false
+		return s, val.val.IsNull()
 	case *Dict:
 		if val.Nulls.IsSet(slot) {
 			return "", true

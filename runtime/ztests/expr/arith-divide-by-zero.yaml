@@ -1,3 +1,4 @@
+# XXX This file should test floats but #6474 needs to be fixed first.
 spq: values a/b, a%b
 
 vector: true
@@ -14,3 +15,17 @@ output: |
   null::uint64
   error("divide by zero")
   error("divide by zero")
+
+---
+
+# Check the divide by zero logic on a const null returns a null.
+spq: |
+  values 
+    1/null::int64,
+    1::uint64/null::uint64
+
+vector: true
+
+output: |
+  null::int64
+  null::uint64

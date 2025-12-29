@@ -58,7 +58,7 @@ func BytesValue(val Any, slot uint32) ([]byte, bool) {
 			return nil, true
 		}
 		s, _ := val.AsBytes()
-		return s, false
+		return s, val.val.IsNull()
 	case *Dict:
 		if val.Nulls.IsSet(slot) {
 			return nil, true

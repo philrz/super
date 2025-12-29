@@ -44,7 +44,7 @@ func NetValue(val Any, slot uint32) (netip.Prefix, bool) {
 			return netip.Prefix{}, true
 		}
 		s, _ := val.AsBytes()
-		return super.DecodeNet(s), false
+		return super.DecodeNet(s), val.val.IsNull()
 	case *Dict:
 		if val.Nulls.IsSet(slot) {
 			return netip.Prefix{}, true

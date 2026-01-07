@@ -76,11 +76,9 @@ type (
 
 		// Columns holds the projection.  We bookkeep both the ast expression
 		// and sem tree expr so we can do lateral column alias macro substition.
-		// Also, a SELECT column can refer to only the lateral columns to its left
-		// so latStop limits the extent of the column lookup to avoid
-		// an infinite expansion cycle.
+		// The lateral field is true when lateral column resolution is allowed.
 		columns []column
-		latStop int
+		lateral bool
 
 		// The output schema is always static, e.g., a dynamic input is
 		// always wrapped in a column.  Also, the projected columns referenced

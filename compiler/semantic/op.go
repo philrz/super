@@ -156,7 +156,7 @@ func (t *translator) maybeCTE(source ast.FromSource) (*ast.SQLCTE, string) {
 func (t *translator) fromCTE(node ast.Node, c *ast.SQLCTE) (sem.Seq, schema) {
 	if slices.Contains(t.cteStack, c) {
 		t.error(node, errors.New("recursive WITH relations not currently supported"))
-		return sem.Seq{badOp()}, badSchema
+		return sem.Seq{badOp}, badSchema
 	}
 	t.cteStack = append(t.cteStack, c)
 	seq, sch := t.sqlQueryBody(c.Body, nil, nil)
@@ -196,7 +196,7 @@ func hasError(val super.Value) bool {
 func (t *translator) hasFromParent(loc ast.Node, seq sem.Seq) sem.Seq {
 	if len(seq) > 0 {
 		t.error(loc, errors.New("from operator cannot have parent unless from argument is an expression"))
-		return append(seq, badOp())
+		return append(seq, badOp)
 	}
 	return nil
 }
@@ -209,13 +209,13 @@ func (t *translator) fromConst(val super.Value, entity *ast.FromEval, args []ast
 	vals, err := val.Elements()
 	if err != nil {
 		t.error(entity.Expr, fmt.Errorf("from expression requires a string but encountered %s", sup.String(val)))
-		return sem.Seq{badOp()}, ""
+		return sem.Seq{badOp}, ""
 	}
 	names := make([]string, 0, len(vals))
 	for _, val := range vals {
 		if super.TypeUnder(val.Type()) != super.TypeString {
 			t.error(entity.Expr, fmt.Errorf("from expression requires a string but encountered %s", sup.String(val)))
-			return sem.Seq{badOp()}, ""
+			return sem.Seq{badOp}, ""
 		}
 		names = append(names, val.AsString())
 	}
@@ -314,11 +314,11 @@ func (t *translator) fromFileGlob(globLoc ast.Node, pattern string, args []ast.O
 	names, err := filepath.Glob(pattern)
 	if err != nil {
 		t.error(globLoc, err)
-		return badOp()
+		return badOp
 	}
 	if len(names) == 0 {
 		t.error(globLoc, errors.New("no file names match glob pattern"))
-		return badOp()
+		return badOp
 	}
 	if len(names) == 1 {
 		return t.file(globLoc, names[0], args)
@@ -336,7 +336,7 @@ func (t *translator) fromURL(urlLoc ast.Node, u string, args []ast.OpArg) sem.Op
 	_, err := url.ParseRequestURI(u)
 	if err != nil {
 		t.error(urlLoc, err)
-		return badOp()
+		return badOp
 	}
 	opArgs := t.opArgs(args, "format", "method", "body", "headers")
 	format, _ := t.textArg(opArgs, "format")
@@ -390,7 +390,7 @@ func (t *translator) fromPoolRegexp(node ast.Node, re, orig, which string, args 
 	poolNames, err := t.matchPools(re, orig, which)
 	if err != nil {
 		t.error(node, err)
-		return sem.Seq{badOp()}
+		return sem.Seq{badOp}
 	}
 	var paths []sem.Seq
 	for _, name := range poolNames {
@@ -436,7 +436,7 @@ func (t *translator) pool(node ast.Node, poolName string, args []ast.OpArg) sem.
 	poolID, err := t.env.PoolID(t.ctx, poolName)
 	if err != nil {
 		t.error(node, err)
-		return badOp()
+		return badOp
 	}
 	var commitID ksuid.KSUID
 	commit, commitLoc := t.textArg(opArgs, "commit")
@@ -445,7 +445,7 @@ func (t *translator) pool(node ast.Node, poolName string, args []ast.OpArg) sem.
 			commitID, err = t.env.CommitObject(t.ctx, poolID, commit)
 			if err != nil {
 				t.error(commitLoc, err)
-				return badOp()
+				return badOp
 			}
 		}
 	}
@@ -456,7 +456,7 @@ func (t *translator) pool(node ast.Node, poolName string, args []ast.OpArg) sem.
 				commitID, err = t.env.CommitObject(t.ctx, poolID, "main")
 				if err != nil {
 					t.error(metaLoc, err)
-					return badOp()
+					return badOp
 				}
 			}
 			tapString, _ := t.textArg(opArgs, "tap")
@@ -477,7 +477,7 @@ func (t *translator) pool(node ast.Node, poolName string, args []ast.OpArg) sem.
 			}
 		}
 		t.error(metaLoc, fmt.Errorf("unknown metadata type %q", meta))
-		return badOp()
+		return badOp
 	}
 	if commitID == ksuid.Nil {
 		// This trick here allows us to default to the main branch when
@@ -485,7 +485,7 @@ func (t *translator) pool(node ast.Node, poolName string, args []ast.OpArg) sem.
 		commitID, err = t.env.CommitObject(t.ctx, poolID, "main")
 		if err != nil {
 			t.error(node, err)
-			return badOp()
+			return badOp
 		}
 	}
 	return &sem.PoolScan{
@@ -499,7 +499,7 @@ func (t *translator) dbMeta(entity *ast.DBMeta) sem.Op {
 	meta := entity.Meta.Text
 	if _, ok := dag.DBMetas[meta]; !ok {
 		t.error(entity, fmt.Errorf("unknown database metadata type %q in from operator", meta))
-		return badOp()
+		return badOp
 	}
 	return &sem.DBMetaScan{
 		Node: entity,
@@ -510,12 +510,12 @@ func (t *translator) dbMeta(entity *ast.DBMeta) sem.Op {
 func (t *translator) deleteScan(op *ast.Delete) sem.Op {
 	if !t.env.IsAttached() {
 		t.error(op, errors.New("deletion requires database"))
-		return badOp()
+		return badOp
 	}
 	poolID, err := t.env.PoolID(t.ctx, op.Pool)
 	if err != nil {
 		t.error(op, err)
-		return badOp()
+		return badOp
 	}
 	var commitID ksuid.KSUID
 	if op.Branch != "" {
@@ -524,7 +524,7 @@ func (t *translator) deleteScan(op *ast.Delete) sem.Op {
 			commitID, err = t.env.CommitObject(t.ctx, poolID, op.Branch)
 			if err != nil {
 				t.error(op, err)
-				return badOp()
+				return badOp
 			}
 		}
 	}
@@ -690,7 +690,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 			n := len(o.Expr.Elems)
 			if n == 0 {
 				t.error(o.Expr, errors.New("count record expression must not be empty"))
-				return append(seq, badOp())
+				return append(seq, badOp)
 			}
 			last := o.Expr.Elems[n-1]
 			if exprElem, ok := last.(*ast.ExprElem); ok {
@@ -700,7 +700,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 			}
 			if alias == "" {
 				t.error(last, errors.New("last element in record expression for count must be an identifier"))
-				return append(seq, badOp())
+				return append(seq, badOp)
 			}
 			if len(o.Expr.Elems) > 1 {
 				expr = t.expr(&ast.RecordExpr{
@@ -739,7 +739,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 		}
 		if _, err := super.NewRecordBuilder(t.sctx, fields); err != nil {
 			t.error(o.Args, err)
-			return append(seq, badOp())
+			return append(seq, badOp)
 		}
 		return append(seq, &sem.CutOp{
 			Node: o,
@@ -822,15 +822,15 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 			l := t.expr(o.Limit)
 			val, ok := t.mustEval(l)
 			if !ok {
-				return append(seq, badOp())
+				return append(seq, badOp)
 			}
 			if !super.IsSigned(val.Type().ID()) {
 				t.error(o.Limit, errors.New("limit argument must be an integer"))
-				return append(seq, badOp())
+				return append(seq, badOp)
 			}
 			if limit = int(val.Int()); limit < 1 {
 				t.error(o.Limit, errors.New("limit argument value must be greater than 0"))
-				return append(seq, badOp())
+				return append(seq, badOp)
 			}
 		}
 		var exprs []sem.SortExpr
@@ -893,7 +893,7 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 		}
 		if leftAlias == rightAlias {
 			t.error(o.Alias, errors.New("left and right join aliases cannot be the same"))
-			return append(seq, badOp())
+			return append(seq, badOp)
 		}
 		var cond sem.Expr
 		if o.Cond != nil {
@@ -938,10 +938,10 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 			this, ok := e.(*sem.ThisExpr)
 			if !ok {
 				t.error(o.As, errors.New("as clause must be a field reference"))
-				return append(seq, badOp())
+				return append(seq, badOp)
 			} else if len(this.Path) != 1 {
 				t.error(o.As, errors.New("field must be a top-level field"))
-				return append(seq, badOp())
+				return append(seq, badOp)
 			}
 			as = this.Path[0]
 		}
@@ -1047,14 +1047,14 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq) sem.Seq {
 	case *ast.LoadOp:
 		if !t.env.IsAttached() {
 			t.error(o, errors.New("load operator cannot be used without an attached database"))
-			return sem.Seq{badOp()}
+			return sem.Seq{badOp}
 		}
 		poolID, err := dbid.ParseID(o.Pool.Text)
 		if err != nil {
 			poolID, err = t.env.PoolID(t.ctx, o.Pool.Text)
 			if err != nil {
 				t.error(o, err)
-				return append(seq, badOp())
+				return append(seq, badOp)
 			}
 		}
 		opArgs := t.opArgs(o.Args, "commit", "author", "message", "meta")
@@ -1155,7 +1155,7 @@ func (c *constDecl) resolve(t *translator) sem.Expr {
 			c.expr = t.mustEvalConst(t.expr(c.decl.Expr))
 		} else {
 			t.error(c.decl.Name, fmt.Errorf("const %q involved in cyclic dependency", c.decl.Name.Name))
-			c.expr = badExpr()
+			c.expr = badExpr
 		}
 	}
 	return c.expr
@@ -1191,7 +1191,7 @@ func (q *queryDecl) resolve(t *translator) sem.Seq {
 			q.body = t.seq(q.decl.Body)
 		} else {
 			t.error(q.decl.Name, fmt.Errorf("named query %q involved in cyclic dependency", q.decl.Name.Name))
-			q.body = sem.Seq{badOp()}
+			q.body = sem.Seq{badOp}
 		}
 	}
 	return q.body
@@ -1296,7 +1296,7 @@ func (t *translator) assignmentOp(p *ast.AssignmentOp) sem.Op {
 	}
 	if len(puts) > 0 && len(aggs) > 0 {
 		t.error(p, errors.New("mix of aggregations and non-aggregations in assignment list"))
-		return badOp()
+		return badOp
 	}
 	if len(puts) > 0 {
 		return &sem.PutOp{
@@ -1433,14 +1433,14 @@ func (t *translator) callOp(call *ast.CallOp, seq sem.Seq) sem.Seq {
 	decl, err := t.scope.lookupOp(call.Name.Name)
 	if err != nil {
 		t.error(call, err)
-		return sem.Seq{badOp()}
+		return sem.Seq{badOp}
 	}
 	if decl == nil {
 		t.error(call, fmt.Errorf("no such user operator: %q", call.Name.Name))
-		return sem.Seq{badOp()}
+		return sem.Seq{badOp}
 	}
 	if decl.bad {
-		return sem.Seq{badOp()}
+		return sem.Seq{badOp}
 	}
 	return append(seq, t.userOp(call.Loc, decl, call.Args)...)
 }
@@ -1454,7 +1454,7 @@ func (t *translator) userOp(loc ast.Loc, decl *opDecl, args []ast.Expr) sem.Seq 
 	params := decl.ast.Params
 	if len(params) != len(args) {
 		t.error(loc, fmt.Errorf("%d arg%s provided when operator expects %d arg%s", len(args), plural.Slice(args, "s"), len(params), plural.Slice(params, "s")))
-		return sem.Seq{badOp()}
+		return sem.Seq{badOp}
 	}
 	exprs := make([]sem.Expr, 0, len(args))
 	for _, arg := range args {
@@ -1462,7 +1462,7 @@ func (t *translator) userOp(loc ast.Loc, decl *opDecl, args []ast.Expr) sem.Seq 
 	}
 	if slices.Contains(t.opStack, decl.ast) {
 		t.error(loc, opCycleError(append(t.opStack, decl.ast)))
-		return sem.Seq{badOp()}
+		return sem.Seq{badOp}
 	}
 	t.opStack = append(t.opStack, decl.ast)
 	oldscope := t.scope
@@ -1474,7 +1474,7 @@ func (t *translator) userOp(loc ast.Loc, decl *opDecl, args []ast.Expr) sem.Seq 
 	for i, param := range params {
 		if err := t.scope.BindSymbol(param.Name, exprs[i]); err != nil {
 			t.error(loc, err)
-			return sem.Seq{badOp()}
+			return sem.Seq{badOp}
 		}
 	}
 	return t.seq(decl.ast.Body)
@@ -1599,7 +1599,7 @@ func (t *translator) mustEvalPositiveInteger(ae ast.Expr) int {
 func (t *translator) mustEvalConst(e sem.Expr) sem.Expr {
 	val, ok := t.mustEval(e)
 	if !ok {
-		return badExpr()
+		return badExpr
 	}
 	return &sem.LiteralExpr{
 		Node:  e,

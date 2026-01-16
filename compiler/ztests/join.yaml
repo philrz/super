@@ -4,7 +4,7 @@ script: |
   echo // === >&2
   ! super compile -dag -C 'fork (pass) (pass) | join on foo.key=left.key'
   echo // === >&2
-  ! super compile -dag -C 'fork (pass) (pass) | join on this'
+  ! super compile -dag -C 'fork (pass) (pass) | join on this=1'
   echo // === >&2
   ! super compile -dag -C 'cross join on left.key=1+2'
 
@@ -28,19 +28,16 @@ outputs:
       fork (pass) (pass) | join as {j,j} on key
                                    ~~~~~
       // ===
-      ambiguous field reference "foo" at line 1, column 30:
-      fork (pass) (pass) | join on foo.key=left.key
-                                   ~~~~~~~~~~~~~~~~
       no such field "foo" at line 1, column 30:
       fork (pass) (pass) | join on foo.key=left.key
                                    ~~~
-      "key" no such field at line 1, column 43:
+      no such field "key" at line 1, column 43:
       fork (pass) (pass) | join on foo.key=left.key
                                                 ~~~
       // ===
       join expression cannot refer to "this" at line 1, column 30:
-      fork (pass) (pass) | join on this
-                                   ~~~~
+      fork (pass) (pass) | join on this=1
+                                   ~~~~~~
       // ===
       parse error at line 1, column 12:
       cross join on left.key=1+2

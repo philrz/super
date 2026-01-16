@@ -57,7 +57,7 @@ func (t *translator) expr(e ast.Expr, inType super.Type) (sem.Expr, super.Type) 
 			RHS: &sem.BinaryExpr{
 				Node: e.Upper,
 				Op:   "<=",
-				LHS:  val,
+				LHS:  sem.CopyExpr(val),
 				RHS:  upper,
 			},
 		}

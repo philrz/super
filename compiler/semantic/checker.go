@@ -351,8 +351,7 @@ func (c *checker) expr(typ super.Type, e sem.Expr) super.Type {
 		return lambdaType
 	case *sem.MapExpr:
 		// fuser could take type at a time instead of array
-		var keyTypes []super.Type
-		var valTypes []super.Type
+		var keyTypes, valTypes []super.Type
 		for _, entry := range e.Entries {
 			keyTypes = append(keyTypes, c.expr(typ, entry.Key))
 			valTypes = append(valTypes, c.expr(typ, entry.Value))
@@ -431,10 +430,9 @@ func (c *checker) binary(op string, loc, lloc, rloc ast.Node, lhs, rhs super.Typ
 		return c.equality(lhs, rhs)
 	case "<", "<=", ">", ">=":
 		return c.comparison(lhs, rhs)
-	case "+", "-", "*", "/", "%":
-		if op == "+" {
-			return c.plus(loc, lhs, rhs)
-		}
+	case "+":
+		return c.plus(loc, lhs, rhs)
+	case "-", "*", "/", "%":
 		return c.arithmetic(lloc, rloc, lhs, rhs)
 	default:
 		panic(op)
@@ -755,7 +753,7 @@ func (c *checker) deref(loc ast.Node, typ super.Type, field string) (super.Type,
 		}
 		return c.fuse(types), valid
 	}
-	c.error(loc, fmt.Errorf("%q no such field", field))
+	c.error(loc, fmt.Errorf("no such field %q", field))
 	return c.unknown, false
 }
 
@@ -949,15 +947,15 @@ func hasUnknown(typ super.Type) bool {
 }
 
 func (c *checker) hasArray(typ super.Type) (super.Type, bool) {
-	if u, ok := super.TypeUnder(typ).(*super.TypeUnion); ok {
-		for _, t := range u.Types {
+	switch typ := super.TypeUnder(typ).(type) {
+	case *super.TypeUnion:
+		for _, t := range typ.Types {
 			if elemType, ok := c.hasArray(t); ok {
 				return elemType, true
 			}
 		}
-	}
-	if a, ok := super.TypeUnder(typ).(*super.TypeArray); ok {
-		return a.Type, true
+	case *super.TypeArray:
+		return typ.Type, true
 	}
 	if isUnknown(typ) {
 		return c.unknown, true

@@ -758,10 +758,14 @@ func (t *translator) semOp(o ast.Op, seq sem.Seq, inType super.Type) (sem.Seq, s
 		if drops == nil {
 			panic(drops)
 		}
+		// Ignore errors in dropPaths since t.fields will get them.
+		t.checker.pushErrs()
+		typ := t.checker.dropPaths(inType, drops)
+		t.checker.popErrs()
 		return append(seq, &sem.DropOp{
 			Node: o,
 			Args: args,
-		}), t.checker.dropPaths(inType, drops)
+		}), typ
 	case *ast.SortOp:
 		var sortExprs []sem.SortExpr
 		for _, e := range o.Exprs {
@@ -1103,13 +1107,12 @@ func (t *translator) joinOp(op *ast.JoinOp, parent sem.Seq, inTypes []super.Type
 func (t *translator) pipeJoinCond(cond ast.JoinCond, leftAlias, rightAlias string, inType super.Type) sem.Expr {
 	switch cond := cond.(type) {
 	case *ast.JoinOnCond:
-		e, _ := t.expr(cond.Expr, inType)
+		e, typ := t.expr(cond.Expr, inType)
+		t.checker.boolean(cond.Expr, typ)
 		// hack: e is wrapped in []sem.Expr to work around CanSet() model in WalkT
 		dag.WalkT(reflect.ValueOf([]sem.Expr{e}), func(e *sem.ThisExpr) *sem.ThisExpr {
 			if len(e.Path) == 0 {
 				t.error(cond.Expr, errors.New(`join expression cannot refer to "this"`))
-			} else if name := e.Path[0]; name != leftAlias && name != rightAlias {
-				t.error(cond.Expr, fmt.Errorf("ambiguous field reference %q", name))
 			}
 			return e
 		})

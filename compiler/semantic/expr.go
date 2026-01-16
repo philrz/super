@@ -3,6 +3,7 @@ package semantic
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/araddon/dateparse"
@@ -663,8 +664,7 @@ func (t *translator) semCaseExpr(c *ast.CaseExpr, inType super.Type) (sem.Expr, 
 		elseType = t.checker.unknown
 	}
 	types := []super.Type{elseType}
-	for i := len(c.Whens) - 1; i >= 0; i-- {
-		when := c.Whens[i]
+	for _, when := range slices.Backward(c.Whens) {
 		cond, condType := t.expr(when.Cond, inType)
 		if e != nil {
 			cond = sem.NewBinaryExpr(c, "==", e, cond)
@@ -758,7 +758,7 @@ func (t *translator) semCallByName(call *ast.CallExpr, name string, args []sem.E
 			t.error(call, fmt.Errorf("%q is not a function", name))
 			return badExpr, t.checker.unknown
 		case thunk:
-			// We're calling a function that is an user-operator parameter.
+			// We're calling a function that is a user-operator parameter.
 			// It must be bound to a function.
 			f, _ := t.resolveThunk(ref, inType)
 			if ref, ok := f.(*sem.FuncRef); ok {

@@ -17,8 +17,8 @@ which is aspirationally backward-compatible with
 
 Super-structured data is
 * _dynamic_ so that data collections can vary by type and are not handcuffed by schemas,
-* _strongly typed_ ensuring that the benefits of comprehensive typing
-  like static type checking apply to dynamic data, and
+* _strongly typed_ allowing static type checking and type-based query
+optimizations to apply to dynamic data,
 * _self-describing_ thus obviating the need to define schemas up front.
 
 SuperDB has taken many of the best ideas of current data systems and adapted them

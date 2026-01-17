@@ -761,11 +761,13 @@ func (t *translator) semCallByName(call *ast.CallExpr, name string, args []sem.E
 			// We're calling a function that is a user-operator parameter.
 			// It must be bound to a function.
 			f, _ := t.resolveThunk(ref, inType)
-			if ref, ok := f.(*sem.FuncRef); ok {
-				return t.resolver.mustResolveCall(call, ref.ID, args, argTypes)
+			funcRef, ok := f.(*sem.FuncRef)
+			if !ok {
+				t.error(call, fmt.Errorf("function called via parameter %q is not a function", name))
+				return badExpr, t.checker.unknown
 			}
-			t.error(call, fmt.Errorf("function called via parameter %q is not a function", name))
-			return badExpr, t.checker.unknown
+			return t.resolver.mustResolveCall(call, funcRef.ID, args, argTypes)
+
 		}
 		if _, ok := entry.ref.(sem.Expr); ok {
 			t.error(call, fmt.Errorf("%q is not a function", name))

@@ -430,10 +430,8 @@ func (c *checker) binary(op string, loc, lloc, rloc ast.Node, lhs, rhs super.Typ
 		return c.equality(lhs, rhs)
 	case "<", "<=", ">", ">=":
 		return c.comparison(lhs, rhs)
-	case "+":
-		return c.plus(loc, lhs, rhs)
-	case "-", "*", "/", "%":
-		return c.arithmetic(lloc, rloc, lhs, rhs)
+	case "+", "-", "*", "/", "%":
+		return c.arithmetic(loc, lloc, rloc, lhs, rhs)
 	default:
 		panic(op)
 	}
@@ -883,22 +881,15 @@ func comparable(a, b super.Type) bool {
 	return false
 }
 
-func (c *checker) arithmetic(lloc, rloc ast.Node, lhs, rhs super.Type) super.Type {
-	if hasUnknown(lhs) || hasUnknown(rhs) {
-		return c.unknown
-	}
-	c.number(lloc, lhs)
-	c.number(rloc, rhs)
-	return c.fuse([]super.Type{lhs, rhs})
-}
-
-func (c *checker) plus(loc ast.Node, lhs, rhs super.Type) super.Type {
+func (c *checker) arithmetic(loc, lloc, rloc ast.Node, lhs, rhs super.Type) super.Type {
 	if hasUnknown(lhs) || hasUnknown(rhs) {
 		return c.unknown
 	}
 	if hasNumber(lhs) && hasNumber(rhs) {
 		return c.fuse([]super.Type{lhs, rhs})
 	}
+	c.number(lloc, lhs)
+	c.number(rloc, rhs)
 	c.error(loc, fmt.Errorf("type mismatch: %s + %s", sup.FormatType(lhs), sup.FormatType(rhs)))
 	return c.unknown
 }

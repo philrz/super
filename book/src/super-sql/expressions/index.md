@@ -47,13 +47,13 @@ representing the byte value at that offset in the bytes sequence.
 
 ### Index Base
 
-Indexing in SuperSQL are 0-based meaning the first element is at index `0` and
+Indexing in SuperSQL is 0-based meaning the first element is at index `0` and
 the last element is at index `n-1` for an entity of size `n`.
 
-If 1-based indexing is desired, a scoped language pragma may be used
+If 1-based indexing is desired, a scoped language [pragma](../declarations/pragmas.md) may be used
 to specify either 1-based indexing or mixed indexing.  In mixed indexing,
-0-based indexing is used for expressions appearing in pipe operators and
-1-based indexing is used for expressions appearing in SQL operators.
+0-based indexing is used for expressions appearing in [pipe operators](../operators/intro.md) and
+1-based indexing is used for expressions appearing in [SQL operators](../sql/intro.md).
 
 >[!NOTE]
 > Mixed indexing is not yet implemented.

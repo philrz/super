@@ -1,6 +1,6 @@
 ## Concatenation
 
-Strings may be concatenated using the concatenation operator having the form
+[Strings](../types/string.md) may be concatenated using the concatenation operator having the form
 ```
 <expr> || <expr>
 ```

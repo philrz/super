@@ -1072,6 +1072,7 @@ which produces an output like this:
 {reviewers:|["nwt","henridf","mccanne"]|}
 {reviewers:|["mccanne","mattnibs"]|}
 {reviewers:|["henridf","mccanne","mattnibs"]|}
+{reviewers:null}
 {reviewers:|["henridf","mccanne","mattnibs"]|}
 ...
 ```

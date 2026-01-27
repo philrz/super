@@ -8,7 +8,7 @@ The syntactical structure of a query consists of
 
 Any valid SQL query may appear as a pipe operator and thus
 be embedded in a pipe query.  A SQL query expressed as a pipe operator is
-called a [SQL operator](sql/intro.md).
+called a [SQL operator](sql/intro.md#sql-operator).
 
 Operator sequences may be parenthesized and nested to form lexical [scopes](#scope).
 
@@ -66,7 +66,7 @@ as a field reference `this.PI` via pipe scoping.
 
 ```mdtest-spq fails {data-layout='no-labels'} {style='margin:auto;width:85%'}
 # spq
-( 
+(
   const PI=3.14
   values PI
 )
@@ -96,7 +96,7 @@ character may be included in a backtick string with Unicode escape `\u0060`.
 In SQL expressions, identifiers may also be enclosed in double-quoted strings.
 
 The [special value](intro.md#pipe-scoping) `this` is also available in SQL but has
-[peculiar semantics](sql/intro.md#accessing-this)
+[peculiar semantics](sql/intro.md#this)
 due to SQL scoping rules.  To reference a column called `this`
 in a SQL expression, simply use double quotes, i.e., `"this"`.
 
@@ -148,7 +148,7 @@ regexp(r'\w+(foo|bar)', this)
 But when used outside of expressions where an explicit indication of
 a regular expression is required (e.g., in a
 [search](operators/search.md) or
-[from](operators/from.md#database-operation) operator), the RE2 is instead
+[from](operators/from.md#pools) operator), the RE2 is instead
 prefixed and suffixed with a `/`, e.g.,
 ```
 /foo|bar/
@@ -184,7 +184,7 @@ to the `from` and [load](operators/load.md) operators.
 Specifically, a text entity is one of:
 * a [string literal](types/string.md) (double quoted, single quoted, or raw string),
 * an unquoted string consisting of a sequence of characters consisting of letters, digits, `_`,  `$`,  `.`, and `/`, or
-* a simple URL consisting of a sequence of characters beginning with `http://` or `https://`,  followed by dotted strings of letters, digits, `-`, and `_`, and in turn optionally followed by `/` and a sequence of characters consisting of letters, digits, `_`, `$`, `.`, and `/`.
+* a simple URL consisting of a sequence of characters beginning with `http://` , `https://`, or `s3://` followed by dotted strings of letters, digits, `-`, and `_`, and in turn optionally followed by `/` and a sequence of characters consisting of letters, digits, `_`, `$`, `.`, and `/`.
 
 If a URL does not meet the constraints of the simple URL rule,
 e.g., containing a `:` or `&`, then it must be quoted.

@@ -1388,10 +1388,6 @@ func (t *translator) pragmaDecl(d *ast.PragmaDecl) {
 		} else {
 			t.error(d.Name, errors.New("index_base must be 0 or 1"))
 		}
-	case "pg":
-		if v, ok := t.mustEvalBool(expr); ok {
-			t.scope.pragmas["pg"] = v
-		}
 	default:
 		t.error(d.Name, fmt.Errorf("unknown pragma %q", name))
 	}

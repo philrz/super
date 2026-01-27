@@ -147,12 +147,6 @@ func (s *Scope) resolve(t *translator, n ast.Node, path field.Path, inType super
 	if scope == nil || len(path) == 0 {
 		panic(s)
 	}
-	var inputFirst bool
-	if pg := s.lookupPragma("pg"); pg != nil {
-		if b, ok := pg.(bool); ok {
-			inputFirst = b
-		}
-	}
 	// If the output projection is in place, then we are outside the
 	// SELECT body (e.g., in ORDER BY), so we need to first check
 	// the select column names before the inputs.  This is handled by
@@ -161,25 +155,7 @@ func (s *Scope) resolve(t *translator, n ast.Node, path field.Path, inType super
 	// in the grouping expression matcher.  So we rely upon this column
 	// lookup to give us the input bindings and then match everything to its
 	// grouped output.
-	if sch, ok := scope.(*selectScope); ok && sch.out != nil && sch.isGrouped() {
-		for _, c := range sch.columns {
-			if c.name == path[0] {
-				e := extend(n, c.semExpr, path[1:])
-				return e, t.checker.expr(inType, e)
-			}
-		}
-	}
-	// We give priority to lateral column aliases which diverges from
-	// PostgreSQL semantics (which checks the input table first) but follows
-	// Google SQL semantics.  We favor this approach so we can avoid
-	// precedence problems for dynamic inputs or super-structured inputs
-	// that evolve, e.g., with a super-structured input, whether a column
-	// is present in the input shouldn't control the scoping decision compared
-	// to a column aliases otherwise as data evolves (and such a column shows up)
-	// the binding of identifiers changes and query results can change.  By
-	// resolving lateral aliases first, we avoid this problem.  This can
-	// be overridden with "pragma pg" to favor PostgreSQL precedence.
-	if scope, ok := scope.(*selectScope); ok && scope.lateral && !inputFirst {
+	if scope, ok := scope.(*selectScope); ok && scope.out != nil && scope.isGrouped() {
 		if e, _ := resolveLateralColumn(t, scope, path[0], inType); e != nil {
 			e := extend(n, e, path[1:])
 			return e, t.checker.expr(inType, e)
@@ -197,11 +173,16 @@ func (s *Scope) resolve(t *translator, n ast.Node, path field.Path, inType super
 				t.error(n, fmt.Errorf("cannot use unqualified reference %q when table of same name is in scope (consider qualified reference)", path[0]))
 				return badExpr, t.checker.unknown
 			}
+			if scope, ok := scope.(*selectScope); ok && scope.lateral {
+				if e, _ := resolveLateralColumn(t, scope, path[0], inType); e != nil {
+					t.error(n, fmt.Errorf("cannot use unqualified reference %q that binds to column alias when input includes dynamic data", path[0]))
+				}
+			}
 		}
 		this := sem.NewThis(n, append(out, path[1:]...))
 		return this, t.checker.this(n, this, inType)
 	}
-	if scope, ok := scope.(*selectScope); ok && scope.lateral && inputFirst {
+	if scope, ok := scope.(*selectScope); ok && scope.lateral {
 		if e, _ := resolveLateralColumn(t, scope, path[0], inType); e != nil {
 			e := extend(n, e, path[1:])
 			return e, t.checker.expr(inType, e)

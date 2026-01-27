@@ -1,0 +1,17 @@
+script: |
+  ! super -dynamic -c "select x as y from x.json group by y"
+
+inputs:
+  - name: x.json
+    data: |
+      {"x":1}
+
+outputs:
+  - name: stderr
+    data: |
+      cannot use unqualified reference "y" that binds to column alias when input includes dynamic data at line 1, column 36:
+      select x as y from x.json group by y
+                                         ~
+      column "x" must appear in GROUP BY clause at line 1, column 8:
+      select x as y from x.json group by y
+             ~

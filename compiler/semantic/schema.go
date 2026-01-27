@@ -310,9 +310,8 @@ func (s *selectScope) resolveUnqualified(col string) (field.Path, bool, error) {
 	if s.out != nil && !s.isGrouped() {
 		// The output scope is set after the select scope is almost closed so that
 		// ORDER BY can utilize the projected columns, which has precedence
-		// higher than the input table regardless of "pramga pg".
-		// Otherwise, this query resolves the order-by to the input
-		//   pragma pg
+		// higher than the input table.
+		// Otherwise, this query would resolve the order-by to the input
 		//   select a as b from (values (0,3),(1,2),(2,0)) T(a,b)
 		//   order by b
 		// but it should use the output table b for order-by.

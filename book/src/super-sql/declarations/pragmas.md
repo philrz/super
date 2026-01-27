@@ -16,15 +16,12 @@ Pragmas must appear in the declaration section of a [scope](../queries.md#scope)
 
 ### List of Pragmas
 
-Currently, there are two supported pragmas.
+Currently, there is one supported pragma:
 
 * `index_base` - controls whether [index expressions](../expressions/index.md) and
     [slice expressions](../expressions/slices.md) are 0-based or 1-based.
     * `0` for zero-based indexing
     * `1` for one-based indexing
-* `pg` - controls the precedence of scoping for GROUP BY clauses in SQL operators
-    * `false` to follow Google SQL semantics of resolving identifiers first from column aliases then from the input table
-    * `true` to follow PostgreSQL semantics of resolving identifiers first from the input table then from the column aliases
 
 ### Example
 

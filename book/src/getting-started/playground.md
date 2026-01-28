@@ -1,6 +1,7 @@
-## Playground
+# Playground
 
-If you have `super` installed, a common pattern for experimentation is to
+If you have `super` [installed](install.md),
+a common pattern for experimentation is to
 "echo" some input to the `super -c` command, e.g.,
 ```
 echo <values> | super -c <query> -
@@ -27,8 +28,8 @@ and you should get this alternative output in the RESULT panel above:
 {out:"goodbye"}
 ```
 The input in the playground examples are generally formatted as
-[SUP](../formats/sup.md) but the `super` playground command autodetects
-the format, so feel free to experiment with other text formats like CSV or JSON.
+[SUP](../formats/sup.md) but the `super` playground command auto-detects
+the format, so you can experiment with other text-based formats like CSV or JSON.
 For example, if you change the input above to
 ```
 id,message
@@ -37,12 +38,15 @@ id,message
 ```
 `super` will detect this as CSV and you will get the same result.
 
-### Examples
+## Examples
 
 To explore a broad range of SuperSQL functionality,
 try browsing the documentation for
-[pipe operators](../super-sql/operators/intro.md) or
+[pipe operators](../super-sql/operators/intro.md),
+[SQL operators](../super-sql/sql/intro.md#sql-operator),
+or
 [functions](../super-sql/functions/intro.md).
+
 Each operator and function has a section of examples
 with playgrounds where you can edit
 the example queries and inputs to explore how SuperSQL works.

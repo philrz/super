@@ -28,7 +28,7 @@ release:
     View [change log](CHANGELOG.md#{{ replace .Tag "." "" }}).
 homebrew_casks:
   - repository:
-      owner: brimdata
+      owner: philrz
       name: homebrew-tap
     commit_author:
       name: brim-bot

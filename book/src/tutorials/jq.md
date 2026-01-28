@@ -1,16 +1,26 @@
-## For jq Users
+# Inspirations From jq
 
-> **TODO: update more for malibu.  position as a way to do jq-like stuff with
-> the performance and strong typing of an analytics database.**
+With a focus toward blending the relational data model
+with the JSON document model, SuperDB draws inspiration not just from SQL
+but also from the wildly popular JSON processing
+tool [jq](https://stedolan.github.io/jq/).
 
-[SuperSQL](../super-sql/intro.md)’s pipes and shortcuts provide a flexible and powerful way for SQL
-users to query their JSON data while leveraging their existing skills.
-However, users who've traditionally wrangled their JSON with other tools such
-as [`jq`](https://stedolan.github.io/jq/) will find `super` equally powerful
-even if they don't know SQL or just prefer to work primarily in shortcuts. This tour
-walks through a number of examples using [`super`](../command/super.md) at
-the command line with `jq` as a
+Despite its concise and some-would-say cryptic query language,
+the `jq` programming model is incredibly powerful, so we wondered
+if we could incorporate some its great ideas into the SuperDB design.
+
+This article walks through a number of examples of how the SuperDB
+design relates to the `jq` computational model using the
+[super](../command/super.md) on the command line with `jq` as a
 reference point.
+
+>[!NOTE]
+> If you want to follow along on the command line,
+> just make sure the `super` command
+> [is installed](../getting-started/install.md)
+> as well as [jq](https://jqlang.org/download/).
+
+## Hello World
 
 We'll start with some simple one-liners where we feed some data to `super`
 with `echo` and specify `-` as input to indicate that standard input
@@ -26,16 +36,12 @@ using the SQL equivalent, e.g.,
 ```
 super -c "SELECT VALUE 'hello, world'"
 ```
-
 or a mix of SQL and pipeline extensions as suits your preferences. However,
 to make this tutorial relevant to `jq` users, we'll lean heavily on SuperSQL's
-use of pipes and shortcuts.
+use of [pipe operators](../super-sql/operators.intro.md) and
+[shortcuts](../super-sql/operators/intro.md#shortcuts).
 
-If you want to follow along on the command line,
-just make sure the `super` command [is installed](../getting-started/install.md)
-as well as [`jq`](https://jqlang.org/download/).
-
-### But JSON
+## But JSON
 
 While `super` is based on a new type of [data model](../formats/model.md),
 its human-readable format [Super (SUP)](../formats/sup.md) just so
@@ -48,9 +54,8 @@ is a popular command-line tool for taking a sequence of JSON values as input,
 doing interesting things on that input, and emitting results, of course, as JSON.
 
 `jq` is awesome and powerful, but its syntax and computational model can
-sometimes be daunting and difficult.  We tried to make `super` really easy and intuitive,
-and it is usually faster, sometimes
-[much faster](../tutorials/performance.md) than `jq`.
+sometimes be daunting and difficult.  We tried to make `super` easy and intuitive,
+and it is usually faster than `jq`.
 
 To this end, if you want full JSON compatibility without having to delve into the
 details of SUP, just use the `-j` option with `super` and this will tell it to
@@ -61,9 +66,12 @@ expect JSON values as input and produce JSON values as output, much like `jq`.
 > `-j` along with [collect](../super-sql/aggregates/collect.md) to aggregate
 > multiple input values into an array.
 
-### `this` vs `.`
+## `this` vs `.`
 
-For example, to add 1 to some numbers with `jq`, you say:
+Let's start with the basics.  How do you reference the input data?
+
+For example, to add 1 to some numbers in the input,
+in `jq` you say:
 ```
 echo '1 2 3' | jq '.+1'
 ```
@@ -73,6 +81,9 @@ and you get
 3
 4
 ```
+The `.` value is like a variable that binds to each input value
+like a column reference in a SQL expression.
+
 With `super`, the mysterious `jq` value `.` is instead called
 the almost-as-mysterious value
 [`this`](../super-sql/intro.md#pipe-scoping)
@@ -91,7 +102,7 @@ which also gives
 > We are using the `-s` option with `super` in all of the examples,
 > which formats the output as [SUP](../formats/sup.md).
 
-### Search vs Transformation
+## Search vs Transformation
 
 Generally, `jq` leads with _transformation_. By comparison, `super` leads with _search_, but
 transformation is also pretty easy.  Let's show what we mean here with an
@@ -112,7 +123,8 @@ expression `2` is evaluated for each input value, and the value `2`
 is produced each time, so three copies of `2` are emitted.
 
 In `super`, a lonely `2` all by itself is not a valid query, but adding a
-leading `?` (shorthand for the [`search` operator](../super-sql/operators/search.md))
+leading `?` (shorthand for the
+[search](../super-sql/operators/search.md)) operator
 ```mdtest-command
 echo '1 2 3' | super -s -c '? 2' -
 ```
@@ -157,10 +169,8 @@ now gives the same answer as `jq`:
 2
 2
 ```
-Cool, but doesn't it seem like search is a better disposition for
-shorthand syntax?  What do you think?
 
-### On to SUP
+## On to SUP
 
 JSON is super easy and ubiquitous, but it can be limiting and frustrating when
 trying to do high-precision stuff with data.
@@ -175,7 +185,7 @@ go from SUP to an efficient binary row format ([Super Binary, BSUP](../formats/b
 and columnar ([Super Columnar, CSUP](../formats/csup.md)) --- and vice versa ---
 with complete fidelity and no loss of information.  In this tour,
 we'll stick to SUP, though for large data sets
-[BSUP is much faster](../tutorials/performance.md).
+CSUP is much faster.
 
 The first thing you'll notice about SUP is that you don't need
 quotations around field names.  We can see this by taking some JSON
@@ -216,7 +226,7 @@ produces
 {"":{}}
 ```
 
-### Comprehensive Types
+## Comprehensive Types
 
 SUP also has a [comprehensive type system](../formats/model.md).
 
@@ -255,7 +265,7 @@ of values as record fields:
 }
 ```
 The first seven values are all [primitive types](../formats/model.md#1-primitive-types)
-in the [super data model](../formats/model.md).
+in the [super-structured data model](../formats/model.md).
 
 Here, `v1` is a 64-bit IEEE floating-point value just like JSON.
 
@@ -283,7 +293,7 @@ Finally, `v11` is a "[record](../formats/model.md#21-record)", which is similar 
 keys are called "fields" and the order of the fields is significant and
 is always preserved.
 
-### Records
+## Records
 
 As is often the case with semi-structured systems, you deal with
 nested values all the time: in JSON, data is nested with objects and arrays,
@@ -303,7 +313,7 @@ produces
 ```
 Note that like the search shortcut, you can also drop the `values` keyword
 here because the record literal [implies](../super-sql/operators/intro.md#shortcuts)
-the [`values` operator](../super-sql/operators/values.md), e.g.,
+the [values](../super-sql/operators/values.md) operator, e.g.,
 ```mdtest-command
 echo '1 2 3' | super -s -c '{kind:"counter",val:this}' -
 ```
@@ -332,11 +342,12 @@ produces
 {d:2,s:"bar"}
 ```
 
-### Record Mutation
+## Record Mutation
 
 Sometimes you just want to extract or mutate certain fields of records.
 
-Similar to the Unix `cut` command, the [`cut` operator](../super-sql/operators/cut.md)
+Similar to the Unix `cut` command, the
+[cut](../super-sql/operators/cut.md) operator
 extracts fields, e.g.,
 ```mdtest-command
 echo '{s:"foo", val:1}{s:"bar"}' | super -s -c 'cut s' -
@@ -346,8 +357,8 @@ produces
 {s:"foo"}
 {s:"bar"}
 ```
-while the [`put` operator](../super-sql/operators/put.md) mutates existing fields
-or adds new fields, e.g.,
+while the [put](../super-sql/operators/put.md) operator
+mutates existing fields or adds new fields, e.g.,
 ```mdtest-command
 echo '{s:"foo", val:1}{s:"bar"}' | super -s -c 'put val:=123,pi:=3.14' -
 ```
@@ -365,7 +376,7 @@ produces the very same output:
 {s:"foo",val:123,pi:3.14}
 {s:"bar",val:123,pi:3.14}
 ```
-Finally, it's worth mentioning that errors in the super data model are
+It's also worth mentioning here that errors in the super data model are
 [first class](https://en.wikipedia.org/wiki/First-class_citizen).
 This means they can just show up in the data as values.  In particular,
 a common error is `error("missing")` which occurs most often when referencing
@@ -390,10 +401,11 @@ produces
 {val:error("quiet")}
 ```
 
-### Union Types
+## Union Types
 
 One of the tricks `super` uses to represent JSON data in its structured type system
 is [union types](../super-sql/types/union.md).
+
 Most of the time, you don't need to worry about unions
 but they show up from time to time.  Even when
 they show up, `super` just tries to "do the right thing" so you usually
@@ -427,7 +439,7 @@ while also having a very precise type definition.  This is the essence
 of the new
 [super-structured data model](../formats/model.md).
 
-### First-class Types
+## First-class Types
 
 Note that in the type value above, the type is wrapped in angle brackets.
 This is how SUP represents types when expressed as values.
@@ -508,7 +520,7 @@ produces
 false
 ```
 
-### Shapes
+## Shapes
 
 Sometimes you'd like to see a sample value of each shape, not its type.
 This is easy to do with the
@@ -532,7 +544,7 @@ emits the same result:
 {x:1,y:2}
 ```
 
-### Fuse
+## Fuse
 
 Sometimes JSON data can get really messy with lots of variations in fields,
 with null values appearing sometimes and sometimes not, and with the same
@@ -590,7 +602,7 @@ your interactive search results to `fuse | shapes`.
 
 To appreciate all this, let's have a look next at some real-world data...
 
-### Real-world GitHub Data
+## Real-world GitHub Data
 
 Now that we've covered the basics of `super` and its query language, let's
 use the query patterns from above to explore some GitHub data.
@@ -618,7 +630,7 @@ super -f json \
 Now that you have this JSON file on your local file system, how would you query it
 with `super`?
 
-### Data Discovery
+## Data Discovery
 
 Before you can do anything, you need to know its structure but you generally don't
 know anything after pulling some random data from an API.
@@ -836,7 +848,7 @@ produces the native time value:
 <time>
 ```
 
-### Cleaning up the Messy JSON
+## Cleaning up the Messy JSON
 
 Okay, now that we've explored the data, we have a sense of it and can
 "clean it up" with some transformative queries.  We'll do this one step at a time,
@@ -884,7 +896,9 @@ which gives
 ```
 
 >[!NOTE]
-> This use of `unnest` with `flatten` traverses each record and generates a key-value pair
+> This use of [unnest](../super-sql/operators/unnest.md)
+> with [flatten](../super-sql/functions/records/flatten.md)
+> traverses each record and generates a key-value pair
 > for each field in each record.
 
 Looking through the fields that are strings, the candidates for ISO dates appear
@@ -940,7 +954,7 @@ and we can see that the date fields are correctly typed as type `time`!
 > to produce a consistent output order since aggregations can be run in parallel
 > to achieve scale and do not guarantee their output order.
 
-### Putting It All Together
+## Putting It All Together
 
 Instead of running each step above into a temporary file, we can
 put all the transformations together in a single
@@ -957,7 +971,8 @@ unnest this                    -- traverse the array of objects
 ```
 
 >[!NOTE]
-> The `--` syntax indicates a single-line comment.
+> The `--` syntax indicates a
+> [single-line comment](../super-sql/queries.md#comments).
 
 We can then put this in a file, called say `transform.spq`, and use the `-I`
 argument to run all the transformations in one fell swoop:
@@ -965,7 +980,7 @@ argument to run all the transformations in one fell swoop:
 super -I transform.spq prs.json > prs.bsup
 ```
 
-### Running Analytics
+## Running Analytics
 
 Now that we've cleaned up our data, we can reliably and easily run analytics
 on the finalized BSUP file `prs.bsup`.
@@ -994,7 +1009,8 @@ Note that we used a [formatted string literal](../super-sql/expressions/f-string
 to convert the field `number` into a string and format it with surrounding text.
 
 Instead of old PRs, we can get the latest list of PRs using the
-[`tail` operator](../super-sql/operators/tail.md) since we know the data is sorted
+[tail](../super-sql/operators/tail.md) operator
+since we know the data is sorted
 chronologically. This command retrieves the last five PRs in the dataset:
 ```mdtest-command dir=book/src/tutorials
 super -f table -c '
@@ -1038,7 +1054,7 @@ collects each item that it encounters into an array:
 ["mccanne","nwt","henridf","mccanne","nwt","mccanne","mattnibs","henridf","mccanne","mattnibs","henridf","mccanne","mattnibs","henridf","mccanne","nwt","aswan","henridf","mccanne","nwt","aswan","philrz","mccanne","mccanne","aswan","henridf","aswan","mccanne","nwt","aswan","mikesbrown","henridf","aswan","mattnibs","henridf","mccanne","aswan","nwt","henridf","mattnibs","aswan","aswan","mattnibs","aswan","henridf","aswan","henridf","mccanne","aswan","aswan","mccanne","nwt","aswan","henridf","aswan"]
 ```
 What we'd prefer is a set of reviewers where each reviewer appears only once.  This
-is easily done with the [`union`](../super-sql/aggregates/union.md) aggregate function
+is easily done with the [union](../super-sql/aggregates/union.md) aggregate function
 (not to be confused with union types) which
 computes the set-wise union of its input and produces a `set` type as its
 output.  In this case, the output is a set of strings, written `|[string]|`
@@ -1076,10 +1092,9 @@ which produces an output like this:
 {reviewers:|["henridf","mccanne","mattnibs"]|}
 ...
 ```
-Note that the syntax `into ( ... )` defines a lateral scope **TODO: FIX/LINK**
-where any subquery can
-run in isolation over the input values created from the sequence of values
-traversed by the outer `over`.
+Note that the syntax `into ( ... )`
+[creates a subquery](../super-sql/operators/unnest.md#description)
+that is run to completion of each unnested batch of values.
 
 But we need a "graph edge" between the requesting user and the reviewers.
 To do this, we need to reference the `user.login` from the top-level scope within the
@@ -1271,9 +1286,10 @@ produces
 {"user":"nwt","groups":[["aswan"],["aswan","mattnibs"],["henridf","mattnibs"],["mccanne","mattnibs"]]}
 ```
 
-### Key Takeaways
+## Key Takeaways
 
-So to summarize, we gave you a tour here of how `super` the super data model
+So to summarize, we gave you a tour here of how `super`
+and the super-structured data model
 provide a powerful way do search, transformation, and analytics in a structured-like
 way on data that begins its life as semi-structured JSON and is transformed
 into the powerful super-structured format without having to create relational
@@ -1289,4 +1305,4 @@ clean data for analysis by `super` or even export into other systems or for test
 If you'd like to learn more, feel free to read through the
 [SuperSQL](../super-sql/intro.md) documentation in depth
 or see how you can organize [data into a SuperDB database](../command/db.md)
-using a git-like commit model.
+using a Git-like commit model.

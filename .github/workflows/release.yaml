@@ -24,7 +24,10 @@ jobs:
       run: |
         wget https://www.ssl.com/download/codesigntool-for-linux-and-macos/ -O /tmp/codesigntool.zip
         unzip /tmp/codesigntool.zip -d /tmp/codesigntool
-        echo "/tmp/codesigntool" >> $GITHUB_PATH
+        chmod +x /tmp/codesigntool/CodeSignTool.sh
+        echo '#!/bin/sh' > /usr/local/bin/CodeSignTool
+        echo 'cd /tmp/codesigntool && ./CodeSignTool.sh "$@"' >> /usr/local/bin/CodeSignTool
+        chmod +x /usr/local/bin/CodeSignTool
     - name: Setup Java
       uses: actions/setup-java@v4
       with:

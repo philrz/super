@@ -26,7 +26,7 @@ jobs:
         unzip /tmp/codesigntool.zip -d /tmp/codesigntool
         chmod +x /tmp/codesigntool/CodeSignTool.sh
         echo '#!/bin/sh' > /usr/local/bin/CodeSignTool
-        echo 'cd /tmp/codesigntool && ./CodeSignTool.sh "$@"' >> /usr/local/bin/CodeSignTool
+        echo 'CODE_SIGN_TOOL_PATH=/tmp/codesigntool bash /tmp/codesigntool/CodeSignTool.sh "$@"' >> /usr/local/bin/CodeSignTool
         chmod +x /usr/local/bin/CodeSignTool
     - name: Setup Java
       uses: actions/setup-java@v4

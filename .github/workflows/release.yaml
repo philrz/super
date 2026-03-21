@@ -20,11 +20,20 @@ jobs:
     - run: make test-unit
     - run: make test-system
     - run: make test-heavy
+    - name: Install SSL.com CodeSignTool
+      run: |
+        wget https://www.ssl.com/download/codesigntool-for-linux-and-macos/ -O codesigntool.zip
+        unzip codesigntool.zip -d ./codesigntool
+        echo "$(pwd)/codesigntool" >> $GITHUB_PATH
     - uses: goreleaser/goreleaser-action@v6
       with:
         args: release --clean
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SSLDOTCOM_USERNAME: ${{ secrets.SSLDOTCOM_USERNAME }}
+        SSLDOTCOM_PASSWORD: ${{ secrets.SSLDOTCOM_PASSWORD }}
+        SSLDOTCOM_CREDENTIAL_ID: ${{ secrets.SSLDOTCOM_CREDENTIAL_ID }}
+        SSLDOTCOM_TOTP_SECRET: ${{ secrets.SSLDOTCOM_TOTP_SECRET }}
         MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
         MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
         MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}

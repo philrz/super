@@ -22,9 +22,9 @@ jobs:
     - run: make test-heavy
     - name: Install SSL.com CodeSignTool
       run: |
-        wget https://www.ssl.com/download/codesigntool-for-linux-and-macos/ -O codesigntool.zip
-        unzip codesigntool.zip -d ./codesigntool
-        echo "$(pwd)/codesigntool" >> $GITHUB_PATH
+        wget https://www.ssl.com/download/codesigntool-for-linux-and-macos/ -O /tmp/codesigntool.zip
+        unzip /tmp/codesigntool.zip -d /tmp/codesigntool
+        echo "/tmp/codesigntool" >> $GITHUB_PATH
     - name: Setup Java
       uses: actions/setup-java@v4
       with:

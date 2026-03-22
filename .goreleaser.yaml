@@ -18,18 +18,12 @@ builds:
     hooks:
       post:
       - cmd: >-
-          sh -c '{{ if eq .Os "windows" }}CodeSignTool sign
+          sh -c '{{ if eq .Os "windows" }}echo y | CodeSignTool sign
           -username="{{ .Env.SSLDOTCOM_USERNAME }}"
           -password="{{ .Env.SSLDOTCOM_PASSWORD }}"
           -credential_id="{{ .Env.SSLDOTCOM_CREDENTIAL_ID }}"
           -totp_secret="{{ .Env.SSLDOTCOM_TOTP_SECRET }}"
-          -input_file_path="{{ .Path }}"
-          -output_directory="{{ dir .Path }}"{{ else }}true{{ end }}'
-      - cmd: >-
-          sh -c '{{ if eq .Os "windows" }}CodeSignTool verify
           -input_file_path="{{ .Path }}"{{ else }}true{{ end }}'
-      - cmd: >-
-          sh -c '{{ if eq .Os "windows" }}ls -la "{{ dir .Path }}"{{ else }}true{{ end }}'
 notarize:
   macos:
     - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'

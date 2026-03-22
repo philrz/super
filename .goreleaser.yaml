@@ -28,6 +28,8 @@ builds:
       - cmd: >-
           sh -c '{{ if eq .Os "windows" }}CodeSignTool verify
           -input_file_path="{{ .Path }}"{{ else }}true{{ end }}'
+      - cmd: >-
+          sh -c '{{ if eq .Os "windows" }}ls -la "{{ dir .Path }}"{{ else }}true{{ end }}'
 notarize:
   macos:
     - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'

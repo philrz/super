@@ -57,8 +57,7 @@ homebrew_casks:
       name: philrz
       email: phil@brimdata.io
     homepage: https://github.com/philrz/super
-    description: |
-      An analytics database that fuses structured and semi-structured data
+    description: An analytics database that fuses structured and semi-structured data
 checksum:
   name_template: 'super-checksums.txt'
 snapshot:

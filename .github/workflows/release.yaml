@@ -39,6 +39,7 @@ jobs:
         args: release --clean
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
         SSLDOTCOM_USERNAME: ${{ secrets.SSLDOTCOM_USERNAME }}
         SSLDOTCOM_PASSWORD: ${{ secrets.SSLDOTCOM_PASSWORD }}
         SSLDOTCOM_CREDENTIAL_ID: ${{ secrets.SSLDOTCOM_CREDENTIAL_ID }}

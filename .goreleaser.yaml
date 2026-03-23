@@ -52,6 +52,7 @@ homebrew_casks:
   - repository:
       owner: philrz
       name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     commit_author:
       name: philrz
       email: phil@brimdata.io

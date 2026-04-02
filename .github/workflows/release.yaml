@@ -28,9 +28,8 @@ jobs:
         #!/bin/sh
         CODE_SIGN_TOOL_PATH=/tmp/codesigntool bash /tmp/codesigntool/CodeSignTool.sh "$@"
         EOF
-        chmod +x /tmp/codesigntool/CodeSignTool.sh /usr/local/bin/CodeSignTool
-    - name: Setup Java
-      uses: actions/setup-java@v4
+        chmod +x /usr/local/bin/CodeSignTool
+    - uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'

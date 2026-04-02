@@ -26,8 +26,8 @@ jobs:
         unzip /tmp/codesigntool.zip -d /tmp/codesigntool
         cat > /usr/local/bin/CodeSignTool << 'EOF'
         #!/bin/sh
-        CODE_SIGN_TOOL_PATH=/tmp/codesigntool
-        . /tmp/codesigntool/CodeSignTool.sh "$@"
+        # Set the variable and execute bash in one go
+        CODE_SIGN_TOOL_PATH=/tmp/codesigntool bash /tmp/codesigntool/CodeSignTool.sh "$@"
         EOF
         chmod +x /usr/local/bin/CodeSignTool
     - uses: actions/setup-java@v4

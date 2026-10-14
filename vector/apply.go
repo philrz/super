@@ -60,9 +60,15 @@ func Apply(opt ApplyOpt, eval func(...Any) Any, vecs ...Any) Any {
 		}
 	}
 	if opt&ApplyDefuseMissings != 0 {
+		//XXX roll these together
 		for k, vec := range vecs {
 			if _, ok := vec.(*NoRip); !ok && vec.Kind() == KindFusion {
 				if union, ok := Super(vec).(*Union); ok {
+					vecs[k] = defuseMissing(vec, union)
+				}
+			}
+			if _, ok := vec.(*NoRip); !ok {
+				if union, ok := vec.(*Union); ok {
 					vecs[k] = defuseMissing(vec, union)
 				}
 			}

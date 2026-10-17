@@ -1,6 +1,7 @@
 script: |
   super -o d.bsup d.json
   super -o out.bsup -c 'values commit.collection' d.bsup
+  super -s out.bsup
 
 inputs:
   - name: d.json
@@ -12,4 +13,6 @@ inputs:
 outputs:
   - name: stdout
     data: |
-      TBD
+      "a"
+      error({message:"'.': applied to non-record",on:error({message:"no such field commit",on:{commit:none::(missing|{collection:string})}})})
+      "b"

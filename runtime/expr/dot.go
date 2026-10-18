@@ -65,8 +65,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 				return val
 			}
 		case *vector.Missing:
-			// XXX TBD - this should be an error
-			return val
+			return vector.NewStringError(d.sctx, fmt.Sprintf("'.': none::missing cannot be dereferenced (with key '%s') (consider ?.)", d.key), val.Len())
 		case *vector.Option:
 			// This is either a pure some or a pure none since we called
 			// Apply with RipOptions.  For option nones with ?. access
@@ -75,7 +74,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 				if d.noneish {
 					return val
 				}
-				return vector.NewStringError(d.sctx, fmt.Sprintf(".: none in option type at %s (consider ?.)", d.path), val.Len())
+				return vector.NewStringError(d.sctx, fmt.Sprintf("'.': none cannot be dereferenced (with key '%s') (consider ?.)", d.key), val.Len())
 			}
 			return eval(on, val.Any)
 		case *vector.Record:
@@ -84,11 +83,11 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 				if d.nullish {
 					return vector.NewNull(val.Len())
 				}
-				return vector.NewStringError(d.sctx, fmt.Sprintf("no such path %s", d.path), val.Len())
+				return vector.NewStringError(d.sctx, fmt.Sprintf("no such field '%s'", d.key), val.Len())
 			}
 			out := val.Fields[i]
 			if _, ok := out.(*vector.Missing); ok {
-				return vector.NewStringError(d.sctx, fmt.Sprintf("no such path %s", d.path), val.Len())
+				return vector.NewStringError(d.sctx, fmt.Sprintf("no such field '%s'", d.key), val.Len())
 			}
 			if !hasUnionMissing(out) {
 				return out
@@ -102,7 +101,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 					}
 					//XXX will check noneish here like nullish above in
 					// a susequent PR
-					return vector.NewStringError(d.sctx, fmt.Sprintf("no such path: %s", d.path), ripped.Len())
+					return vector.NewStringError(d.sctx, fmt.Sprintf("'.': no such field '%s'", d.key), ripped.Len())
 				}
 				return unripped
 			}, vector.AddNoRip(out), out)
@@ -120,7 +119,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 				errs = append(errs, i)
 			}
 			if len(errs) > 0 {
-				return vector.NewCombinedError(d.sctx, fmt.Sprintf("no such field %s", sup.QuotedName(d.key)), typvals, val, errs)
+				return vector.NewCombinedError(d.sctx, fmt.Sprintf("'.': no such field '%s'", sup.QuotedName(d.key)), typvals, val, errs)
 			}
 			return typvals
 		case *vector.Map:
@@ -134,6 +133,8 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 			// underlying vector as its own "on" to keep lengths aligned. Error
 			// values on this path wrap the ripped value instead of the outer one.
 			return vector.Pick(eval(val.Any, val.Any), val.Index)
+		case *vector.Error:
+			return vector.NewWrappedError(d.sctx, fmt.Sprintf("'.': error dereferecing '%s'", d.key), val)
 		}
 		op := "."
 		if d.noneish {

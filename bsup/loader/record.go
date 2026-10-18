@@ -82,17 +82,6 @@ func (r *record) project(loader *FrameLoader, projection field.Projection) vecto
 	return vector.NewRecord(loader.sctx.MustLookupTypeRecord(fields), valFields, r.length())
 }
 
-func project(name string, projection field.Projection) (field.Projection, bool) {
-	//XXX this is O(n*n), for large, wide records this is problematic; we need to
-	// recode this to use a map (maybe put the map inside field.Projection)
-	for _, node := range projection {
-		if node.Name == name {
-			return node.Proj, true
-		}
-	}
-	return nil, false
-}
-
 func indexOfField(name string, r *bsup.Record) int {
 	return slices.IndexFunc(r.Fields, func(f bsup.Field) bool {
 		return f.Name == name

@@ -27,6 +27,9 @@ func (b *bytes) length() uint32 {
 func (*bytes) unmarshal(*bsup.Context, field.Projection) {}
 
 func (b *bytes) project(loader *FrameLoader, projection field.Projection) vector.Any {
+	if len(projection) > 0 {
+		return vector.NewMissing(b.len)
+	}
 	var vec vector.Any
 	table := b.load(loader)
 	switch b.meta.Typ.ID() {
@@ -36,9 +39,6 @@ func (b *bytes) project(loader *FrameLoader, projection field.Projection) vector
 		vec = vector.NewBytes(table)
 	default:
 		panic(b.meta.Typ)
-	}
-	if len(projection) > 0 {
-		return vector.NewWrappedError(loader.sctx, "'.': applied to non-record", vec)
 	}
 	return vec
 }

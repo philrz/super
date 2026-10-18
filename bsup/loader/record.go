@@ -69,22 +69,15 @@ func (r *record) project(loader *FrameLoader, projection field.Projection) vecto
 		return vector.NewRecord(loader.sctx.MustLookupTypeRecord(types), valFields, r.length())
 	}
 	fields := make([]super.Field, 0, len(r.fields))
-	for k := range r.fields {
-		if child, ok := project(r.meta.Fields[k].Name, projection); ok {
-			val := r.fields[k].project(loader, child)
-			valFields = append(valFields, val)
-			types = append(types, super.NewField(r.meta.Fields[k].Name, val.Type()))
+	for _, node := range projection {
+		var val vector.Any
+		if k := indexOfField(node.Name, r.meta); k >= 0 && r.fields[k] != nil {
+			val = r.fields[k].project(loader, node.Proj)
 		} else {
-			// XXX problem is we need the type to build a vector.Loader but currently
-			// we have no way to get the type without loading the children.  I have
-			// another design in mind for the column metas that will have a better
-			// type representation so I will finish that redesign before filling
-			// this in here.
-			var badType super.Type
-			var bctx *bsup.Context
-			valFields = append(valFields, vector.NewUnloaded(badType, r.meta.Len(bctx)))
-			types = append(types, super.NewField(r.meta.Fields[k].Name, badType))
+			val = vector.NewMissing(r.len)
 		}
+		valFields = append(valFields, val)
+		fields = append(fields, super.NewField(node.Name, val.Type()))
 	}
 	return vector.NewRecord(loader.sctx.MustLookupTypeRecord(fields), valFields, r.length())
 }

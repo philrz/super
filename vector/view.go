@@ -58,8 +58,6 @@ func PushView(val Any) Any {
 		return NewFusion(val.Typ, Pick(val.Values, view.Index), outTypes)
 	case *Option:
 		return Pick(val, view.Index)
-	case *Unloaded:
-		return NewUnloaded(val.Type(), uint32(len(view.Index)))
 	default:
 		return view
 	}

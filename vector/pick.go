@@ -55,8 +55,6 @@ func Pick(val Any, index []uint32) Any {
 		default:
 			return NewSome(val.Typ, Pick(val.Any, index))
 		}
-	case *Unloaded:
-		return NewUnloaded(val.Type(), uint32(len(index)))
 	case nil:
 		return nil
 	}

@@ -26,9 +26,6 @@ func (i *ip) length() uint32 {
 func (*ip) unmarshal(*bsup.Context, field.Projection) {}
 
 func (i *ip) project(loader *FrameLoader, projection field.Projection) vector.Any {
-	if len(projection) > 0 {
-		return vector.NewMissing(i.meta.Count)
-	}
 	return vector.NewIP(i.load(loader))
 }
 

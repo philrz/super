@@ -26,9 +26,6 @@ func (n *net) length() uint32 {
 func (*net) unmarshal(*bsup.Context, field.Projection) {}
 
 func (n *net) project(loader *FrameLoader, projection field.Projection) vector.Any {
-	if len(projection) > 0 {
-		return vector.NewMissing(n.meta.Count)
-	}
 	return vector.NewNet(n.load(loader))
 }
 

@@ -23,9 +23,6 @@ func (c *const_) length() uint32 {
 func (*const_) unmarshal(*bsup.Context, field.Projection) {}
 
 func (c *const_) project(loader *FrameLoader, projection field.Projection) vector.Any {
-	if len(projection) > 0 {
-		return vector.NewMissing(c.len)
-	}
 	// Map the const super.Value in the bsup's type context to
 	// a new one in the query type context.
 	val := c.meta.Value

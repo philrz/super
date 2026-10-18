@@ -33,9 +33,6 @@ func (t *typevalue) length() uint32 {
 func (*typevalue) unmarshal(*bsup.Context, field.Projection) {}
 
 func (t *typevalue) project(loader *FrameLoader, projection field.Projection) vector.Any {
-	if len(projection) > 0 {
-		return vector.NewMissing(t.len)
-	}
 	return vector.NewTypeValueWithLoader(loader.sctx, t.newLoader(loader))
 }
 

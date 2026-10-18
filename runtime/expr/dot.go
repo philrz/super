@@ -22,18 +22,20 @@ type DotExpr struct {
 	defuse    *Defuse
 	entity    Evaluator
 	key       string
+	path      string
 	noneish   bool
 	nullish   bool
 	okPush    bool
 	hasFusion samfunc.FusionChecker
 }
 
-func NewDotExpr(sctx *super.Context, record Evaluator, field string, noneish, nullish bool) *DotExpr {
+func NewDotExpr(sctx *super.Context, record Evaluator, field, path string, noneish, nullish bool) *DotExpr {
 	return &DotExpr{
 		sctx:    sctx,
 		defuse:  NewDefuse(sctx),
 		entity:  record,
 		key:     field,
+		path:    path,
 		noneish: noneish,
 		nullish: nullish,
 	}
@@ -41,8 +43,9 @@ func NewDotExpr(sctx *super.Context, record Evaluator, field string, noneish, nu
 
 func NewDottedExpr(sctx *super.Context, f field.Chain) Evaluator {
 	ret := Evaluator(&This{})
-	for _, elem := range f {
-		ret = NewDotExpr(sctx, ret, elem.ID, elem.Noneish, elem.Nullish)
+	for k, elem := range f {
+		path := f[:k+1].String()
+		ret = NewDotExpr(sctx, ret, elem.ID, path, elem.Noneish, elem.Nullish)
 	}
 	return ret
 }
@@ -72,7 +75,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 				if d.noneish {
 					return val
 				}
-				return vector.NewWrappedError(d.sctx, fmt.Sprintf(".: encountered none dereferencing field %s (consider ?.)", sup.QuotedName(d.key)), val)
+				return vector.NewStringError(d.sctx, fmt.Sprintf(".: none in option type at %s (consider ?.)", d.path), val.Len())
 			}
 			return eval(on, val.Any)
 		case *vector.Record:
@@ -81,29 +84,28 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 				if d.nullish {
 					return vector.NewNull(val.Len())
 				}
-				return vector.NewWrappedError(d.sctx, fmt.Sprintf("no such field %s", sup.QuotedName(d.key)), val)
+				return vector.NewStringError(d.sctx, fmt.Sprintf("no such path %s", d.path), val.Len())
 			}
 			out := val.Fields[i]
 			if _, ok := out.(*vector.Missing); ok {
-				return vector.NewWrappedError(d.sctx, fmt.Sprintf("no such field %s", sup.QuotedName(d.key)), val)
+				return vector.NewStringError(d.sctx, fmt.Sprintf("no such path %s", d.path), val.Len())
 			}
 			if !hasUnionMissing(out) {
 				return out
 			}
 			return vector.Apply(vector.ApplyDefuseMissings, func(vecs ...vector.Any) vector.Any {
-				on := vecs[0]
-				unripped := vecs[1]
-				ripped := vecs[2]
+				unripped := vecs[0]
+				ripped := vecs[1]
 				if _, ok := ripped.(*vector.Missing); ok {
 					if d.nullish {
 						return vector.NewNull(ripped.Len())
 					}
 					//XXX will check noneish here like nullish above in
 					// a susequent PR
-					return vector.NewWrappedError(d.sctx, fmt.Sprintf("no such field %s", sup.QuotedName(d.key)), on)
+					return vector.NewStringError(d.sctx, fmt.Sprintf("no such path: %s", d.path), ripped.Len())
 				}
 				return unripped
-			}, vector.AddNoRip(on), vector.AddNoRip(out), out)
+			}, vector.AddNoRip(out), out)
 		case *vector.TypeValue:
 			var errs []uint32
 			typvals := vector.NewTypeValueEmpty()
@@ -139,7 +141,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 		} else if d.nullish {
 			op = "??."
 		}
-		return vector.NewWrappedError(d.sctx, fmt.Sprintf("'%s': applied to non-record", op), on)
+		return vector.NewStringError(d.sctx, fmt.Sprintf("'%s': type mismatch at %s", op, d.path), ripped.Len())
 	}
 	vec := outerVecs[0]
 	return vector.Apply(vector.ApplyRipFusions|vector.ApplyRipUnions|vector.ApplyRipOptions, eval, vector.AddNoRip(vec), vec)

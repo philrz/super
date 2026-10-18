@@ -27,9 +27,6 @@ func (b *bool_) length() uint32 {
 func (*bool_) unmarshal(*bsup.Context, field.Projection) {}
 
 func (b *bool_) project(loader *FrameLoader, projection field.Projection) vector.Any {
-	if len(projection) > 0 {
-		return vector.NewMissing(b.meta.Count)
-	}
 	return vector.NewBool(b.load(loader))
 }
 

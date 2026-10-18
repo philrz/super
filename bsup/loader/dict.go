@@ -35,9 +35,6 @@ func (d *dict) unmarshal(bctx *bsup.Context, projection field.Projection) {
 }
 
 func (d *dict) project(loader *FrameLoader, projection field.Projection) vector.Any {
-	if len(projection) > 0 {
-		return vector.NewMissing(d.len)
-	}
 	index, counts := d.load(loader)
 	return vector.NewDict(d.values.project(loader, projection), index, counts)
 }

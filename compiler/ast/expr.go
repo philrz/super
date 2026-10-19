@@ -21,7 +21,6 @@ type (
 	}
 	BadNone struct {
 		Kind string `json:"kind" unpack:""`
-		Type Type   `json:"type"`
 		Loc  `json:"loc"`
 	}
 	BetweenExpr struct {

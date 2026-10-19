@@ -1423,7 +1423,6 @@ BooleanLiteral
 NullLiteral
   = NULL { return newPrimitive(c, "null", ""), nil }
 
-//XXX change this to ast.OptionNone
 NoneLiteral
   = NONE __ "::" __ typ:(TypeAsValue / IDExpr) {
       return &ast.BinaryExpr{

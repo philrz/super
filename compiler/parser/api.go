@@ -108,16 +108,6 @@ func ParseFiles(inputs []srcfiles.Input) (*AST, error) {
 	return &AST{sliceOf[ast.Op](p), files}, nil
 }
 
-// semanticError is returned by grammar actions to report a specific
-// error message for input that otherwise parses.
-type semanticError struct {
-	msg string
-}
-
-func (s *semanticError) Error() string {
-	return s.msg
-}
-
 func convertParseErrs(err error, files *srcfiles.List) error {
 	errs, ok := err.(errList)
 	if !ok {
@@ -128,12 +118,7 @@ func convertParseErrs(err error, files *srcfiles.List) error {
 		if !ok {
 			return err
 		}
-		msg := "parse error"
-		var se *semanticError
-		if errors.As(pe.Inner, &se) {
-			msg = se.msg
-		}
-		files.AddError(msg, pe.pos.offset, -1)
+		files.AddError("parse error", pe.pos.offset, -1)
 	}
 	return nil
 }

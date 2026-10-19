@@ -22,20 +22,18 @@ type DotExpr struct {
 	defuse    *Defuse
 	entity    Evaluator
 	key       string
-	path      string
 	noneish   bool
 	nullish   bool
 	okPush    bool
 	hasFusion samfunc.FusionChecker
 }
 
-func NewDotExpr(sctx *super.Context, record Evaluator, field, path string, noneish, nullish bool) *DotExpr {
+func NewDotExpr(sctx *super.Context, record Evaluator, field string, noneish, nullish bool) *DotExpr {
 	return &DotExpr{
 		sctx:    sctx,
 		defuse:  NewDefuse(sctx),
 		entity:  record,
 		key:     field,
-		path:    path,
 		noneish: noneish,
 		nullish: nullish,
 	}
@@ -43,9 +41,8 @@ func NewDotExpr(sctx *super.Context, record Evaluator, field, path string, nonei
 
 func NewDottedExpr(sctx *super.Context, f field.Chain) Evaluator {
 	ret := Evaluator(&This{})
-	for k, elem := range f {
-		path := f[:k+1].String()
-		ret = NewDotExpr(sctx, ret, elem.ID, path, elem.Noneish, elem.Nullish)
+	for _, elem := range f {
+		ret = NewDotExpr(sctx, ret, elem.ID, elem.Noneish, elem.Nullish)
 	}
 	return ret
 }
@@ -65,7 +62,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 				return val
 			}
 		case *vector.Missing:
-			return vector.NewStringError(d.sctx, fmt.Sprintf("'.': none::missing cannot be dereferenced (with key '%s') (consider ?.)", d.key), val.Len())
+			return d.noFieldErr(val)
 		case *vector.Option:
 			// This is either a pure some or a pure none since we called
 			// Apply with RipOptions.  For option nones with ?. access
@@ -74,7 +71,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 				if d.noneish {
 					return val
 				}
-				return vector.NewStringError(d.sctx, fmt.Sprintf("'.': none cannot be dereferenced (with key '%s') (consider ?.)", d.key), val.Len())
+				return vector.NewStringError(d.sctx, fmt.Sprintf("cannot access field '%s' of none (use ?. or ok())", d.key), val.Len())
 			}
 			return eval(on, val.Any)
 		case *vector.Record:
@@ -83,11 +80,11 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 				if d.nullish {
 					return vector.NewNull(val.Len())
 				}
-				return vector.NewStringError(d.sctx, fmt.Sprintf("no such field '%s'", d.key), val.Len())
+				return d.noFieldErr(val)
 			}
 			out := val.Fields[i]
 			if _, ok := out.(*vector.Missing); ok {
-				return vector.NewStringError(d.sctx, fmt.Sprintf("no such field '%s'", d.key), val.Len())
+				return d.noFieldErr(val)
 			}
 			if !hasUnionMissing(out) {
 				return out
@@ -101,7 +98,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 					}
 					//XXX will check noneish here like nullish above in
 					// a susequent PR
-					return vector.NewStringError(d.sctx, fmt.Sprintf("'.': no such field '%s'", d.key), ripped.Len())
+					return d.noFieldErr(ripped)
 				}
 				return unripped
 			}, vector.AddNoRip(out), out)
@@ -119,7 +116,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 				errs = append(errs, i)
 			}
 			if len(errs) > 0 {
-				return vector.NewCombinedError(d.sctx, fmt.Sprintf("'.': no such field '%s'", sup.QuotedName(d.key)), typvals, val, errs)
+				return vector.NewCombinedError(d.sctx, fmt.Sprintf("no such field '%s'", sup.QuotedName(d.key)), typvals, val, errs)
 			}
 			return typvals
 		case *vector.Map:
@@ -134,18 +131,16 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 			// values on this path wrap the ripped value instead of the outer one.
 			return vector.Pick(eval(val.Any, val.Any), val.Index)
 		case *vector.Error:
-			return vector.NewWrappedError(d.sctx, fmt.Sprintf("'.': error dereferecing '%s'", d.key), val)
+			return val
 		}
-		op := "."
-		if d.noneish {
-			op = "?."
-		} else if d.nullish {
-			op = "??."
-		}
-		return vector.NewStringError(d.sctx, fmt.Sprintf("'%s': type mismatch at %s", op, d.path), ripped.Len())
+		return vector.NewStringError(d.sctx, fmt.Sprintf("cannot access field '%s' of %s", d.key, ripped.Kind().String()), ripped.Len())
 	}
 	vec := outerVecs[0]
 	return vector.Apply(vector.ApplyRipFusions|vector.ApplyRipUnions|vector.ApplyRipOptions, eval, vector.AddNoRip(vec), vec)
+}
+
+func (d *DotExpr) noFieldErr(on vector.Any) *vector.Error {
+	return vector.NewStringError(d.sctx, fmt.Sprintf("no such field '%s'", d.key), on.Len())
 }
 
 func hasUnionMissing(vec vector.Any) bool {

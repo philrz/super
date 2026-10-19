@@ -70,6 +70,37 @@ func KindFromString(v string) Kind {
 	}
 }
 
+func (k Kind) String() string {
+	switch k {
+	case KindInt:
+		return "int"
+	case KindUint:
+		return "uint"
+	case KindFloat:
+		return "float"
+	case KindBytes:
+		return "bytes"
+	case KindString:
+		return "string"
+	case KindType:
+		return "type"
+	case KindArray:
+		return "array"
+	case KindSet:
+		return "set"
+	case KindMap:
+		return "map"
+	case KindRecord:
+		return "record"
+	case KindMissing:
+		return "missing"
+	case KindOption:
+		return "option"
+	default:
+		panic(k)
+	}
+}
+
 func FormOf(v Any) (Form, bool) {
 	switch v.(type) {
 	case *Int, *Uint, *Float, *Bytes, *String, *TypeValue: //XXX IP, Net

@@ -19,6 +19,11 @@ type (
 		Elems []ArrayElem `json:"elems"`
 		Loc   `json:"loc"`
 	}
+	BadNone struct {
+		Kind string `json:"kind" unpack:""`
+		Type Type   `json:"type"`
+		Loc  `json:"loc"`
+	}
 	BetweenExpr struct {
 		Kind  string `json:"kind" unpack:""`
 		Not   bool   `json:"not"`
@@ -277,6 +282,7 @@ func (*FStringExprElem) fStringElemNode() {}
 
 func (*AggFuncExpr) exprNode()     {}
 func (*ArrayExpr) exprNode()       {}
+func (*BadNone) exprNode()         {}
 func (*BetweenExpr) exprNode()     {}
 func (*BinaryExpr) exprNode()      {}
 func (*CallExpr) exprNode()        {}

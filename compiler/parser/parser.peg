@@ -1423,9 +1423,7 @@ BooleanLiteral
 NullLiteral
   = NULL { return newPrimitive(c, "null", ""), nil }
 
-// none::T is shorthand for the none of option(T) (or of T when T is
-// an option type) and is implemented as a cast of missing to T.  A bare
-// none without a type is an error.
+//XXX change this to ast.OptionNone
 NoneLiteral
   = NONE __ "::" __ typ:(TypeAsValue / IDExpr) {
       return &ast.BinaryExpr{
@@ -1437,7 +1435,11 @@ NoneLiteral
       }, nil
     }
   / NONE {
-      return newPrimitive(c, "missing", ""), &semanticError{"none must have a type decorator (e.g., none::int64)"}
+      // We have an ast placeholder for this to generate a better error.
+      return &ast.BadNone{
+        Kind: "BadNone",
+        Loc: loc(c),
+      }, nil
     }
 
 MissingLiteral

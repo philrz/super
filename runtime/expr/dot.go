@@ -59,6 +59,9 @@ func (d *DotExpr) eval(vecs ...vector.Any) vector.Any {
 			return vec
 		}
 	case *vector.Missing:
+		if d.noneish {
+			return vec
+		}
 		return d.noFieldErr(vec)
 	case *vector.Option:
 		// This is either a pure some or a pure none since we called

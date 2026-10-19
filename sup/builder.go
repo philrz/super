@@ -59,7 +59,7 @@ func buildValue(b *scode.Builder, val Value) error {
 			panic(typ)
 
 		}
-		// This is a none::missing
+		// This is a missing value
 		b.Append(nil)
 		return nil
 	}
@@ -191,7 +191,7 @@ func buildRecord(b *scode.Builder, val *Record) error {
 	b.BeginContainer()
 	for k, v := range val.fields {
 		if super.TypeUnder(v.Type()) == super.TypeMissing {
-			return fmt.Errorf("none::missing assigned to field %s", super.TypeUnder(val.Type()).(*super.TypeRecord).Fields[k].Name)
+			return fmt.Errorf("missing value assigned to field %s", super.TypeUnder(val.Type()).(*super.TypeRecord).Fields[k].Name)
 		}
 		if err := buildValue(b, v); err != nil {
 			return err

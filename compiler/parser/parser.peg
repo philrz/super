@@ -1388,6 +1388,7 @@ Literal
   / BooleanLiteral
   / NullLiteral
   / NoneLiteral
+  / MissingLiteral
 
 SubnetLiteral
   = v:IP6Net !IdentifierRest {
@@ -1422,9 +1423,25 @@ BooleanLiteral
 NullLiteral
   = NULL { return newPrimitive(c, "null", ""), nil }
 
-// a bare none has type missing
+// none::T is shorthand for the none of option(T) (or of T when T is
+// an option type) and is implemented as a cast of missing to T.  A bare
+// none without a type is an error.
 NoneLiteral
-  = NONE { return newPrimitive(c, "missing", ""), nil }
+  = NONE __ "::" __ typ:(TypeAsValue / IDExpr) {
+      return &ast.BinaryExpr{
+        Kind: "BinaryExpr",
+        Op: "::",
+        LHS: newPrimitive(c, "missing", ""),
+        RHS: typ.(ast.Expr),
+        Loc: loc(c),
+      }, nil
+    }
+  / NONE {
+      return newPrimitive(c, "missing", ""), &semanticError{"none must have a type decorator (e.g., none::int64)"}
+    }
+
+MissingLiteral
+  = MISSING { return newPrimitive(c, "missing", ""), nil }
   
 BytesLiteral
   = "0x" HexDigit* {
@@ -1706,7 +1723,8 @@ IdentifierRest
 
 IDGuard
   = BooleanLiteral
-  / NoneLiteral
+  / NONE
+  / MISSING
   / NullLiteral
   / NaN
   / Infinity
@@ -2526,6 +2544,7 @@ LOAD       = "LOAD"i            !IdentifierRest
 MATERIALIZED = "MATERIALIZED"i  !IdentifierRest
 MAP        = "MAP"i             !IdentifierRest
 MERGE      = "MERGE"i           !IdentifierRest
+MISSING    = "MISSING"i         !IdentifierRest
 NONE       = "NONE"i            !IdentifierRest
 NOT        = "NOT"i             !IdentifierRest
 NULL       = "NULL"i            !IdentifierRest

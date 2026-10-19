@@ -325,7 +325,7 @@ func (a *Analyzer) convertValue(val ast.Value) (Value, error) {
 		// A none is always typed and none::T is shorthand for none::option(T)
 		// unless T is already an option type.
 		if val.Type == nil {
-			return nil, errors.New("none must include implied option type (e.g., none::int64)")
+			return nil, ErrBadNone
 		}
 		typ, err := a.convertType(val.Type)
 		if err != nil {

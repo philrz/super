@@ -15,7 +15,7 @@ import (
 	"github.com/superdb/super/scode"
 )
 
-const BadNone = "none must have a type (e.g., none::int64)"
+var ErrBadNone = errors.New("none must have a type (e.g., none::int64)")
 
 func (p *Parser) ParseValue() (ast.Value, error) {
 	v, err := p.matchOuterValue()
@@ -273,7 +273,7 @@ func (p *Parser) matchNone() (*ast.None, error) {
 		if noEOF(err) != nil {
 			return nil, err
 		}
-		return nil, p.error(BadNone)
+		return nil, p.err(ErrBadNone)
 	}
 	l.skip(2)
 	typ, err := p.matchTypeComponent()
@@ -281,7 +281,7 @@ func (p *Parser) matchNone() (*ast.None, error) {
 		return nil, err
 	}
 	if typ == nil {
-		return nil, p.error(BadNone)
+		return nil, p.err(ErrBadNone)
 	}
 	return &ast.None{
 		Kind: "None",

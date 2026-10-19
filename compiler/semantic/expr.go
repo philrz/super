@@ -41,7 +41,7 @@ func (t *translator) expr(e ast.Expr, inType super.Type) (sem.Expr, super.Type) 
 			Elems: elems,
 		}, t.sctx.LookupTypeArray(elemsType)
 	case *ast.BadNone:
-		t.error(e, errors.New(sup.BadNone))
+		t.error(e, sup.ErrBadNone)
 		return badExpr, t.checker.unknown
 	case *ast.BinaryExpr:
 		return t.binaryExpr(e, inType)

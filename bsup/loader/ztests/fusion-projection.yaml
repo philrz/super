@@ -14,5 +14,5 @@ outputs:
   - name: stdout
     data: |
       "a"
-      error({message:"'.': applied to non-record",on:error({message:"no such field commit",on:{commit:none::(missing|{collection:string})}})})
+      error("no such field commit")
       "b"

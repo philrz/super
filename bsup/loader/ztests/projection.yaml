@@ -23,36 +23,36 @@ inputs:
 outputs:
   - name: stdout
     data: |
-      {x:1,y:2,z:error("no such field z")}
-      {x:3,y:4,z:error("no such field z")}
-      {x:3,y:4,z:error("no such field z")}
-      {x:3,y:4,z:error("no such field z")}
-      {x:error("no such field x"),y:error("no such field y"),z:error("no such field z")}
+      {x:1,y:2,z:none}
+      {x:3,y:4,z:none}
+      {x:3,y:4,z:none}
+      {x:3,y:4,z:none}
+      {x:none,y:none,z:none}
       ===
       {s:"foo"}
-      {s:error("no such field s")}
+      {s:none}
       {s:"bar"}
-      {s:error("no such field s")}
+      {s:none}
       {s:"baz"}
       ===
       {x:1,s:"foo"}
-      {x:3,s:error("no such field s")}
+      {x:3,s:none}
       {x:3,s:"bar"}
-      {x:3,s:error("no such field s")}
-      {x:error("no such field x"),s:"baz"}
+      {x:3,s:none}
+      {x:none,s:"baz"}
       ===
       {s:"foo",x:1}
-      {s:error("no such field s"),x:3}
+      {s:none,x:3}
       {s:"bar",x:3}
-      {s:error("no such field s"),x:3}
-      {s:"baz",x:error("no such field x")}
+      {s:none,x:3}
+      {s:"baz",x:none}
       ===
-      {y:2,w:error("no such field w")}
-      {y:4,w:error("no such field w")}
-      {y:4,w:error("no such field w")}
-      {y:4,w:error("no such field w")}
-      {y:error("no such field y"),w:{y:5}}
+      {y:2,w:none}
+      {y:4,w:none}
+      {y:4,w:none}
+      {y:4,w:none}
+      {y:none,w:{y:5}}
       ===
-      error({message:"'.': applied to non-record",on:1})
-      error({message:"'.': applied to non-record",on:2})
-      error({message:"'.': applied to non-record",on:3})
+      1
+      2
+      3

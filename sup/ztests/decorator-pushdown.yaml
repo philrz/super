@@ -57,7 +57,7 @@ flags: -i sup
 input: none
 
 error: |
-  stdio:stdin: line 1: parse error: none value must have a type decorator (e.g., none::int64)
+  stdio:stdin: line 1: parse error: none must have a type (e.g., none::int64)
 
 ---
 

@@ -26,6 +26,6 @@ output: |
 spq: values 1, none
 
 error: |
-  none must include implied option type (e.g., none::int64) at line 1, column 11:
+  none must have a type (e.g., none::int64) at line 1, column 11:
   values 1, none
             ~~~~

@@ -48,7 +48,7 @@ func NewDottedExpr(sctx *super.Context, f field.Chain) Evaluator {
 }
 
 func (d *DotExpr) Eval(vec vector.Any) vector.Any {
-	return vector.Apply(vector.ApplyRipFusions|vector.ApplyRipUnions|vector.ApplyRipOptions, d.eval, vector.AddNoRip(vec), d.entity.Eval(vec))
+	return vector.Apply(vector.ApplyRipFusions|vector.ApplyRipUnions|vector.ApplyRipOptions, d.eval, d.entity.Eval(vec))
 }
 
 func (d *DotExpr) eval(vecs ...vector.Any) vector.Any {

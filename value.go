@@ -266,12 +266,12 @@ func (v Value) IsError() bool {
 	return ok
 }
 
-func (v *Value) IsMissing() bool {
+func (v *Value) IsErrorMissing() bool {
 	if v == nil {
 		return true
 	}
 	if typ, ok := v.Type().(*TypeError); ok {
-		return typ.IsMissing(v.Bytes())
+		return typ.IsErrorMissing(v.Bytes())
 	}
 	return false
 }
@@ -381,7 +381,7 @@ func (v *Value) AsTime() nano.Ts {
 }
 
 func (v *Value) MissingAsNull() Value {
-	if v.IsMissing() {
+	if v.IsErrorMissing() {
 		return Null
 	}
 	return *v
@@ -452,7 +452,7 @@ func (v Value) Unwrap() Value {
 }
 
 func (v Value) DeoptionWithMissing(sctx *Context) Value {
-	return v.Coalesce(sctx.Missing())
+	return v.Coalesce(sctx.ErrorMissing())
 }
 
 func (v Value) IsNone() bool {

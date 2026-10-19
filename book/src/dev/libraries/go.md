@@ -53,8 +53,8 @@ func main() {
 			return
 		}
 		s := val.Deref("s")
-		if s.IsMissing() {
-			s = sctx.Missing().Ptr()
+		if s.IsErrorMissing() {
+			s = sctx.ErrorMissing().Ptr()
 		}
 		fmt.Println(sup.String(s))
 	}
@@ -142,8 +142,8 @@ func main() {
 			return
 		}
 		s := val.Deref("s")
-		if s.IsMissing() {
-			s = sctx.Missing().Ptr()
+		if s.IsErrorMissing() {
+			s = sctx.ErrorMissing().Ptr()
 		}
 		fmt.Println(sup.String(s))
 	}

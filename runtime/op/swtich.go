@@ -91,5 +91,5 @@ func isErrorMissing(vec vector.Any, i uint32) bool {
 		return false
 	}
 	s := vector.StringValue(errVec.Vals, i)
-	return s == string(super.Missing)
+	return s == string(super.ErrorMissingBytes)
 }

@@ -128,7 +128,7 @@ func (d *DotExpr) eval(vecs ...vector.Any) vector.Any {
 }
 
 func (d *DotExpr) noFieldErr(on vector.Any) *vector.Error {
-	return vector.NewStringError(d.sctx, fmt.Sprintf("no such field '%s'", d.key), on.Len())
+	return vector.NewStringError(d.sctx, fmt.Sprintf("no such field %s", sup.QuotedName(d.key)), on.Len())
 }
 
 func kindName(typ super.Type) string {

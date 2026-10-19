@@ -133,7 +133,7 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 		case *vector.Error:
 			return val
 		}
-		return vector.NewStringError(d.sctx, fmt.Sprintf("cannot access field '%s' of %s", d.key, ripped.Kind().String()), ripped.Len())
+		return vector.NewStringError(d.sctx, fmt.Sprintf("cannot access field '%s' of %s", d.key, kindName(ripped.Type())), ripped.Len())
 	}
 	vec := outerVecs[0]
 	return vector.Apply(vector.ApplyRipFusions|vector.ApplyRipUnions|vector.ApplyRipOptions, eval, vector.AddNoRip(vec), vec)
@@ -141,6 +141,27 @@ func (d *DotExpr) eval(outerVecs ...vector.Any) vector.Any {
 
 func (d *DotExpr) noFieldErr(on vector.Any) *vector.Error {
 	return vector.NewStringError(d.sctx, fmt.Sprintf("no such field '%s'", d.key), on.Len())
+}
+
+func kindName(typ super.Type) string {
+	switch t := super.TypeUnder(typ).(type) {
+	case *super.TypeRecord:
+		return "struct"
+	case *super.TypeArray:
+		return "array"
+	case *super.TypeSet:
+		return "set"
+	case *super.TypeMap:
+		return "map"
+	case *super.TypeEnum:
+		return "enum"
+	case *super.TypeUnion:
+		return "union"
+	case *super.TypeOption:
+		return "option"
+	default:
+		return sup.FormatType(t) // int64, time, ip, null, ...
+	}
 }
 
 func hasUnionMissing(vec vector.Any) bool {

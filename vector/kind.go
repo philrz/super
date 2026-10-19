@@ -29,7 +29,6 @@ const (
 	KindFusion  = 19
 	KindMissing = 20
 	KindOption  = 21
-	KindNil     = 22
 )
 
 const (
@@ -61,6 +60,8 @@ func KindFromString(v string) Kind {
 		return KindMap
 	case "Record":
 		return KindRecord
+	case "Null":
+		return KindNull
 	case "Missing":
 		return KindMissing
 	case "Option":
@@ -92,12 +93,15 @@ func (k Kind) String() string {
 		return "map"
 	case KindRecord:
 		return "record"
+	case KindNull:
+		return "null"
 	case KindMissing:
 		return "missing"
 	case KindOption:
 		return "option"
 	default:
-		panic(k)
+		//XXX panic
+		return "unknown"
 	}
 }
 

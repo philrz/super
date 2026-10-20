@@ -51,7 +51,7 @@ func buildValue(b *scode.Builder, val Value) error {
 	case *Null:
 		b.Append(nil)
 		return nil
-	case *None:
+	case *Missing:
 		typ := val.Type()
 		if super.TypeUnder(typ) != super.TypeMissing {
 			// option nones should have been converted to Option
@@ -261,7 +261,7 @@ func buildFusion(b *scode.Builder, f *Fusion) error {
 }
 
 func buildOption(b *scode.Builder, o *Option) error {
-	if _, ok := o.value.(*None); ok {
+	if o.value == nil {
 		super.BuildNone(b)
 	} else {
 		super.BeginSomeContainer(b)

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	_ "github.com/superdb/super/cmd/super/compile"
 	_ "github.com/superdb/super/cmd/super/db/attach"
@@ -33,6 +34,7 @@ import (
 )
 
 func main() {
+	time.Sleep(150 * time.Millisecond) // fake regression for testing the perf canary
 	if err := root.Super.Exec(os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)

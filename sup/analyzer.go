@@ -165,11 +165,6 @@ func (a *Analyzer) LookupType(t ast.Type) (int, error) {
 	return super.TypeID(typ), nil
 }
 
-// convertValueAndDecorate converts val and decorates it with decorator.
-// Decorators are pushed down into the elements of containers (and the fields
-// of records) before the elements are converted so that elements are
-// decorated by their implied types rather than first being normalized
-// into a union type, e.g., [1,missing]::[option(int64)].
 func (a *Analyzer) convertValueAndDecorate(val ast.Value, decorator super.Type) (Value, error) {
 	v, err := a.convertValue(val)
 	if err != nil {
@@ -178,50 +173,11 @@ func (a *Analyzer) convertValueAndDecorate(val ast.Value, decorator super.Type) 
 	return a.decorate(v, decorator)
 }
 
-// convertRecordAndDecorate matches the fields of rec to the fields of the
-// record decorator by name.  Fields of the decorator that are absent from rec
-// must be option types and are filled in with the option's none.
-func (a *Analyzer) convertRecordAndDecorate(rec *ast.Record, decorator super.Type, typ *super.TypeRecord) (Value, error) {
-	byName := make(map[string]*ast.Field, len(rec.Fields))
-	for k := range rec.Fields {
-		byName[rec.Fields[k].Name] = &rec.Fields[k]
-	}
-	fields := make([]Value, 0, len(typ.Fields))
-	var matched int
-	for _, f := range typ.Fields {
-		field, ok := byName[f.Name]
-		if !ok {
-			none, err := a.absentField(f, decorator)
-			if err != nil {
-				return nil, err
-			}
-			fields = append(fields, none)
-			continue
-		}
-		matched++
-		if field.Opt && !isOptionType(f.Type) {
-			return nil, fmt.Errorf("optional field %q decorated with non-option type %q", f.Name, FormatType(f.Type))
-		}
-		val, err := a.convertValueAndDecorate(field.Value, f.Type)
-		if err != nil {
-			return nil, err
-		}
-		fields = append(fields, val)
-	}
-	if matched != len(rec.Fields) {
-		return nil, fmt.Errorf("record decorator incompatible with record value: %q", FormatType(decorator))
-	}
-	return &Record{
-		typ:    decorator,
-		fields: fields,
-	}, nil
-}
-
 func (a *Analyzer) absentField(f super.Field, decorator super.Type) (Value, error) {
 	if !isOptionType(f.Type) {
 		return nil, fmt.Errorf("non-optional field %q of record decorator %q not present in record value", f.Name, FormatType(decorator))
 	}
-	return &Option{typ: f.Type, value: &Missing{typ: super.TypeMissing}}, nil
+	return &Option{typ: f.Type}, nil
 }
 
 func isOptionType(typ super.Type) bool {
@@ -555,8 +511,14 @@ func (a *Analyzer) decorate(val Value, typ super.Type) (Value, error) {
 	if super.IsTypeAny(typ) {
 		return a.createAny(val), nil
 	}
-	_, isUnion := val.(*Union)
-	if optionType, ok := super.TypeUnder(typ).(*super.TypeOption); ok && !isUnion {
+	if union, ok := val.(*Union); ok {
+		// As with cast in the runtime, decorating a union value with a
+		// non-union type decorates the union's underlying value, e.g.,
+		// the elements of [1,missing] (which are normalized to the union
+		// (int64|missing)) decorated with option(int64) become option values.
+		return a.decorate(union.value, typ)
+	}
+	if optionType, ok := super.TypeUnder(typ).(*super.TypeOption); ok {
 		if option, ok := val.(*Option); ok {
 			if option.value == nil {
 				// Retype an option none.
@@ -609,8 +571,6 @@ func (a *Analyzer) decorate(val Value, typ super.Type) (Value, error) {
 		return a.decorateError(val, typ)
 	case *Fusion:
 		return nil, fmt.Errorf("fusion values cannot be decorated: %q", FormatType(typ))
-	case *Union:
-		return a.decorateUnion(val, typ)
 	case *Option:
 		if val.value != nil {
 			// typ cannot be an option type as that case is handled above
@@ -771,40 +731,6 @@ func (a Analyzer) decorateSet(set *Set, decorator super.Type) (Value, error) {
 		typ:   decorator,
 		elems: elems,
 	}, nil
-}
-
-func (a Analyzer) decorateUnion(union *Union, decorator super.Type) (Value, error) {
-	unionType, ok := super.TypeUnder(decorator).(*super.TypeUnion)
-	if !ok {
-		if optionType, ok := super.TypeUnder(decorator).(*super.TypeOption); ok {
-			return a.decorate(union.value, optionType)
-		}
-		return nil, fmt.Errorf("union decorator not a union: %q", FormatType(decorator))
-	}
-	val := Value(union)
-	if !super.IsTypeNamed(union.Type()) {
-		// When a union is inside a union and it's not a named type,
-		// the parent union is flattened and contains
-		// this union's elemental types, so we just pull out the value from the child
-		// union and cast it to the parent union.
-		// When the value is a named union, we match the value exactly to the union types
-		// since the named type won't be flattened in the union.
-		val = union.value
-	}
-	valType := val.Type()
-	if valType == unionType {
-		return val, nil
-	}
-	for k, typ := range unionType.Types {
-		if valType == typ {
-			return &Union{
-				typ:   decorator,
-				tag:   k,
-				value: val,
-			}, nil
-		}
-	}
-	return nil, fmt.Errorf("%q is not in union type %q", FormatType(valType), FormatType(unionType))
 }
 
 func (a Analyzer) decorateMap(m *Map, decorator super.Type) (Value, error) {

@@ -90,7 +90,7 @@ flags: -i sup
 input: '{a?:1}::{a:int64}'
 
 error: |
-  stdio:stdin: optional field "a" decorated with non-option type "int64"
+  stdio:stdin: cannot decorate an option value with a non-option type
 
 ---
 
